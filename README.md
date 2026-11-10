@@ -53,7 +53,7 @@ Karena aku asumsikan di kelompok kita ada yang pakai **Claude Code**, **CODEX**,
 ---
 
 ## 🐴 Cara Pakai Plugin `Ponytail` (Mode Ngoding Anti-Ribet)
-Di dalam folder `.agents/plugins/ponytail`, sudah kupasang plugin **Ponytail** (*Lazy Senior Dev Mode*). Gunanya buat maksa AI nulis kode yang **paling simpel, pendek, dan nggak kebanyakan gaya** (*over-engineering*), jadi kodenya gampang dibaca sama satu kelompok.
+Di dalam folder `.agents/plugins/ponytail` (Apa itu Ponytail? Cari di gugel), sudah kupasang plugin **Ponytail** (*Lazy Senior Dev Mode*). Gunanya buat maksa AI nulis kode yang **paling simpel, pendek, dan nggak kebanyakan gaya** (*over-engineering*), jadi kodenya gampang dibaca sama satu kelompok.
 
 ### Kapan Harus Dipakai & Kapan Jangan?
 | Kerjaan yang Lagi Dibuat | Pakai Ponytail? | Alasannya |
