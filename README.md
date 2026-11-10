@@ -52,6 +52,31 @@ Karena aku asumsikan di kelompok kita ada yang pakai **Claude Code**, **CODEX**,
 
 ---
 
+## 🐴 Cara Pakai Plugin `Ponytail` (Mode Ngoding Anti-Ribet)
+Di dalam folder `.agents/plugins/ponytail`, sudah kupasang plugin **Ponytail** (*Lazy Senior Dev Mode*). Gunanya buat maksa AI nulis kode yang **paling simpel, pendek, dan nggak kebanyakan gaya** (*over-engineering*), jadi kodenya gampang dibaca sama satu kelompok.
+
+### Kapan Harus Dipakai & Kapan Jangan?
+| Kerjaan yang Lagi Dibuat | Pakai Ponytail? | Alasannya |
+| :--- | :---: | :--- |
+| **Bikin Desain Visual / Tampilan UI Awal** | ❌ **Jangan Dulu** | Kalau dinyalain pas lagi mendesain halaman dari nol, AI-nya bakal terlalu "pelit" dan tampilannya jadi polosan kali. Biarkan AI fokus ikut aturan `anti-ai-slop.md` dulu. |
+| **Ngoding Logika JS / Form di Frontend** | ✅ **Pakai (`/ponytail lite`)** | Biar AI nggak nyuruh *install* library JS yang aneh-aneh dan cukup pakai HTML/JS bawaan yang simpel. |
+| **Ngoding Backend (Controller, Model, REST API)** | ✅ **Pakai (`/ponytail full`)** | Biar kodenya *to-the-point*, nggak bikin banyak file ribet yang nggak perlu, dan gampang kita pahami. |
+
+### Cara Memanggilnya di Chat AI:
+- **Memulai Ponytail:** Ketik **`/ponytail`** di chat (atau tulis *"pakai mode ponytail"*).
+  - `/ponytail lite` $\rightarrow$ Tetap bikin sesuai permintaan, sambil ngasih tahu cara yang lebih simpel.
+  - `/ponytail full` $\rightarrow$ *(Default)* Langsung pilih solusi paling ringkas & tolak fitur tambahan yang nggak diminta.
+  - `/ponytail ultra` $\rightarrow$ Mode super irit baris kode.
+- **Perintah Tambahan Ponytail (Opsional):**
+  - `/ponytail-review` $\rightarrow$ Suruh AI ngecek kode kita sebelum di-*push* ke GitHub.
+  - `/ponytail-debt` $\rightarrow$ Cari bagian kode yang kepanjangan/ribet buat diringkas.
+- **Mematikan Ponytail (Balik ke Mode Normal):**
+  - Cukup ketik **`stop ponytail`** atau **`normal mode`** di chat.
+
+**Kalo gak mau pake Ponytail (misalnya karna kurang paham memakainya atau gak mau ribet) bilang aja ya wok.**
+
+---
+
 ## 🗄️ Desain Database (PostgreSQL) & Alur Tabel
 Contoh **7 tabel utama** sudah ku siapkan di folder **[`app/Database/`](app/Database/)**. Konsepnya simpel:
 1. **`users`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
