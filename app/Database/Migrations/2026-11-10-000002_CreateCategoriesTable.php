@@ -8,12 +8,13 @@ class CreateCategoriesTable extends Migration
 {
     public function up()
     {
+        // Membuat tabel kategori wisata
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
-            'name' => [
+            'nama' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 100,
             ],
@@ -21,15 +22,15 @@ class CreateCategoriesTable extends Migration
                 'type'       => 'VARCHAR',
                 'constraint' => 120,
             ],
-            'description' => [
+            'deskripsi' => [
                 'type' => 'TEXT',
                 'null' => true,
             ],
-            'created_at' => [
+            'dibuat_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
-            'updated_at' => [
+            'diperbarui_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
@@ -37,11 +38,11 @@ class CreateCategoriesTable extends Migration
 
         $this->forge->addKey('id', true);
         $this->forge->addUniqueKey('slug');
-        $this->forge->createTable('categories', true);
+        $this->forge->createTable('kategori', true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('categories', true, true);
+        $this->forge->dropTable('kategori', true, true);
     }
 }

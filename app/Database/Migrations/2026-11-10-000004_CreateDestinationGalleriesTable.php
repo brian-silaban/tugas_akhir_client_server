@@ -8,37 +8,38 @@ class CreateDestinationGalleriesTable extends Migration
 {
     public function up()
     {
+        // Membuat tabel galeri foto pendukung tiap destinasi
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
-            'destination_id' => [
+            'id_destinasi' => [
                 'type' => 'INT',
             ],
-            'image_url' => [
+            'url_foto' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 255,
             ],
-            'caption' => [
+            'keterangan' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 180,
                 'null'       => true,
             ],
-            'created_at' => [
+            'dibuat_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->addKey('destination_id');
-        $this->forge->addForeignKey('destination_id', 'destinations', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('destination_galleries', true);
+        $this->forge->addKey('id_destinasi');
+        $this->forge->addForeignKey('id_destinasi', 'destinasi', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->createTable('galeri_destinasi', true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('destination_galleries', true, true);
+        $this->forge->dropTable('galeri_destinasi', true, true);
     }
 }

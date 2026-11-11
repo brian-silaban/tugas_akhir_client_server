@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= esc($pageTitle ?? 'IndWalk — Explore Indonesia Together') ?></title>
-    <meta name="description" content="<?= esc($metaDescription ?? 'Direktori kurasi destinasi wisata Nusantara dengan transparansi harga tiket, jam operasional, dan integrasi REST API ekosistem perjalanan.') ?>">
+    <title><?= esc($judulHalaman ?? 'IndWalk — Explore Indonesia Together') ?></title>
+    <meta name="description" content="<?= esc($deskripsiMeta ?? 'Direktori kurasi destinasi wisata Nusantara dengan transparansi harga tiket, jam operasional, dan integrasi REST API ekosistem perjalanan.') ?>">
     <link rel="icon" type="image/png" href="<?= base_url('assets/IndWalk_ Explore Indonesia Together.png') ?>">
 
-    <!-- Google Fonts: Fraunces (Editorial Display Serif) + Plus Jakarta Sans (UI & Data) + JetBrains Mono (API Telemetry) -->
+    <!-- Google Fonts: Fraunces (Heading Serif Editorial) + Plus Jakarta Sans (Body & UI) + JetBrains Mono (API) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS CDN Configured with Official IndWalk Design Tokens -->
+    <!-- Tailwind CSS CDN dengan Konfigurasi Token Warna Resmi IndWalk -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -51,18 +51,13 @@
         .tabular-nums {
             font-variant-numeric: tabular-nums;
         }
-        /* Subtle organic paper grain accent */
-        .editorial-grid-line {
-            background-image: linear-gradient(to right, rgba(231, 229, 228, 0.55) 1px, transparent 1px);
-            background-size: 25% 100%;
-        }
     </style>
 
     <?= $this->renderSection('head') ?>
 </head>
 <body class="bg-[#FAF8F5] text-stone-900 min-h-screen flex flex-col overflow-x-hidden selection:bg-[#0B6E77]/15 selection:text-[#0B6E77]">
 
-    <!-- Top Editorial Telemetry Bar -->
+    <!-- Baris Informasi Status Arsitektur Client-Server -->
     <div class="bg-[#1B4332] text-stone-100 text-xs border-b border-white/10">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2.5">
@@ -70,22 +65,22 @@
                 <span class="font-medium tracking-wide text-stone-200">Edisi Kurasi Nusantara · 6 Destinasi Prioritas &amp; 4 Zona Ekologi</span>
             </div>
             <div class="hidden md:flex items-center gap-5 text-stone-300 font-mono text-[11px] tabular-nums">
-                <span>PROVIDER: <strong class="text-white font-medium">GET /api/v1/destinations</strong></span>
+                <span>PROVIDER: <strong class="text-white font-medium">GET /api/v1/destinasi</strong></span>
                 <span class="text-white/30">|</span>
-                <span>CONSUMER: <strong class="text-white font-medium">PartnerApiService (3s Timeout · Auto-Fallback)</strong></span>
+                <span>CONSUMER: <strong class="text-white font-medium">LayananApiMitra (Timeout 3 dtk · Fallback Otomatis)</strong></span>
             </div>
         </div>
     </div>
 
-    <!-- Navbar -->
+    <!-- Komponen Navigasi Atas -->
     <?= $this->include('layout/navbar') ?>
 
-    <!-- Main Page Content -->
+    <!-- Konten Utama Halaman -->
     <main class="flex-grow">
         <?= $this->renderSection('content') ?>
     </main>
 
-    <!-- Footer -->
+    <!-- Komponen Footer Bawah -->
     <?= $this->include('layout/footer') ?>
 
     <?= $this->renderSection('scripts') ?>

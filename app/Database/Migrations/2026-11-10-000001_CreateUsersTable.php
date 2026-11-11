@@ -8,12 +8,13 @@ class CreateUsersTable extends Migration
 {
     public function up()
     {
+        // Membuat tabel pengguna (untuk role 'admin' dan 'member')
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
-            'name' => [
+            'nama' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 120,
             ],
@@ -21,26 +22,26 @@ class CreateUsersTable extends Migration
                 'type'       => 'VARCHAR',
                 'constraint' => 150,
             ],
-            'password_hash' => [
+            'kata_sandi' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 255,
             ],
-            // Menggunakan VARCHAR (bukan ENUM) agar 100% kompatibel dengan PostgreSQL ('admin' | 'member')
-            'role' => [
+            // Menggunakan VARCHAR agar kompatibel penuh dengan PostgreSQL ('admin' | 'member')
+            'peran' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 20,
                 'default'    => 'member',
             ],
-            'avatar' => [
+            'foto_profil' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 255,
                 'null'       => true,
             ],
-            'created_at' => [
+            'dibuat_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
-            'updated_at' => [
+            'diperbarui_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
@@ -48,11 +49,11 @@ class CreateUsersTable extends Migration
 
         $this->forge->addKey('id', true);
         $this->forge->addUniqueKey('email');
-        $this->forge->createTable('users', true);
+        $this->forge->createTable('pengguna', true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('users', true, true);
+        $this->forge->dropTable('pengguna', true, true);
     }
 }

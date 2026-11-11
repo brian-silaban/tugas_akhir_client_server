@@ -8,32 +8,33 @@ class CreateWishlistsTable extends Migration
 {
     public function up()
     {
+        // Membuat tabel favorit (daftar destinasi yang disimpan pengguna)
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
-            'user_id' => [
+            'id_pengguna' => [
                 'type' => 'INT',
             ],
-            'destination_id' => [
+            'id_destinasi' => [
                 'type' => 'INT',
             ],
-            'created_at' => [
+            'dibuat_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->addUniqueKey(['user_id', 'destination_id']);
-        $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('destination_id', 'destinations', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('wishlists', true);
+        $this->forge->addUniqueKey(['id_pengguna', 'id_destinasi']);
+        $this->forge->addForeignKey('id_pengguna', 'pengguna', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->addForeignKey('id_destinasi', 'destinasi', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->createTable('favorit', true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('wishlists', true, true);
+        $this->forge->dropTable('favorit', true, true);
     }
 }

@@ -8,15 +8,16 @@ class CreateDestinationsTable extends Migration
 {
     public function up()
     {
+        // Membuat tabel utama destinasi wisata
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
-            'category_id' => [
+            'id_kategori' => [
                 'type' => 'INT',
             ],
-            'name' => [
+            'nama' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 180,
             ],
@@ -24,67 +25,67 @@ class CreateDestinationsTable extends Migration
                 'type'       => 'VARCHAR',
                 'constraint' => 200,
             ],
-            // Kolom city menjadi jembatan parameter untuk integrasi REST API kelompok lain
-            'city' => [
+            // Kolom kota menjadi kunci parameter saat memanggil REST API kelompok lain
+            'kota' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 100,
             ],
-            'province' => [
+            'provinsi' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 100,
             ],
-            'address' => [
+            'alamat' => [
                 'type' => 'TEXT',
                 'null' => true,
             ],
-            'latitude' => [
+            'garis_lintang' => [
                 'type'       => 'DECIMAL',
                 'constraint' => '10,7',
                 'null'       => true,
             ],
-            'longitude' => [
+            'garis_bujur' => [
                 'type'       => 'DECIMAL',
                 'constraint' => '10,7',
                 'null'       => true,
             ],
-            'ticket_price' => [
+            'harga_tiket' => [
                 'type'    => 'INT',
                 'default' => 0,
             ],
-            'open_time' => [
+            'jam_buka' => [
                 'type' => 'TIME',
                 'null' => true,
             ],
-            'close_time' => [
+            'jam_tutup' => [
                 'type' => 'TIME',
                 'null' => true,
             ],
-            'description' => [
+            'deskripsi' => [
                 'type' => 'TEXT',
             ],
-            // Disimpan sebagai JSON string di TEXT agar kompatibel penuh di semua versi PostgreSQL & MySQL
-            'facilities' => [
+            // Disimpan sebagai JSON string pada kolom TEXT agar kompatibel penuh di PostgreSQL
+            'fasilitas' => [
                 'type' => 'TEXT',
                 'null' => true,
             ],
-            'thumbnail' => [
+            'foto_utama' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 255,
             ],
-            'rating_avg' => [
+            'rata_rating' => [
                 'type'       => 'DECIMAL',
                 'constraint' => '3,2',
                 'default'    => 0.00,
             ],
-            'review_count' => [
+            'jumlah_ulasan' => [
                 'type'    => 'INT',
                 'default' => 0,
             ],
-            'created_at' => [
+            'dibuat_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
-            'updated_at' => [
+            'diperbarui_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
@@ -92,14 +93,14 @@ class CreateDestinationsTable extends Migration
 
         $this->forge->addKey('id', true);
         $this->forge->addUniqueKey('slug');
-        $this->forge->addKey('city');
-        $this->forge->addKey('category_id');
-        $this->forge->addForeignKey('category_id', 'categories', 'id', 'CASCADE', 'RESTRICT');
-        $this->forge->createTable('destinations', true);
+        $this->forge->addKey('kota');
+        $this->forge->addKey('id_kategori');
+        $this->forge->addForeignKey('id_kategori', 'kategori', 'id', 'CASCADE', 'RESTRICT');
+        $this->forge->createTable('destinasi', true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('destinations', true, true);
+        $this->forge->dropTable('destinasi', true, true);
     }
 }

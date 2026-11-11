@@ -8,59 +8,60 @@ class CreateBookingsTable extends Migration
 {
     public function up()
     {
+        // Membuat tabel pemesanan tiket kunjungan wisata
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
-            'booking_code' => [
+            'kode_pemesanan' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 40,
             ],
-            'user_id' => [
+            'id_pengguna' => [
                 'type' => 'INT',
             ],
-            'destination_id' => [
+            'id_destinasi' => [
                 'type' => 'INT',
             ],
-            'visit_date' => [
+            'tanggal_kunjungan' => [
                 'type' => 'DATE',
             ],
-            'visitor_count' => [
+            'jumlah_pengunjung' => [
                 'type'    => 'INT',
                 'default' => 1,
             ],
-            'total_price' => [
+            'total_harga' => [
                 'type'    => 'INT',
                 'default' => 0,
             ],
-            // Menggunakan VARCHAR untuk kompatibilitas PostgreSQL ('pending' | 'paid' | 'cancelled')
+            // Status pemesanan: 'menunggu' | 'lunas' | 'dibatalkan'
             'status' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 20,
-                'default'    => 'pending',
+                'default'    => 'menunggu',
             ],
-            'created_at' => [
+            'dibuat_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
-            'updated_at' => [
+            'diperbarui_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->addUniqueKey('booking_code');
-        $this->forge->addKey('user_id');
-        $this->forge->addKey('destination_id');
-        $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('destination_id', 'destinations', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('bookings', true);
+        $this->forge->addUniqueKey('kode_pemesanan');
+        $this->forge->addKey('id_pengguna');
+        $this->forge->addKey('id_destinasi');
+        $this->forge->addForeignKey('id_pengguna', 'pengguna', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->addForeignKey('id_destinasi', 'destinasi', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->createTable('pemesanan', true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('bookings', true, true);
+        $this->forge->dropTable('pemesanan', true, true);
     }
 }

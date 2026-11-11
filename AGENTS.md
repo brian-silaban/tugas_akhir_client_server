@@ -6,8 +6,9 @@ Dokumen ini adalah panduan utama (*Single Source of Truth*) untuk seluruh AI Cod
 
 ## 0. Dokumen Acuan Wajib (Baca Sebelum Menulis Kode)
 1. **[`GOAL.md`](GOAL.md)** — Visi produk **IndWalk**, arsitektur Client-Server (API Provider & Consumer + Mock Fallback), dan token warna resmi dari logo IndWalk.
-2. **[`PRD.md`](PRD.md)** — Spesifikasi fitur lengkap, skema **7 tabel PostgreSQL**, kontrak JSON REST API, daftar routing, dan pembagian modul untuk 5 anggota kelompok.
+2. **[`PRD.md`](PRD.md)** — Spesifikasi fitur lengkap, skema **7 tabel PostgreSQL berbahasa Indonesia**, kontrak JSON REST API, daftar routing, dan pembagian modul untuk 5 anggota kelompok.
 3. **[`.agents/rules/anti-ai-slop.md`](.agents/rules/anti-ai-slop.md)** — Ruleset wajib Anti-AI-Slop UI/UX Design & 10-Point Sloplint Checklist.
+4. **[`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md)** — Ruleset wajib penulisan **Clean Code Berbahasa Indonesia** (nama variabel, *array key*, kolom database, fungsi buatan, dan komentar).
 
 ---
 
@@ -21,14 +22,27 @@ Dokumen ini adalah panduan utama (*Single Source of Truth*) untuk seluruh AI Cod
 - **Struktur Direktori Utama**:
   - `app/Controllers/` — Orchestrator request & response (`Api/`, `Admin/`, dan publik)
   - `app/Models/` — Query database, `$allowedFields`, dan validasi data
-  - `app/Libraries/PartnerApiService.php` — Client HTTP pemanggil REST API kelompok lain + Mock Fallback
-  - `app/Database/Migrations/` & `Seeds/IndWalkSeeder.php` — 7 tabel PostgreSQL & data awal
+  - `app/Libraries/LayananApiMitra.php` — Client HTTP pemanggil REST API kelompok lain + Mock Fallback
+  - `app/Database/Migrations/` & `Seeds/IndWalkSeeder.php` — 7 tabel PostgreSQL (`pengguna`, `kategori`, `destinasi`, `galeri_destinasi`, `pemesanan`, `ulasan`, `favorit`) & data awal
   - `app/Views/` — Template tampilan UI (`layout/`, `pages/`, `components/`)
   - `public/` — Document root & aset statis (`assets/`, `css/`, `js/`)
 
 ---
 
-## 2. 🎨 Wajib Patuhi: Ruleset Desain "Anti-AI-Slop" & Brand IndWalk
+## 2. 🇮🇩 Wajib Patuhi: Clean Code Berbahasa Indonesia
+Seluruh kode PHP dan JavaScript yang ditulis wajib mematuhi **[`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md)**:
+1. **Penamaan Variabel (`$camelCase` Bahasa Indonesia)**:
+   - Contoh: `$destinasiUtama`, `$daftarDestinasi`, `$daftarKategori`, `$filterPencarian`, `$totalHarga` (bukan `$heroDestination` atau `$catList`).
+2. **Penamaan Array Key & Kolom Database (`snake_case` Bahasa Indonesia)**:
+   - Contoh: `$destinasi['harga_tiket']`, `$destinasi['garis_lintang']`, `$destinasi['garis_bujur']`, `$destinasi['jam_buka']`, `$destinasi['rata_rating']`, `$destinasi['jumlah_ulasan']`.
+3. **Penamaan Fungsi Buatan Sendiri (`camelCase` Bahasa Indonesia)**:
+   - Contoh: `ambilDestinasiPopuler()`, `hitungTotalHarga()`, `ambilRekomendasiMitra()`. *(Method bawaan wajib CI4 seperti `index()`, `findAll()`, `esc()`, `base_url()` tetap sesuai bawaan framework).*
+4. **Keterbacaan di Atas Baris Pendek (*Readability over Brevity*)**:
+   - Dilarang memadatkan logika rumit ke dalam 1 baris (*nested ternary*). Pecah menjadi langkah-langkah jelas dengan komentar singkat Bahasa Indonesia agar mudah dipahami seluruh anggota kelompok.
+
+---
+
+## 3. 🎨 Wajib Patuhi: Ruleset Desain "Anti-AI-Slop" & Brand IndWalk
 Seluruh pembuatan dan modifikasi tampilan antarmuka (`app/Views/**` dan `public/css/**`) **WAJIB** mematuhi aturan lengkap di:
 👉 **[`.agents/rules/anti-ai-slop.md`](.agents/rules/anti-ai-slop.md)**
 
@@ -53,7 +67,7 @@ Seluruh pembuatan dan modifikasi tampilan antarmuka (`app/Views/**` dan `public/
 
 ---
 
-## 3. ⚙️ Standar Coding, PostgreSQL & Keamanan CodeIgniter 4
+## 4. ⚙️ Standar Coding, PostgreSQL & Keamanan CodeIgniter 4
 1. **Kompatibilitas PostgreSQL**:
    - Jangan gunakan tipe `ENUM` inline di migrasi; gunakan `VARCHAR` dengan default yang jelas.
    - Jangan melakukan hardcode `id` saat `insertBatch` agar sequence `SERIAL` PostgreSQL tidak rusak.
@@ -61,13 +75,13 @@ Seluruh pembuatan dan modifikasi tampilan antarmuka (`app/Views/**` dan `public/
    - Jangan menulis query SQL mentah di dalam View atau Controller. Tempatkan logika query di `app/Models/` dan logika HTTP client di `app/Libraries/`.
    - Gunakan layout inheritance CI4 (`$this->extend('layout/main')` dan `$this->section('content')`).
 3. **Keamanan Wajib**:
-   - **Anti-XSS**: Selalu bungkus output variabel dinamis di View dengan `esc()`, contoh: `<?= esc($destination['name']) ?>`.
+   - **Anti-XSS**: Selalu bungkus output variabel dinamis di View dengan `esc()`, contoh: `<?= esc($destinasi['nama']) ?>`.
    - **Anti-CSRF**: Setiap `<form method="post">` wajib menyertakan `<?= csrf_field() ?>`.
    - **URL & Aset**: Gunakan `base_url()` atau `site_url()` untuk link internal dan pemanggilan aset statis.
 
 ---
 
-## 4. Perintah Terminal (CLI)
+## 5. Perintah Terminal (CLI)
 ```bash
 # Menjalankan development server lokal
 php spark serve

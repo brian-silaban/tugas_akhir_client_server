@@ -8,45 +8,45 @@ class CreateReviewsTable extends Migration
 {
     public function up()
     {
+        // Membuat tabel ulasan dan rating pengunjung (1 sampai 5 bintang)
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
                 'auto_increment' => true,
             ],
-            'user_id' => [
+            'id_pengguna' => [
                 'type' => 'INT',
             ],
-            'destination_id' => [
+            'id_destinasi' => [
                 'type' => 'INT',
             ],
-            // SMALLINT di PostgreSQL (dipetakan otomatis dari SMALLINT/TINYINT) untuk skala 1-5
             'rating' => [
                 'type'    => 'SMALLINT',
                 'default' => 5,
             ],
-            'comment' => [
+            'komentar' => [
                 'type' => 'TEXT',
             ],
-            'created_at' => [
+            'dibuat_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
-            'updated_at' => [
+            'diperbarui_pada' => [
                 'type' => 'DATETIME',
                 'null' => true,
             ],
         ]);
 
         $this->forge->addKey('id', true);
-        $this->forge->addKey('user_id');
-        $this->forge->addKey('destination_id');
-        $this->forge->addForeignKey('user_id', 'users', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->addForeignKey('destination_id', 'destinations', 'id', 'CASCADE', 'CASCADE');
-        $this->forge->createTable('reviews', true);
+        $this->forge->addKey('id_pengguna');
+        $this->forge->addKey('id_destinasi');
+        $this->forge->addForeignKey('id_pengguna', 'pengguna', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->addForeignKey('id_destinasi', 'destinasi', 'id', 'CASCADE', 'CASCADE');
+        $this->forge->createTable('ulasan', true);
     }
 
     public function down()
     {
-        $this->forge->dropTable('reviews', true, true);
+        $this->forge->dropTable('ulasan', true, true);
     }
 }

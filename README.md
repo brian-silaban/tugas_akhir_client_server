@@ -48,100 +48,85 @@ Karena aku asumsikan di kelompok kita ada yang pakai **Claude Code**, **CODEX**,
 | **[`PRD.md`](PRD.md)** | Rencana fitur lengkap, daftar route URL, format JSON REST API buat dibagi ke kelompok lain, dan **usulan pembagian tugas 5 orang**. |
 | **[`AGENTS.md`](AGENTS.md)** | Instruksi otomatis yang dibaca sama **Antigravity** & **CODEX** waktu kalian ngoding. |
 | **[`CLAUDE.md`](CLAUDE.md)** | Instruksi otomatis khusus buat yang pakai **Claude Code**. |
-| **[`.agents/`](.agents/)** | Folder berisi rules **`anti-ai-slop.md`** (biar desain UI bikinan AI nggak kelihatan pasaran/kaku) dan plugin **`ponytail`** (mode ngoding hemat & anti ribet). |
+| **[`.agents/`](.agents/)** | Folder berisi rules **`anti-ai-slop.md`** (biar desain UI bikinan AI nggak kelihatan pasaran/kaku) dan **`clean-code-indonesia.md`** (biar semua variabel, array key, & kode memakai Bahasa Indonesia yang gampang kita baca). |
 
 ---
 
-## 🐴 Cara Pakai Plugin `Ponytail` (Mode Ngoding Anti-Ribet)
-Di dalam folder `.agents/plugins/ponytail` (Apa itu Ponytail? Cari di gugel), sudah kupasang plugin **Ponytail** (*Lazy Senior Dev Mode*). Gunanya buat maksa AI nulis kode yang **paling simpel, pendek, dan nggak kebanyakan gaya** (*over-engineering*), jadi kodenya gampang dibaca sama satu kelompok.
-
-### Kapan Harus Dipakai & Kapan Jangan?
-| Kerjaan yang Lagi Dibuat | Pakai Ponytail? | Alasannya |
-| :--- | :---: | :--- |
-| **Bikin Desain Visual / Tampilan UI Awal** | ❌ **Jangan Dulu** | Kalau dinyalain pas lagi mendesain halaman dari nol, AI-nya bakal terlalu "pelit" dan tampilannya jadi polosan kali. Biarkan AI fokus ikut aturan `anti-ai-slop.md` dulu. |
-| **Ngoding Logika JS / Form di Frontend** | ✅ **Pakai (`/ponytail lite`)** | Biar AI nggak nyuruh *install* library JS yang aneh-aneh dan cukup pakai HTML/JS bawaan yang simpel. |
-| **Ngoding Backend (Controller, Model, REST API)** | ✅ **Pakai (`/ponytail full`)** | Biar kodenya *to-the-point*, nggak bikin banyak file ribet yang nggak perlu, dan gampang kita pahami. |
-
-### Cara Memanggilnya di Chat AI:
-- **Memulai Ponytail:** Ketik **`/ponytail`** di chat (atau tulis *"pakai mode ponytail"*).
-  - `/ponytail lite` $\rightarrow$ Tetap bikin sesuai permintaan, sambil ngasih tahu cara yang lebih simpel.
-  - `/ponytail full` $\rightarrow$ *(Default)* Langsung pilih solusi paling ringkas & tolak fitur tambahan yang nggak diminta.
-  - `/ponytail ultra` $\rightarrow$ Mode super irit baris kode.
-- **Perintah Tambahan Ponytail (Opsional):**
-  - `/ponytail-review` $\rightarrow$ Suruh AI ngecek kode kita sebelum di-*push* ke GitHub.
-  - `/ponytail-debt` $\rightarrow$ Cari bagian kode yang kepanjangan/ribet buat diringkas.
-- **Mematikan Ponytail (Balik ke Mode Normal):**
-  - Cukup ketik **`stop ponytail`** atau **`normal mode`** di chat.
-
-**Kalo gak mau pake Ponytail (misalnya karna kurang paham memakainya atau gak mau ribet) bilang aja ya wok.**
+## 🇮🇩 Aturan Ngoding Kita: Clean Code Berbahasa Indonesia
+Di dalam folder `.agents/rules/clean-code-indonesia.md`, sudah dipasang aturan supaya setiap kali kita nyuruh AI bikin kode:
+1. **Nama Variabel & Fungsi Pakai Bahasa Indonesia:** Contohnya `$destinasiUtama`, `$daftarKategori`, `hitungTotalHarga()` (bukan bahasa Inggris yang bikin pusing pas baca).
+2. **Array Key & Nama Kolom Database Seragam Bahasa Indonesia:** Contohnya `$destinasi['harga_tiket']`, `$destinasi['garis_lintang']`, `$destinasi['jam_buka']`.
+3. **Kodenya Mudah Dibaca (*Clean Code*):** AI dilarang menumpuk logika rumit jadi 1 baris pendek yang susah dimengerti, dan wajib ngasih komentar penjelas berbahasa Indonesia supaya waktu ditanya dosen pas demo/sidang kita semua paham alurnya!
 
 ---
 
 ## 🗄️ Desain Database (PostgreSQL) & Alur Tabel
-Contoh **7 tabel utama** sudah ku siapkan di folder **[`app/Database/`](app/Database/)**. Konsepnya simpel:
-1. **`users`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
-2. **`categories`**: Kategori wisata (Bahari, Cagar Budaya, Pegunungan, dll).
-3. **`destinations`**: Data tempat wisata. Ada kolom **`city`** (misal: *Magelang*, *Malang*) yang dipakai buat nyambungin **REST API kelompok lain** (Kuliner, Penginapan, Transportasi) di kota yang sama!
-4. **`destination_galleries`**: Foto-foto tambahan tiap tempat wisata.
-5. **`bookings`**: Data pemesanan tiket kunjungan dari member.
-6. **`reviews`**: Rating bintang (1–5) & ulasan pengunjung.
-7. **`wishlists`**: Daftar tempat wisata yang di-*bookmark* member.
+Contoh **7 tabel utama (Full Bahasa Indonesia)** sudah ku siapkan di folder **[`app/Database/`](app/Database/)**. Konsepnya simpel:
+1. **`pengguna`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
+2. **`kategori`**: Kategori wisata (Bahari, Cagar Budaya, Pegunungan, dll).
+3. **`destinasi`**: Data tempat wisata. Ada kolom **`kota`** (misal: *Magelang*, *Malang*) yang dipakai buat nyambungin **REST API kelompok lain** (Kuliner, Penginapan, Transportasi) di kota yang sama!
+4. **`galeri_destinasi`**: Foto-foto tambahan tiap tempat wisata.
+5. **`pemesanan`**: Data pemesanan tiket kunjungan dari member.
+6. **`ulasan`**: Rating bintang (1–5) & komentar pengunjung.
+7. **`favorit`**: Daftar tempat wisata yang disimpan/di-*bookmark* member.
 
 ```mermaid
 erDiagram
-    USERS ||--o{ BOOKINGS : "pesan tiket"
-    USERS ||--o{ REVIEWS : "kasih ulasan"
-    USERS ||--o{ WISHLISTS : "simpan favorit"
-    CATEGORIES ||--o{ DESTINATIONS : "punya"
-    DESTINATIONS ||--o{ DESTINATION_GALLERIES : "punya galeri"
-    DESTINATIONS ||--o{ BOOKINGS : "dipesan di"
-    DESTINATIONS ||--o{ REVIEWS : "diulas di"
-    DESTINATIONS ||--o{ WISHLISTS : "disimpan di"
+    PENGGUNA ||--o{ PEMESANAN : "pesan tiket"
+    PENGGUNA ||--o{ ULASAN : "kasih ulasan"
+    PENGGUNA ||--o{ FAVORIT : "simpan favorit"
+    KATEGORI ||--o{ DESTINASI : "punya"
+    DESTINASI ||--o{ GALERI_DESTINASI : "punya galeri"
+    DESTINASI ||--o{ PEMESANAN : "dipesan di"
+    DESTINASI ||--o{ ULASAN : "diulas di"
+    DESTINASI ||--o{ FAVORIT : "disimpan di"
 
-    USERS {
+    PENGGUNA {
         int id PK
-        string name
+        string nama
         string email UK
-        string role "admin / member"
+        string peran "admin / member"
     }
-    CATEGORIES {
+    KATEGORI {
         int id PK
-        string name
+        string nama
         string slug UK
     }
-    DESTINATIONS {
+    DESTINASI {
         int id PK
-        int category_id FK
-        string name
-        string city "Kunci sambungan REST API"
-        int ticket_price
-        decimal rating_avg
+        int id_kategori FK
+        string nama
+        string kota "Kunci sambungan REST API"
+        int harga_tiket
+        decimal garis_lintang
+        decimal garis_bujur
+        decimal rata_rating
     }
-    DESTINATION_GALLERIES {
+    GALERI_DESTINASI {
         int id PK
-        int destination_id FK
-        string image_url
+        int id_destinasi FK
+        string url_foto
     }
-    BOOKINGS {
+    PEMESANAN {
         int id PK
-        string booking_code UK
-        int user_id FK
-        int destination_id FK
-        date visit_date
-        int total_price
-        string status "pending / paid / cancelled"
+        string kode_pemesanan UK
+        int id_pengguna FK
+        int id_destinasi FK
+        date tanggal_kunjungan
+        int total_harga
+        string status "menunggu / lunas / dibatalkan"
     }
-    REVIEWS {
+    ULASAN {
         int id PK
-        int user_id FK
-        int destination_id FK
+        int id_pengguna FK
+        int id_destinasi FK
         smallint rating "1-5"
-        text comment
+        text komentar
     }
-    WISHLISTS {
+    FAVORIT {
         int id PK
-        int user_id FK
-        int destination_id FK
+        int id_pengguna FK
+        int id_destinasi FK
     }
 ```
 
@@ -176,7 +161,7 @@ Pertama, buat database kosong dulu di PostgreSQL kalian (misal namanya `indwalk_
 Karena kita kerja **berlima**, ikuti **3 tips ini ya coy**  biar kode kita nggak ketimpa:
 
 ### 1. Selalu `git pull` Dulu SEBELUM Mulai Ngoding!
-Jangan langsung ngoding di kode basi kemarin ya bujang. Tarik dulu update terbaru dari kawan yang lain:
+Jangan langsung ngoding dulu ya bujang. Tarik dulu update terbaru dari kawan yang lain:
 ```bash
 git pull origin main
 ```
