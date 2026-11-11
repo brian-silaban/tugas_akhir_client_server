@@ -122,5 +122,8 @@ _modules/*
 # Visual Studio Code
 .vscode/
 
+# Personal AI Design System (Local Only)
+/DESIGN.md
+
 /results/
 /phpunit.xml
