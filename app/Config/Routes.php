@@ -2,6 +2,7 @@
 
 use CodeIgniter\Router\RouteCollection;
 
-/** @var RouteCollection $routes */
-$routes->get('/', 'HomeController::index');
-$routes->get('/destinations', 'HomeController::index');
+/**
+ * @var RouteCollection $routes
+ */
+$routes->get('/', 'Home::index');
