@@ -298,7 +298,7 @@ $daftarWilayahKepulauan = [
 ];
 
 // URL logo utama IndWalk (menggunakan aset lokal di public/assets/)
-$urlLogoIndWalk = base_url('assets/IndWalk_ Explore Indonesia Together.png');
+$urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
 ?>
 <!DOCTYPE html>
 <html lang="id">

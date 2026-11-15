@@ -5,32 +5,36 @@ Dokumen ini adalah panduan utama (*Single Source of Truth*) untuk seluruh AI Cod
 ---
 
 ## 0. Dokumen Acuan Wajib (Baca Sebelum Menulis Kode)
-1. **[`GOAL.md`](GOAL.md)** — Visi produk **IndWalk**, arsitektur Client-Server (API Provider & Consumer + Mock Fallback), dan token warna resmi dari logo IndWalk.
-2. **[`PRD.md`](PRD.md)** — Spesifikasi fitur lengkap, skema **7 tabel PostgreSQL berbahasa Indonesia**, kontrak JSON REST API, daftar routing, dan pembagian modul untuk 5 anggota kelompok.
+1. **[`GOAL.md`](GOAL.md)** — Visi produk **IndWalk**, arsitektur terpisah **Backend (`backend/`) & Frontend (`frontend/`)** via REST API + Mock Fallback, serta token warna resmi dari logo IndWalk.
+2. **[`PRD.md`](PRD.md)** — Spesifikasi fitur lengkap, skema **7 tabel PostgreSQL berbahasa Indonesia**, kontrak JSON REST API, daftar routing untuk Backend & Frontend, dan pembagian modul untuk 5 anggota kelompok.
 3. **[`.agents/rules/anti-ai-slop.md`](.agents/rules/anti-ai-slop.md)** — Ruleset wajib Anti-AI-Slop UI/UX Design & 10-Point Sloplint Checklist.
 4. **[`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md)** — Ruleset wajib penulisan **Clean Code Berbahasa Indonesia** (nama variabel, *array key*, kolom database, fungsi buatan, dan komentar).
 
 ---
 
-## 1. Konteks & Arsitektur Projek
+## 1. Konteks & Arsitektur Projek (Terpisah Backend & Frontend)
 - **Nama Platform**: **IndWalk** (*Explore Indonesia Together*)
-- **Logo**: `public/assets/IndWalk_ Explore Indonesia Together.png`
+- **Logo**: `frontend/public/assets/IndWalk_ Explore Indonesia Together.png`
 - **Tech Stack**:
-  - **Backend**: PHP 8.2+ dengan framework **CodeIgniter 4 (CI4)**
-  - **Database**: **PostgreSQL** (`DBDriver = Postgre`, Port `5432`)
-  - **Frontend**: Semantic HTML5, Tailwind CSS, Vanilla JS / Alpine.js, SVG Icons (Lucide)
+  - **Backend (`backend/`)**: PHP 8.2+ dengan **CodeIgniter 4 (CI4)** khusus penyedia **REST API (JSON)** pada Port `8080`.
+  - **Database (`backend/app/Database/`)**: **PostgreSQL** (`DBDriver = Postgre`, Port `5432`) — dapat dijalankan lokal atau terpusat di Cloud VM Azure.
+  - **Frontend (`frontend/`)**: **CodeIgniter 4 (CI4)** khusus **Client Web UI** pada Port `8081` (Semantic HTML5, Tailwind CSS, Vanilla JS / Alpine.js, Material Symbols / SVG Icons). **Frontend dilarang mengakses database PostgreSQL secara langsung**; seluruh data diambil melalui HTTP Request ke REST API `backend/` dan REST API kelompok mitra.
 - **Struktur Direktori Utama**:
-  - `app/Controllers/` — Orchestrator request & response (`Api/`, `Admin/`, dan publik)
-  - `app/Models/` — Query database, `$allowedFields`, dan validasi data
-  - `app/Libraries/LayananApiMitra.php` — Client HTTP pemanggil REST API kelompok lain + Mock Fallback
-  - `app/Database/Migrations/` & `Seeds/IndWalkSeeder.php` — 7 tabel PostgreSQL (`pengguna`, `kategori`, `destinasi`, `galeri_destinasi`, `pemesanan`, `ulasan`, `favorit`) & data awal
-  - `app/Views/` — Template tampilan UI (`layout/`, `pages/`, `components/`)
-  - `public/` — Document root & aset statis (`assets/`, `css/`, `js/`)
+  - **`backend/` (Server REST API & Database PostgreSQL)**:
+    - `backend/app/Controllers/Api/` — Endpoint REST API JSON (`/api/v1/destinasi`, `/api/v1/kategori`, `/api/v1/pemesanan`, dll.)
+    - `backend/app/Models/` — Query database PostgreSQL, `$allowedFields`, dan validasi data
+    - `backend/app/Database/Migrations/` & `Seeds/IndWalkSeeder.php` — 7 tabel PostgreSQL (`pengguna`, `kategori`, `destinasi`, `galeri_destinasi`, `pemesanan`, `ulasan`, `favorit`) & data awal
+    - `backend/app/Database/schema_postgresql.sql` — Skema DDL SQL murni untuk import cepat
+  - **`frontend/` (Client Web Tampilan IndWalk)**:
+    - `frontend/app/Controllers/` — Controller halaman web yang memanggil REST API Backend & Mitra lalu meneruskan data ke View
+    - `frontend/app/Libraries/` — HTTP Client pemanggil REST API Backend (`LayananApiBackend.php`) & REST API kelompok lain (`LayananApiMitra.php` + Mock Fallback)
+    - `frontend/app/Views/` — Template tampilan UI (`welcome_message.php`, `layout/`, `pages/`, `components/`)
+    - `frontend/public/` — Document root & aset statis (`assets/`)
 
 ---
 
 ## 2. 🇮🇩 Wajib Patuhi: Clean Code Berbahasa Indonesia
-Seluruh kode PHP dan JavaScript yang ditulis wajib mematuhi **[`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md)**:
+Seluruh kode PHP dan JavaScript di dalam `backend/` maupun `frontend/` wajib mematuhi **[`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md)**:
 1. **Penamaan Variabel (`$camelCase` Bahasa Indonesia)**:
    - Contoh: `$destinasiUtama`, `$daftarDestinasi`, `$daftarKategori`, `$filterPencarian`, `$totalHarga` (bukan `$heroDestination` atau `$catList`).
 2. **Penamaan Array Key & Kolom Database (`snake_case` Bahasa Indonesia)**:
@@ -43,17 +47,17 @@ Seluruh kode PHP dan JavaScript yang ditulis wajib mematuhi **[`.agents/rules/cl
 ---
 
 ## 3. 🎨 Wajib Patuhi: Ruleset Desain "Anti-AI-Slop" & Brand IndWalk
-Seluruh pembuatan dan modifikasi tampilan antarmuka (`app/Views/**` dan `public/css/**`) **WAJIB** mematuhi aturan lengkap di:
+Seluruh pembuatan dan modifikasi tampilan antarmuka (`frontend/app/Views/**` dan `frontend/public/css/**`) **WAJIB** mematuhi aturan lengkap di:
 👉 **[`.agents/rules/anti-ai-slop.md`](.agents/rules/anti-ai-slop.md)**
 
 ### Ringkasan Prinsip Utama:
 1. **Aesthetic Persona (`anthropics/frontend-design`)**:
    - Gunakan gaya **Warm Organic & Editorial Travel** (seperti *Airbnb*, *Indonesia.travel*, *Lonely Planet*), **bukan** template landing page SaaS teknologi.
    - **Palet Warna Resmi IndWalk**:
-     - Latar utama: *Warm Stone Off-White* (`#FAF8F5` / `bg-stone-50`)
-     - Brand Primary 1 (Kata *"Ind"*): *Deep Ocean Teal* (`#0B6E77` / `teal-700`)
-     - Brand Primary 2 (Kata *"Walk"*): *Forest Moss Green* (`#2D5A36` / `emerald-900`)
-     - Aksen CTA: *Terracotta* (`#C2410C` / `orange-700`) & Rating *Warm Amber* (`#D97706`)
+     - Latar utama: *Warm Stone Off-White* (`#FAF8F5` / `#FFF8F5`)
+     - Brand Primary 1 (Kata *"Ind"*): *Deep Ocean Teal* (`#0B6E77` / `#00545B`)
+     - Brand Primary 2 (Kata *"Walk"*): *Forest Moss Green* (`#2D5A36` / `#3B6843`)
+     - Aksen CTA: *Terracotta* (`#C2410C` / `#B53801`) & Rating *Warm Amber* (`#D97706`)
    - **Tipografi**: Heading Serif (*Playfair Display* / *Fraunces*) + Body Sans (*Plus Jakarta Sans* / *DM Sans*), dengan `tabular-nums` untuk harga dan rating.
 2. **Larangan 5 Hallmark AI Slop (`pbakaus/impeccable`)**:
    - **DILARANG** memakai gradien ungu-ke-biru (`from-indigo-500 to-purple-600`).
@@ -67,29 +71,29 @@ Seluruh pembuatan dan modifikasi tampilan antarmuka (`app/Views/**` dan `public/
 
 ---
 
-## 4. ⚙️ Standar Coding, PostgreSQL & Keamanan CodeIgniter 4
-1. **Kompatibilitas PostgreSQL**:
+## 4. ⚙️ Standar Coding, Pemisahan Client-Server, PostgreSQL & Keamanan CI4
+1. **Disiplin Pemisahan Backend vs Frontend**:
+   - **`backend/`** hanya mengembalikan respons JSON (`$this->response->setJSON(...)` atau `ResponseTrait`), tidak me-render halaman HTML.
+   - **`frontend/`** tidak boleh memiliki query SQL atau mengakses PostgreSQL langsung; seluruh pembacaan/penyimpanan data harus memanggil endpoint REST API di `backend/` menggunakan HTTP Client (`CURLRequest`).
+2. **Kompatibilitas PostgreSQL (di `backend/`)**:
    - Jangan gunakan tipe `ENUM` inline di migrasi; gunakan `VARCHAR` dengan default yang jelas.
    - Jangan melakukan hardcode `id` saat `insertBatch` agar sequence `SERIAL` PostgreSQL tidak rusak.
-2. **MVC yang Bersih**:
-   - Jangan menulis query SQL mentah di dalam View atau Controller. Tempatkan logika query di `app/Models/` dan logika HTTP client di `app/Libraries/`.
-   - Gunakan layout inheritance CI4 (`$this->extend('layout/main')` dan `$this->section('content')`).
-3. **Keamanan Wajib**:
+3. **Keamanan Wajib (di `frontend/` & `backend/`)**:
    - **Anti-XSS**: Selalu bungkus output variabel dinamis di View dengan `esc()`, contoh: `<?= esc($destinasi['nama']) ?>`.
    - **Anti-CSRF**: Setiap `<form method="post">` wajib menyertakan `<?= csrf_field() ?>`.
-   - **URL & Aset**: Gunakan `base_url()` atau `site_url()` untuk link internal dan pemanggilan aset statis.
+   - **URL & Aset**: Gunakan `base_url()` atau `site_url()` untuk link internal.
 
 ---
 
 ## 5. Perintah Terminal (CLI)
 ```bash
-# Menjalankan development server lokal
-php spark serve
-
-# Menjalankan migrasi & seeder database (PostgreSQL)
+# 1. Menjalankan Server Backend REST API (Port 8080) & Migrasi Database
+cd backend
 php spark migrate
 php spark db:seed IndWalkSeeder
+php spark serve --port 8080
 
-# Rollback & refresh migrasi
-php spark migrate:refresh
+# 2. Menjalankan Aplikasi Client Frontend Web (Port 8081)
+cd frontend
+php spark serve --port 8081
 ```

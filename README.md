@@ -2,7 +2,7 @@
 **Repo Projek Akhir Kelompok Mata Kuliah Client-Server (CodeIgniter 4 + PostgreSQL)**
 
 <p align="center">
-  <img src="public/assets/IndWalk_ Explore Indonesia Together.png" alt="Logo IndWalk" width="320">
+  <img src="frontend/public/assets/IndWalk_ Explore Indonesia Together.png" alt="Logo IndWalk" width="320">
 </p>
 
 > [!IMPORTANT]
@@ -11,31 +11,52 @@
 
 ---
 
-## 🖥️ Soal Landing Page yang Ada Sekarang
-Kalau kalian nengok View, trus kalian ketik ini di cmd/terminal (`php spark serve`), bakal muncul **Landing Page statis**.
-- **Kenapa dibuat?** Cuma buat *preview* kasar / gambaran awal aja cam mana bentuk web wisata kita nanti, sekaligus ngetes biar waktu kalian baru *clone* repo ini, webnya langsung bisa dibuka di browser **tanpa harus pusing setting PostgreSQL dulu**.
-- **"Anjing burik kali kontol tampilan apa ini modal AI bah!"** Santai ya bujang, desain yang sekarang memang masih sementara. Nanti kita rombak bersamaan dengan hasil diskusi kelompok!
+## 🧩 Kenapa Ada 2 Folder (`backend/` & `frontend/`)?
+Sesuai arahan dosen kita supaya **integrasi REST API Client-Server-nya kelihatan jelas**, projek ini sengaja dibagi jadi **2 folder CodeIgniter 4 terpisah**:
+
+1. **Folder [`backend/`](backend/) (Server REST API + Database PostgreSQL — Jalan di Port `8080`)**:
+   - Ini **mesin belakang (Server)** kita. Cuma dia yang boleh nyambung ke database **PostgreSQL**.
+   - Dia **nggak punya tampilan web HTML**, kerjanya murni ngeluarin data **JSON REST API** buat dipakai sama `frontend/` kita sendiri dan juga dipakai sama kelompok lain (Hotel, Kuliner, Transportasi).
+2. **Folder [`frontend/`](frontend/) (Client Web Tampilan IndWalk — Jalan di Port `8081`)**:
+   - Ini **tampilan web (Client)** yang dilihat pengunjung.
+   - Dia **nggak punya database sama sekali**, jadi setiap kali mau nampilin tempat wisata, login, atau pesan tiket, dia wajib minta data lewat **REST API** ke `backend/`.
+
+---
+
+## 🖥️ Soal Landing Page yang Ada di `frontend/` Sekarang
+Kalau kalian masuk ke folder `frontend` trus ketik `php spark serve --port 8081` di cmd/terminal, bakal muncul **Landing Page statis** (desain dari Google Stitch + sudah dirapikan pakai aturan Clean Code Bahasa Indonesia).
+- **Kenapa dibuat?** Cuma buat *preview* / gambaran awal aja cam mana bentuk web wisata kita nanti, sekaligus ngetes biar waktu kalian baru *clone* repo ini, webnya langsung bisa dibuka di browser **tanpa harus pusing setting PostgreSQL dulu**.
+- Desain yang sekarang masih bisa kita kembangkan atau ubah bareng-bareng sesuai hasil diskusi kelompok!
 
 ---
 
 ## ⚡ Cara Jalanin Projek di Laptop Masing-Masing
 
+### A. Kalau Cuma Mau Nengok Tampilan Web (`frontend`) Dulu:
 ```bash
-# 1. Clone repo ini (cukup sekali di awal)
+# 1. Clone repo ini (cukup sekali di awal, atau lewat VS Code langsung)
 git clone <url-repo-github-kita>
 cd tugas_akhir_client_server
-# Sebenarnya bisa langsung lewat VS Code untuk nge clone dari github tanpa ngetik kode clone ini. Cari di gugel caranya cam mana.
 
-# 2. Copy file env dan ubah .env
+# 2. Masuk ke folder frontend & install vendor kalau belum ada
+cd frontend
 cp env .env
-
-# 3. Kalau vendor belum ada / error, jalankan:
 composer install
 
-# 4. Nyalakan server lokal
-php spark serve
+# 3. Nyalakan server Frontend di port 8081
+php spark serve --port 8081
 ```
-Buka **`http://localhost:8080`** di browser. Done!
+Buka **`http://localhost:8081`** di browser. Langsung nongol Landing Page-nya!
+
+### B. Cara Jalanin Server REST API (`backend`):
+Buka terminal baru, lalu jalankan:
+```bash
+cd backend
+cp env .env
+composer install
+php spark serve --port 8080
+```
+Buka **`http://localhost:8080`** di browser, nanti bakal muncul teks **JSON** status API Server kita.
 
 ---
 
@@ -44,8 +65,8 @@ Karena aku asumsikan di kelompok kita ada yang pakai **Claude Code**, **CODEX**,
 
 | Nama File / Folder | Gunanya Buat Apa Mek? |
 | :--- | :--- |
-| **[`GOAL.md`](GOAL.md)** | Visi web **IndWalk**, warna brand dari logo, dan trik **Client-Server REST API** (biar web kita tetap aman pakai data simulasi kalau API kelompok lain belum jadi / mati pas demo). |
-| **[`PRD.md`](PRD.md)** | Rencana fitur lengkap, daftar route URL, format JSON REST API buat dibagi ke kelompok lain, dan **usulan pembagian tugas 5 orang**. |
+| **[`GOAL.md`](GOAL.md)** | Visi web **IndWalk**, warna brand dari logo, dan arsitektur pisah **`backend/` & `frontend/`** lewat REST API. |
+| **[`PRD.md`](PRD.md)** | Rencana fitur lengkap, daftar route API & Web, format JSON REST API buat dibagi ke kelompok lain, dan **usulan pembagian tugas 5 orang**. |
 | **[`AGENTS.md`](AGENTS.md)** | Instruksi otomatis yang dibaca sama **Antigravity** & **CODEX** waktu kalian ngoding. |
 | **[`CLAUDE.md`](CLAUDE.md)** | Instruksi otomatis khusus buat yang pakai **Claude Code**. |
 | **[`.agents/`](.agents/)** | Folder berisi rules **`anti-ai-slop.md`** (biar desain UI bikinan AI nggak kelihatan pasaran/kaku) dan **`clean-code-indonesia.md`** (biar semua variabel, array key, & kode memakai Bahasa Indonesia yang gampang kita baca). |
@@ -53,15 +74,15 @@ Karena aku asumsikan di kelompok kita ada yang pakai **Claude Code**, **CODEX**,
 ---
 
 ## 🇮🇩 Aturan Ngoding Kita: Clean Code Berbahasa Indonesia
-Di dalam folder `.agents/rules/clean-code-indonesia.md`, sudah dipasang aturan supaya setiap kali kita nyuruh AI bikin kode:
+Di dalam folder [`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md), sudah dipasang aturan supaya setiap kali kita nyuruh AI bikin kode (mau di `backend` ataupun `frontend`):
 1. **Nama Variabel & Fungsi Pakai Bahasa Indonesia:** Contohnya `$destinasiUtama`, `$daftarKategori`, `hitungTotalHarga()` (bukan bahasa Inggris yang bikin pusing pas baca).
 2. **Array Key & Nama Kolom Database Seragam Bahasa Indonesia:** Contohnya `$destinasi['harga_tiket']`, `$destinasi['garis_lintang']`, `$destinasi['jam_buka']`.
-3. **Kodenya Mudah Dibaca (*Clean Code*):** AI dilarang menumpuk logika rumit jadi 1 baris pendek yang susah dimengerti, dan wajib ngasih komentar penjelas berbahasa Indonesia supaya waktu ditanya dosen pas demo/sidang kita semua paham alurnya!
+3. **Kodenya Mudah Dibaca (*Clean Code*):** AI dilarang menumpuk logika rumit jadi 1 baris pendek yang susah dimengerti, dan wajib ngasih komentar penjelas berbahasa Indonesia supaya waktu ditanya dosen pas demo/sidang kita semua paham alurnya! (Contoh nyatanya bisa kalian tengok langsung di [`frontend/app/Views/welcome_message.php`](frontend/app/Views/welcome_message.php)).
 
 ---
 
 ## 🗄️ Desain Database (PostgreSQL) & Alur Tabel
-Contoh **7 tabel utama (Full Bahasa Indonesia)** sudah ku siapkan di folder **[`app/Database/`](app/Database/)**. Konsepnya simpel:
+Contoh **7 tabel utama (Full Bahasa Indonesia)** sudah ku siapkan di folder **[`backend/app/Database/`](backend/app/Database/)**. Konsepnya simpel:
 1. **`pengguna`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
 2. **`kategori`**: Kategori wisata (Bahari, Cagar Budaya, Pegunungan, dll).
 3. **`destinasi`**: Data tempat wisata. Ada kolom **`kota`** (misal: *Magelang*, *Malang*) yang dipakai buat nyambungin **REST API kelompok lain** (Kuliner, Penginapan, Transportasi) di kota yang sama!
@@ -130,11 +151,11 @@ erDiagram
     }
 ```
 
-### Cara Import Database ke PostgreSQL Masing-Masing
-Pertama, buat database kosong dulu di PostgreSQL kalian (misal namanya `indwalk_db`), lalu pilih **salah satu** cara paling gampang buat kalian:
+### Cara Import Database ke PostgreSQL (Kalau Pakai DB Lokal / VM Cloud)
+Kalau nanti kita pakai database PostgreSQL terpusat di VM Azure, kalian tinggal masukin IP VM-nya di `backend/.env` tanpa perlu install PostgreSQL sendiri. Tapi kalau mau coba di PostgreSQL lokal laptop masing-masing:
 
-#### Cara 1: Lewat Terminal/CMD CI4 (Sekaligus Isi Data Contoh Otomatis)
-1. Buka file `.env`, cari bagian database, hapus tanda `#` di depannya, dan sesuaikan:
+#### Cara 1: Lewat Terminal/CMD di Folder `backend/` (Sekaligus Isi Data Contoh Otomatis)
+1. Buka file `backend/.env`, cari bagian database, hapus tanda `#` di depannya, dan sesuaikan:
    ```ini
    database.default.hostname = localhost
    database.default.database = indwalk_db
@@ -143,8 +164,9 @@ Pertama, buat database kosong dulu di PostgreSQL kalian (misal namanya `indwalk_
    database.default.DBDriver = Postgre
    database.default.port     = 5432
    ```
-2. Jalankan perintah ini di terminal/cmd:
+2. Jalankan perintah ini di terminal/cmd dari dalam folder **`backend/`**:
    ```bash
+   cd backend
    php spark migrate
    php spark db:seed IndWalkSeeder
    ```
@@ -152,13 +174,13 @@ Pertama, buat database kosong dulu di PostgreSQL kalian (misal namanya `indwalk_
 
 #### Cara 2: Buat yang MALAS Setting CLI (Langsung via pgAdmin / DBeaver)
 1. Buka **pgAdmin** atau **DBeaver**, pilih database `indwalk_db`.
-2. Buka Query Tool, lalu *copy-paste* dan *run* isi file **[`app/Database/schema_postgresql.sql`](app/Database/schema_postgresql.sql)**. Langsung jadi ke-7 tabelnya!
+2. Buka Query Tool, lalu *copy-paste* dan *run* isi file **[`backend/app/Database/schema_postgresql.sql`](backend/app/Database/schema_postgresql.sql)**. Langsung jadi ke-7 tabelnya!
 
 ---
 
 ## 🌿 Cheat Sheet Git Simpel (Biar Nggak Bentrok / Conflict Pas Push!)
 
-Karena kita kerja **berlima**, ikuti **3 tips ini ya coy**  biar kode kita nggak ketimpa:
+Karena kita kerja **berlima**, ikuti **3 tips ini ya coy** biar kode kita nggak ketimpa:
 
 ### 1. Selalu `git pull` Dulu SEBELUM Mulai Ngoding!
 Jangan langsung ngoding dulu ya bujang. Tarik dulu update terbaru dari kawan yang lain:
