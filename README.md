@@ -49,14 +49,16 @@ php spark serve --port 8081
 Buka **`http://localhost:8081`** di browser. Langsung nongol Landing Page-nya!
 
 ### B. Cara Jalanin Server REST API (`backend`):
+> 💡 **Info Penting:** Server Backend & Database PostgreSQL kita sudah jalan **online 24 jam di VM Azure** (`http://70.153.139.28:8080`)! Jadi kalau mau nyoba dari laptop masing-masing atau ngetes kode baru:
 Buka terminal baru, lalu jalankan:
 ```bash
 cd backend
 cp env .env
+# (Buka .env, hapus tanda # di bagian database.default.* & minta password-nya di grup WA)
 composer install
 php spark serve --port 8080
 ```
-Buka **`http://localhost:8080`** di browser, nanti bakal muncul teks **JSON** status API Server kita.
+Buka **`http://localhost:8080`** di browser (atau **`http://70.153.139.28:8080`** untuk versi online VM Azure), nanti bakal muncul teks **JSON** status API Server kita.
 
 ---
 
@@ -151,16 +153,42 @@ erDiagram
     }
 ```
 
-### Cara Import Database ke PostgreSQL (Kalau Pakai DB Lokal / VM Cloud)
-Kalau nanti kita pakai database PostgreSQL terpusat di VM Azure, kalian tinggal masukin IP VM-nya di `backend/.env` tanpa perlu install PostgreSQL sendiri. Tapi kalau mau coba di PostgreSQL lokal laptop masing-masing:
+### ☁️ Database Sudah Online di VM Azure
+Kabar bagus coy: **Database PostgreSQL (`indwalk_db`) kita sudah aku pasang dan aktif di VM Azure aku** (`70.153.139.28:5432`), lengkap beserta ke-7 tabel dan data awalnya!
+
+1. **Cara Menyambungkan `backend/` di Laptop Masing-Masing:**
+   - Masuk ke folder `backend/`, lalu copy file template env (`cp env .env`).
+   - Buka `backend/.env`, cari bagian **`DATABASE`**, lalu **hapus tanda `#`** dan isi password-nya (sudah ku siapkan IP & user-nya di [`backend/env`](backend/env)):
+     ```ini
+     database.default.hostname = 70.153.139.28
+     database.default.database = indwalk_db
+     database.default.username = indwalk_user
+     database.default.password = (Tanya aku di Grup WA)
+     database.default.charset  = utf8
+     database.default.DBDriver = Postgre
+     database.default.port     = 5432
+     ```
+2. **Cara Melihat Struktur & Isi Tabel Lewat pgAdmin / DBeaver:**
+   - Buka **pgAdmin** atau **DBeaver** di laptop kalian $\rightarrow$ Register Server baru.
+   - Masukkan **Host**: `70.153.139.28`, **Port**: `5432`, **Database**: `indwalk_db`, **Username**: `indwalk_user`, **Password**: *(minta di grup WA)*.
+   - Semua tabel dan datanya langsung kelihatan di `indwalk_db -> Schemas -> public -> Tables`!
+3. **⚠️ Aturan Wajib Karena Database Dipakai Bersama Berlima:**
+   - **DILARANG** menjalankan `php spark migrate:refresh` seenaknya tanpa izin grup, karena itu bakal **menghapus semua data** di VM Azure!
+   - Kalau mau ubah struktur tabel (tambah kolom/tabel), tetap buat lewat file **Migration** di `backend/app/Database/Migrations/` lalu `git push` ke GitHub (jangan ubah struktur diam-diam lewat pgAdmin saja biar kawan lain tidak bingung).
+
+---
+
+### Cara Import Database ke PostgreSQL Lokal (Opsional / Cadangan Kalau Offline)
+Kalau suatu saat kalian mau bikin database cadangan di PostgreSQL lokal laptop masing-masing:
 
 #### Cara 1: Lewat Terminal/CMD di Folder `backend/` (Sekaligus Isi Data Contoh Otomatis)
-1. Buka file `backend/.env`, cari bagian database, hapus tanda `#` di depannya, dan sesuaikan:
+1. Buka file `backend/.env`, ubah bagian database ke lokal kalian:
    ```ini
    database.default.hostname = localhost
    database.default.database = indwalk_db
    database.default.username = postgres
    database.default.password = password_postgres_kalian
+   database.default.charset  = utf8
    database.default.DBDriver = Postgre
    database.default.port     = 5432
    ```
