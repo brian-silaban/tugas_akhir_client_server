@@ -14,7 +14,7 @@ Berbeda dengan website wisata generik yang hanya menampilkan foto dan teks promo
 - Transparansi harga tiket masuk dan jam operasional.
 - Titik koordinat, kota/kabupaten, dan fasilitas riil di lapangan.
 - Ulasan dan rating terverifikasi dari wisatawan.
-- **Ekosistem Perjalanan Terpadu (Client-Server):** Menampilkan rekomendasi lintas-layanan (Kuliner/Rumah Makan, Penginapan, Transportasi, dll.) di sekitar lokasi wisata melalui integrasi **REST API** dengan sistem kelompok lain.
+- **Ekosistem Perjalanan Terpadu (Client-Server):** Menampilkan rekomendasi lintas-layanan (**Penyedia Tur Guide**, **Kuliner/Rumah Makan**, **Penginapan**, dan **Transportasi**) di sekitar lokasi wisata melalui integrasi **REST API** dengan 4 kelompok mitra di kelas.
 
 ---
 
@@ -27,10 +27,11 @@ Sesuai arahan dosen pengampu mata kuliah **Client-Server**, repositori ini memis
    - Satu-satunya aplikasi yang terhubung ke database **PostgreSQL** (`indwalk_db`).
    - Tidak memiliki tampilan halaman web (`Views` HTML), melainkan murni melayani pertukaran data **JSON REST API**:
      - Menyediakan endpoint internal untuk aplikasi `frontend/` kita sendiri (katalog destinasi, pencarian, autentikasi, pemesanan tiket, ulasan, favorit, dan admin).
-     - Menyediakan endpoint publik (`/api/v1/destinasi`) sebagai **REST API Provider** untuk diakses oleh kelompok lain (kelompok Kuliner, Penginapan, atau Transportasi) berdasarkan kota (`?kota=Magelang`) atau kategori.
+     - Menyediakan endpoint publik (`/api/v1/destinasi`) sebagai **REST API Provider** untuk diakses oleh 4 kelompok mitra di kelas (Penyedia Tur Guide, Kuliner/Rumah Makan, Penginapan, dan Transportasi) berdasarkan kota (`?kota=Magelang`) atau kategori.
 2. **Projek `frontend/` — Murni Client Web UI (Port `8081`):**
    - Tidak memiliki koneksi langsung ke database PostgreSQL.
-   - Seluruh halaman web yang dilihat pengguna mengambil dan mengirim data melalui **HTTP Request (REST API JSON)** ke server `backend/` serta memanggil REST API milik kelompok lain (**REST API Consumer**):
+   - Seluruh halaman web yang dilihat pengguna mengambil dan mengirim data melalui **HTTP Request (REST API JSON)** ke server `backend/` serta memanggil REST API milik 4 kelompok mitra (**REST API Consumer**):
+     - 🧭 **Penyedia Tur Guide Lokal** (API Kelompok Tur Guide)
      - 🍽️ **Kuliner / Rumah Makan Terdekat** (API Kelompok Kuliner)
      - 🏨 **Penginapan & Homestay Sekitar** (API Kelompok Penginapan)
      - 🚐 **Layanan Transportasi / Rute** (API Kelompok Transportasi)

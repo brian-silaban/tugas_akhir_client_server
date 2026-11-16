@@ -27,13 +27,14 @@
 # app.CSPEnabled = false
 
 #--------------------------------------------------------------------
-# DATABASE (PostgreSQL — Lokal atau Cloud VM Azure)
+# DATABASE (PostgreSQL — Cloud VM Azure)
 #--------------------------------------------------------------------
 
-# database.default.hostname = localhost
+# database.default.hostname = 70.153.139.28
 # database.default.database = indwalk_db
-# database.default.username = postgres
-# database.default.password = password_postgres_kalian
+# database.default.username = indwalk_user
+# database.default.password = (Tanya aku di Grup WA)
+# database.default.charset  = utf8
 # database.default.DBDriver = Postgre
 # database.default.DBPrefix =
 # database.default.port = 5432

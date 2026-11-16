@@ -43,9 +43,10 @@ Seluruh file migrasi sudah tersedia di [`backend/app/Database/Migrations/`](back
 
 ## 4. Kontrak & Spesifikasi REST API (`backend/`)
 
-### A. Endpoint REST API di `backend/` (Dipakai oleh `frontend/` & Kelompok Lain)
+### A. Endpoint REST API di `backend/` (Dipakai oleh `frontend/` & 4 Kelompok Mitra)
 
 #### 1. `GET /api/v1/destinasi`
+*(Endpoint publik untuk dikonsumsi oleh kelompok **Penyedia Tur Guide**, **Kuliner/Rumah Makan**, **Penginapan**, dan **Transportasi**)*
 - **Query Params Opsional**:
   - `?kota=Magelang` (Filter berdasarkan kota — *case-insensitive*)
   - `?kategori=cagar-budaya` (Filter berdasarkan slug kategori)
@@ -97,19 +98,27 @@ Seluruh file migrasi sudah tersedia di [`backend/app/Database/Migrations/`](back
 
 ---
 
-### B. Integrasi REST API Kelompok Mitra di `frontend/`
-Di halaman Detail Destinasi (`/destinasi/{slug}`), aplikasi `frontend/` memanggil library `frontend/app/Libraries/LayananApiMitra.php` dengan parameter `kota` (misal: `Magelang`, `Malang`, `Banyuwangi`):
-1. **Konfigurasi di `frontend/.env`**:
+### B. Integrasi 4 REST API Kelompok Mitra di `frontend/`
+Di halaman Detail Destinasi (`/destinasi/{slug}`), aplikasi `frontend/` memanggil library `frontend/app/Libraries/LayananApiMitra.php` dengan parameter `kota` (misal: `Magelang`, `Malang`, `Banyuwangi`) untuk mengambil data dari **4 kelompok mitra di kelas**:
+1. **Kelompok Penyedia Tur Guide** (`PARTNER_TUR_GUIDE_API_URL`)
+2. **Kelompok Kuliner / Rumah Makan** (`PARTNER_KULINER_API_URL`)
+3. **Kelompok Penginapan** (`PARTNER_HOTEL_API_URL`)
+4. **Kelompok Transportasi** (`PARTNER_TRANSPORT_API_URL`)
+
+Konfigurasi endpoint dan mekanisme fallback disimpan di `frontend/.env`:
+1. **Konfigurasi di `frontend/.env`** (sesuai contoh di [`frontend/env`](frontend/env)):
    ```ini
-   INDWALK_BACKEND_API_URL = "http://localhost:8080/api/v1"
-   MODE_CADANGAN_MOCK      = true
-   URL_MITRA_KULINER       = "http://localhost:8082/api/kuliner"
-   URL_MITRA_PENGINAPAN    = "http://localhost:8083/api/penginapan"
-   URL_MITRA_TRANSPORTASI  = "http://localhost:8084/api/transportasi"
+   INDWALK_BACKEND_API_URL   = 'http://localhost:8080/api/v1'
+   PARTNER_KULINER_API_URL   = 'http://localhost:8082/api/kuliner'
+   PARTNER_HOTEL_API_URL     = 'http://localhost:8083/api/penginapan'
+   PARTNER_TRANSPORT_API_URL = 'http://localhost:8084/api/transportasi'
+   PARTNER_TUR_GUIDE_API_URL = 'http://localhost:8085/api/tur_guide'
+   PARTNER_API_TIMEOUT       = 3
+   MODE_CADANGAN_MOCK        = true
    ```
 2. **Mekanisme Timeout & Fallback Otomatis**:
-   - Setiap request HTTP dibatasi `timeout => 3` detik.
-   - Jika server kelompok lain belum siap atau mati saat demo, `LayananApiMitra` otomatis mengembalikan data **Mock Fallback** berlabel `"sumber_data": "simulasi_fallback"` sehingga halaman tidak pernah *error*.
+   - Setiap request HTTP dibatasi `PARTNER_API_TIMEOUT = 3` detik.
+   - Jika server salah satu dari 4 kelompok mitra belum siap atau mati saat demo, `LayananApiMitra` otomatis mengembalikan data **Mock Fallback** berlabel `"sumber_data": "simulasi_fallback"` sehingga halaman tidak pernah *error*.
 
 ---
 
@@ -125,11 +134,11 @@ Dengan pemisahan folder `backend/` dan `frontend/`, 5 anggota kelompok dapat mem
   - `frontend/app/Controllers/Home.php`, `frontend/app/Controllers/DestinasiController.php`
   - `frontend/app/Views/welcome_message.php`, `frontend/app/Views/pages/destinasi/*`
 
-### 👤 Anggota 2 — Integrasi Client-Server (HTTP Client Backend & API Kelompok Mitra)
+### 👤 Anggota 2 — Integrasi Client-Server (HTTP Client Backend & 4 API Kelompok Mitra)
 - **Frontend (`frontend/`)**:
   - `frontend/app/Libraries/LayananApiBackend.php` (Helper pemanggil REST API `backend/`)
-  - `frontend/app/Libraries/LayananApiMitra.php` (Pemanggil REST API kelompok Kuliner, Penginapan, Transportasi + Mock Fallback)
-  - `frontend/app/Views/components/rekomendasi_mitra.php` (Tampilan kartu rekomendasi lintas-kelompok di halaman Detail Wisata)
+  - `frontend/app/Libraries/LayananApiMitra.php` (Pemanggil REST API 4 kelompok mitra: **Penyedia Tur Guide**, **Kuliner/Rumah Makan**, **Penginapan**, dan **Transportasi** + Mock Fallback)
+  - `frontend/app/Views/components/rekomendasi_mitra.php` (Tampilan kartu rekomendasi 4 layanan mitra di halaman Detail Wisata)
 - **Backend (`backend/`)**:
   - Dokumentasi & pengujian kontrak JSON `/api/v1/destinasi` untuk dibagikan ke kelompok lain + deployment ke VM Azure.
 

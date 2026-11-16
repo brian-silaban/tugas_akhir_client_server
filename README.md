@@ -16,7 +16,7 @@ Sesuai arahan dosen kita supaya **integrasi REST API Client-Server-nya kelihatan
 
 1. **Folder [`backend/`](backend/) (Server REST API + Database PostgreSQL — Jalan di Port `8080`)**:
    - Ini **mesin belakang (Server)** kita. Cuma dia yang boleh nyambung ke database **PostgreSQL**.
-   - Dia **nggak punya tampilan web HTML**, kerjanya murni ngeluarin data **JSON REST API** buat dipakai sama `frontend/` kita sendiri dan juga dipakai sama kelompok lain (Hotel, Kuliner, Transportasi).
+   - Dia **nggak punya tampilan web HTML**, kerjanya murni ngeluarin data **JSON REST API** buat dipakai sama `frontend/` kita sendiri dan juga dipakai sama kelompok lain (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi).
 2. **Folder [`frontend/`](frontend/) (Client Web Tampilan IndWalk — Jalan di Port `8081`)**:
    - Ini **tampilan web (Client)** yang dilihat pengunjung.
    - Dia **nggak punya database sama sekali**, jadi setiap kali mau nampilin tempat wisata, login, atau pesan tiket, dia wajib minta data lewat **REST API** ke `backend/`.
@@ -85,7 +85,7 @@ Di dalam folder [`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-co
 Contoh **7 tabel utama (Full Bahasa Indonesia)** sudah ku siapkan di folder **[`backend/app/Database/`](backend/app/Database/)**. Konsepnya simpel:
 1. **`pengguna`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
 2. **`kategori`**: Kategori wisata (Bahari, Cagar Budaya, Pegunungan, dll).
-3. **`destinasi`**: Data tempat wisata. Ada kolom **`kota`** (misal: *Magelang*, *Malang*) yang dipakai buat nyambungin **REST API kelompok lain** (Kuliner, Penginapan, Transportasi) di kota yang sama!
+3. **`destinasi`**: Data tempat wisata. Ada kolom **`kota`** (misal: *Magelang*, *Malang*) yang dipakai buat nyambungin **REST API kelompok lain** (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi) di kota yang sama!
 4. **`galeri_destinasi`**: Foto-foto tambahan tiap tempat wisata.
 5. **`pemesanan`**: Data pemesanan tiket kunjungan dari member.
 6. **`ulasan`**: Rating bintang (1–5) & komentar pengunjung.
