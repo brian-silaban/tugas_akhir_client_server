@@ -30,7 +30,7 @@
 # DATABASE (PostgreSQL — Cloud VM Azure)
 #--------------------------------------------------------------------
 
-# database.default.hostname = 70.153.139.28
+# database.default.hostname = 70.153.136.38
 # database.default.database = indwalk_db
 # database.default.username = indwalk_user
 # database.default.password = (Tanya aku di Grup WA)
