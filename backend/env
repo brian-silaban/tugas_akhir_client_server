@@ -27,7 +27,7 @@
 # app.CSPEnabled = false
 
 #--------------------------------------------------------------------
-# DATABASE (PostgreSQL — Cloud VM Azure)
+# DATABASE (PostgreSQL — Cloud VM Azur)
 #--------------------------------------------------------------------
 
 # database.default.hostname = 70.153.136.38
