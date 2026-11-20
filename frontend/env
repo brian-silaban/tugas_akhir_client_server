@@ -33,7 +33,7 @@
 # Semua API URL dibawah ini hanya contoh saja, nanti kita sesuaikan dengan API kita dan kelompok lain.
 #--------------------------------------------------------------------
 
-# INDWALK_BACKEND_API_URL = 'http://localhost:8080/api/v1'
+# JEJAKSUMUT_BACKEND_API_URL = 'http://localhost:8080/api/v1'
 # PARTNER_KULINER_API_URL = 'http://localhost:8082/api/kuliner'
 # PARTNER_HOTEL_API_URL = 'http://localhost:8083/api/penginapan'
 # PARTNER_TRANSPORT_API_URL = 'http://localhost:8084/api/transportasi'

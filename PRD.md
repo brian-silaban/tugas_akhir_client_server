@@ -28,9 +28,9 @@ Sesuai arahan dosen pengampu mata kuliah **Manajemen Database Client Server (`PL
 ---
 
 ## 3. Referensi Skema Database PostgreSQL (`backend/app/Database/`)
-> **Catatan:** Struktur tabel sedang disesuaikan/diperbarui berdasarkan hasil *scraping* data destinasi wisata **Sumatera Utara** oleh tim database, dan akan dilengkapi dengan minimal **3 objek database (`VIEW`, `TRIGGER`, `STORED FUNCTION/PROCEDURE`)** serta user *Least Privilege* sesuai kriteria **K1 & K2** pada [`Form_Evaluasi_Proyek_MDCS.docx.pdf`](Form_Evaluasi_Proyek_MDCS.docx.pdf).
+> **Status Evaluasi K1 & K2 (`Form_Evaluasi_Proyek_MDCS.docx.pdf`):** Skema sudah memenuhi **3NF**, lengkap dengan constraint (`PK`, `FK`, `UNIQUE`, `CHECK`), `INDEX`, **objek database K2** (`View`, `Trigger`, `Stored Function`, `Stored Procedure`), transaksi ACID di Model, serta skrip role *Least Privilege* di [`backend/app/Database/setup_hak_akses_k2.sql`](backend/app/Database/setup_hak_akses_k2.sql).
 
-Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (10 tabel + 1 SQL View `v_wisata_lengkap` berisi 971 objek wisata di 33 kabupaten/kota Sumatera Utara):
+Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (9 tabel + 2 SQL View + Trigger & Stored Function/Procedure untuk 971 objek wisata di 33 kabupaten/kota Sumatera Utara):
 1. **`kabupaten_kota`**: `kode_kabupaten` (PK), `nama_kabupaten_kota` (Unique), `jenis_daerah`, `ibu_kota`
 2. **`pengguna`**: `id` (PK), `nama`, `email` (Unique), `kata_sandi`, `peran` (`'admin'` | `'member'`), `foto_profil`, `dibuat_pada`, `diperbarui_pada`
 3. **`kategori`**: `id` (PK), `nama`, `slug` (Unique), `deskripsi`, `dibuat_pada`, `diperbarui_pada`
@@ -40,7 +40,18 @@ Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backe
 7. **`pemesanan`**: `id` (PK), `kode_pemesanan` (Unique, format `JSM-YYYYMMDD-XXX`), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `tanggal_kunjungan`, `jumlah_pengunjung`, `total_harga`, `status` (`'menunggu'` | `'lunas'` | `'dibatalkan'`), `dibuat_pada`, `diperbarui_pada`
 8. **`ulasan`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `rating` (1–5), `komentar`, `dibuat_pada`, `diperbarui_pada`
 9. **`favorit`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `dibuat_pada` (Unique: `id_pengguna + id_destinasi`)
-10. **View `v_wisata_lengkap`**: Gabungan `destinasi`, `kabupaten_kota`, dan `kategori`
+
+### Objek Database K2 (Terpasang di Migrasi `000010`–`000011` & `schema_postgresql.sql`)
+- **2 SQL Views**:
+  - `v_wisata_lengkap` — Gabungan `destinasi`, `kabupaten_kota`, dan `kategori`.
+  - `v_ringkasan_pemesanan` — Gabungan `pemesanan`, `pengguna` (tanpa kata sandi), `destinasi`, dan `kabupaten_kota`.
+- **1 Stored Function**: `fn_buat_kode_pemesanan(DATE)` — Generator kode `JSM-YYYYMMDD-XXX` aman konkurensi (*advisory transaction lock*).
+- **1 Stored Procedure**: `sp_verifikasi_pemesanan(INT, VARCHAR)` — Validasi transisi status & *row locking* (`FOR UPDATE`).
+- **2 Trigger Functions (+ Triggers)**:
+  - `trg_sinkronkan_rating_destinasi` (`fn_sinkronkan_rating_destinasi()`, `SECURITY DEFINER`) — Otomatis menghitung ulang `rata_rating` & `jumlah_ulasan` di `destinasi` saat tabel `ulasan` berubah.
+  - `trg_*_diperbarui_pada` (`fn_perbarui_waktu_ubah()`) — Otomatis memperbarui timestamp `diperbarui_pada` saat `UPDATE`.
+- **3 Role User *Least Privilege* ([`setup_hak_akses_k2.sql`](backend/app/Database/setup_hak_akses_k2.sql))**:
+  - `jejaksumut_app_publik` (Aplikasi Client 1 / Publik & Member), `jejaksumut_app_admin` (Aplikasi Client 2 / Panel Admin), dan `jejaksumut_mitra_readonly` (Akses Read-Only katalog).
 
 ---
 
@@ -111,8 +122,8 @@ Di halaman Detail Destinasi (`/destinasi/{slug}`), aplikasi `frontend/` memanggi
 Konfigurasi endpoint dan mekanisme fallback disimpan di `frontend/.env`:
 1. **Konfigurasi di `frontend/.env`** (sesuai contoh di [`frontend/env`](frontend/env)):
    ```ini
-   INDWALK_BACKEND_API_URL   = 'http://localhost:8080/api/v1'
-   PARTNER_KULINER_API_URL   = 'http://localhost:8082/api/kuliner'
+   JEJAKSUMUT_BACKEND_API_URL = 'http://localhost:8080/api/v1'
+   PARTNER_KULINER_API_URL    = 'http://localhost:8082/api/kuliner'
    PARTNER_HOTEL_API_URL     = 'http://localhost:8083/api/penginapan'
    PARTNER_TRANSPORT_API_URL = 'http://localhost:8084/api/transportasi'
    PARTNER_TUR_GUIDE_API_URL = 'http://localhost:8085/api/tur_guide'

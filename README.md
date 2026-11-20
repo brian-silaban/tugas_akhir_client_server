@@ -81,26 +81,37 @@ Di dalam folder [`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-co
 ---
 
 ## 🗄️ Desain Database (PostgreSQL) & Alur Tabel
-Contoh **7 tabel utama (Full Bahasa Indonesia)** sudah ku siapkan di folder **[`backend/app/Database/`](backend/app/Database/)**. Konsepnya simpel:
-1. **`pengguna`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
-2. **`kategori`**: Kategori wisata (Bahari, Cagar Budaya, Pegunungan, dll).
-3. **`destinasi`**: Data tempat wisata di Sumatera Utara. Ada kolom **`kota`** (misal: *Samosir*, *Medan*, *Karo*, *Langkat*) yang dipakai buat nyambungin **REST API kelompok lain** (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi) di kabupaten/kota yang sama!
-4. **`galeri_destinasi`**: Foto-foto tambahan tiap tempat wisata.
-5. **`pemesanan`**: Data pemesanan tiket kunjungan dari member.
-6. **`ulasan`**: Rating bintang (1–5) & komentar pengunjung.
-7. **`favorit`**: Daftar tempat wisata yang disimpan/di-*bookmark* member.
+Struktur **9 tabel utama + 2 SQL View + Trigger & Stored Procedure/Function (Full Bahasa Indonesia)** sudah tersedia di folder **[`backend/app/Database/`](backend/app/Database/)**:
+1. **`kabupaten_kota`**: Data 33 kabupaten & kota di Provinsi Sumatera Utara (`kode_kabupaten`, `nama_kabupaten_kota`, `jenis_daerah`, `ibu_kota`).
+2. **`pengguna`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
+3. **`kategori`**: 6 kategori wisata Sumatera Utara (Wisata Alam, Bahari & Pantai, Budaya & Sejarah, Religi, Buatan & Edukasi, Desa Wisata).
+4. **`destinasi`**: Data objek wisata Sumatera Utara. Ada kolom **`kota`** & **`kode_kabupaten`** (misal: *Samosir*, *Medan*, *Karo*, *Langkat*) yang dipakai buat nyambungin **REST API kelompok lain** (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi) di kabupaten/kota yang sama!
+5. **`fasilitas`** & **`destinasi_fasilitas`**: Master fasilitas & tabel relasi fasilitas tiap destinasi.
+6. **`galeri_destinasi`**: Foto-foto tambahan tiap tempat wisata.
+7. **`pemesanan`**: Data pemesanan tiket kunjungan dari member.
+8. **`ulasan`**: Rating bintang (1–5) & komentar pengunjung (otomatis memperbarui `rata_rating` & `jumlah_ulasan` di `destinasi` lewat Trigger).
+9. **`favorit`**: Daftar tempat wisata yang disimpan/di-*bookmark* member.
 
 ```mermaid
 erDiagram
+    KABUPATEN_KOTA ||--o{ DESTINASI : "lokasi"
+    KATEGORI ||--o{ DESTINASI : "punya"
+    DESTINASI ||--o{ DESTINASI_FASILITAS : "punya fasilitas"
+    FASILITAS ||--o{ DESTINASI_FASILITAS : "terpasang di"
     PENGGUNA ||--o{ PEMESANAN : "pesan tiket"
     PENGGUNA ||--o{ ULASAN : "kasih ulasan"
     PENGGUNA ||--o{ FAVORIT : "simpan favorit"
-    KATEGORI ||--o{ DESTINASI : "punya"
     DESTINASI ||--o{ GALERI_DESTINASI : "punya galeri"
     DESTINASI ||--o{ PEMESANAN : "dipesan di"
     DESTINASI ||--o{ ULASAN : "diulas di"
     DESTINASI ||--o{ FAVORIT : "disimpan di"
 
+    KABUPATEN_KOTA {
+        string kode_kabupaten PK
+        string nama_kabupaten_kota UK
+        string jenis_daerah
+        string ibu_kota
+    }
     PENGGUNA {
         int id PK
         string nama
@@ -115,12 +126,22 @@ erDiagram
     DESTINASI {
         int id PK
         int id_kategori FK
+        string kode_kabupaten FK
         string nama
         string kota "Kunci sambungan REST API"
         int harga_tiket
         decimal garis_lintang
         decimal garis_bujur
         decimal rata_rating
+    }
+    FASILITAS {
+        int id PK
+        string nama UK
+        string slug UK
+    }
+    DESTINASI_FASILITAS {
+        int id_destinasi FK
+        int id_fasilitas FK
     }
     GALERI_DESTINASI {
         int id PK
@@ -151,15 +172,15 @@ erDiagram
 ```
 
 ### ☁️ Database Sudah Online di VM Azure
-Kabar bagus coy: **Database PostgreSQL (`indwalk_db`) kita sudah aku pasang dan aktif di VM Azure aku** (`70.153.139.28:5432`), lengkap beserta ke-7 tabel dan data awalnya!
+Kabar bagus coy: **Database PostgreSQL (`jejaksumut_db`) kita disiapkan aktif di VM Azure aku** (`70.153.136.38:5432`), lengkap beserta seluruh tabel, objek database (View, Trigger, Stored Procedure/Function), dan data wisata Sumatera Utara!
 
 1. **Cara Menyambungkan `backend/` di Laptop Masing-Masing:**
    - Masuk ke folder `backend/`, lalu copy file template env (`cp env .env`).
    - Buka `backend/.env`, cari bagian **`DATABASE`**, lalu **hapus tanda `#`** dan isi password-nya (sudah ku siapkan IP & user-nya di [`backend/env`](backend/env)):
      ```ini
      database.default.hostname = 70.153.136.38
-     database.default.database = indwalk_db
-     database.default.username = indwalk_user
+     database.default.database = jejaksumut_db
+     database.default.username = jejaksumut_user
      database.default.password = (Tanya aku di Grup WA)
      database.default.charset  = utf8
      database.default.DBDriver = Postgre
@@ -167,8 +188,8 @@ Kabar bagus coy: **Database PostgreSQL (`indwalk_db`) kita sudah aku pasang dan 
      ```
 2. **Cara Melihat Struktur & Isi Tabel Lewat pgAdmin / DBeaver:**
    - Buka **pgAdmin** atau **DBeaver** di laptop kalian $\rightarrow$ Register Server baru.
-   - Masukkan **Host**: `70.153.136.38`, **Port**: `5432`, **Database**: `indwalk_db`, **Username**: `indwalk_user`, **Password**: *(minta di grup WA)*.
-   - Semua tabel dan datanya langsung kelihatan di `indwalk_db -> Schemas -> public -> Tables`!
+   - Masukkan **Host**: `70.153.136.38`, **Port**: `5432`, **Database**: `jejaksumut_db`, **Username**: `jejaksumut_user`, **Password**: *(minta di grup WA)*.
+   - Semua tabel dan datanya langsung kelihatan di `jejaksumut_db -> Schemas -> public -> Tables`!
 3. **⚠️ Aturan Wajib Karena Database Dipakai Bersama Berlima:**
    - **DILARANG** menjalankan `php spark migrate:refresh` seenaknya tanpa izin grup, karena itu bakal **menghapus semua data** di VM Azure!
    - Kalau mau ubah struktur tabel (tambah kolom/tabel), tetap buat lewat file **Migration** di `backend/app/Database/Migrations/` lalu `git push` ke GitHub (jangan ubah struktur diam-diam lewat pgAdmin saja biar kawan lain tidak bingung).
@@ -178,11 +199,11 @@ Kabar bagus coy: **Database PostgreSQL (`indwalk_db`) kita sudah aku pasang dan 
 ### Cara Import Database ke PostgreSQL Lokal (Opsional / Cadangan Kalau Offline)
 Kalau suatu saat kalian mau bikin database cadangan di PostgreSQL lokal laptop masing-masing:
 
-#### Cara 1: Lewat Terminal/CMD di Folder `backend/` (Sekaligus Isi Data Contoh Otomatis)
+#### Cara 1: Lewat Terminal/CMD di Folder `backend/` (Sekaligus Isi Data Wisata Sumut Otomatis)
 1. Buka file `backend/.env`, ubah bagian database ke lokal kalian:
    ```ini
    database.default.hostname = localhost
-   database.default.database = indwalk_db
+   database.default.database = jejaksumut_db
    database.default.username = postgres
    database.default.password = password_postgres_kalian
    database.default.charset  = utf8
@@ -193,13 +214,13 @@ Kalau suatu saat kalian mau bikin database cadangan di PostgreSQL lokal laptop m
    ```bash
    cd backend
    php spark migrate
-   php spark db:seed IndWalkSeeder
+   php spark db:seed MainSeeder
    ```
-   *(Otomatis langsung ke-buat 7 tabel + akun contoh + 6 data destinasi wisata!)*
+   *(Otomatis langsung ke-buat seluruh tabel, View, Trigger, Stored Function/Procedure + akun contoh + ratusan destinasi wisata Sumatera Utara!)*
 
 #### Cara 2: Buat yang MALAS Setting CLI (Langsung via pgAdmin / DBeaver)
-1. Buka **pgAdmin** atau **DBeaver**, pilih database `indwalk_db`.
-2. Buka Query Tool, lalu *copy-paste* dan *run* isi file **[`backend/app/Database/schema_postgresql.sql`](backend/app/Database/schema_postgresql.sql)**. Langsung jadi ke-7 tabelnya!
+1. Buka **pgAdmin** atau **DBeaver**, pilih database `jejaksumut_db`.
+2. Buka Query Tool, lalu *copy-paste* dan *run* isi file **[`backend/app/Database/schema_postgresql.sql`](backend/app/Database/schema_postgresql.sql)**. Langsung jadi seluruh tabel, view, trigger, dan stored procedure-nya!
 
 ---
 
