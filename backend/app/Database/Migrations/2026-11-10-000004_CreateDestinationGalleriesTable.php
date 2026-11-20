@@ -18,8 +18,7 @@ class CreateDestinationGalleriesTable extends Migration
                 'type' => 'INT',
             ],
             'url_foto' => [
-                'type'       => 'VARCHAR',
-                'constraint' => 255,
+                'type' => 'TEXT',
             ],
             'keterangan' => [
                 'type'       => 'VARCHAR',

@@ -30,14 +30,17 @@ Sesuai arahan dosen pengampu mata kuliah **Manajemen Database Client Server (`PL
 ## 3. Referensi Skema Database PostgreSQL (`backend/app/Database/`)
 > **Catatan:** Struktur tabel sedang disesuaikan/diperbarui berdasarkan hasil *scraping* data destinasi wisata **Sumatera Utara** oleh tim database, dan akan dilengkapi dengan minimal **3 objek database (`VIEW`, `TRIGGER`, `STORED FUNCTION/PROCEDURE`)** serta user *Least Privilege* sesuai kriteria **K1 & K2** pada [`Form_Evaluasi_Proyek_MDCS.docx.pdf`](Form_Evaluasi_Proyek_MDCS.docx.pdf).
 
-Skema dasar 7 tabel inti berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/):
-1. **`pengguna`**: `id` (PK), `nama`, `email` (Unique), `kata_sandi`, `peran` (`'admin'` | `'member'`), `foto_profil`, `dibuat_pada`, `diperbarui_pada`
-2. **`kategori`**: `id` (PK), `nama`, `slug` (Unique), `deskripsi`, `dibuat_pada`, `diperbarui_pada`
-3. **`destinasi`**: `id` (PK), `id_kategori` (FK ke `kategori.id`), `nama`, `slug` (Unique), `kota` (Kabupaten/Kota di Sumatera Utara — indeks pencarian & kunci parameter REST API), `provinsi` (`'Sumatera Utara'`), `alamat`, `garis_lintang`, `garis_bujur`, `harga_tiket`, `jam_buka`, `jam_tutup`, `deskripsi`, `fasilitas` (JSON string), `foto_utama`, `rata_rating`, `jumlah_ulasan`, `dibuat_pada`, `diperbarui_pada`
-4. **`galeri_destinasi`**: `id` (PK), `id_destinasi` (FK ke `destinasi.id`), `url_foto`, `keterangan`, `dibuat_pada`
-5. **`pemesanan`**: `id` (PK), `kode_pemesanan` (Unique, format `JSM-YYYYMMDD-XXX`), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `tanggal_kunjungan`, `jumlah_pengunjung`, `total_harga`, `status` (`'menunggu'` | `'lunas'` | `'dibatalkan'`), `dibuat_pada`, `diperbarui_pada`
-6. **`ulasan`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `rating` (1–5), `komentar`, `dibuat_pada`, `diperbarui_pada`
-7. **`favorit`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `dibuat_pada` (Unique: `id_pengguna + id_destinasi`)
+Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (10 tabel + 1 SQL View `v_wisata_lengkap` berisi 971 objek wisata di 33 kabupaten/kota Sumatera Utara):
+1. **`kabupaten_kota`**: `kode_kabupaten` (PK), `nama_kabupaten_kota` (Unique), `jenis_daerah`, `ibu_kota`
+2. **`pengguna`**: `id` (PK), `nama`, `email` (Unique), `kata_sandi`, `peran` (`'admin'` | `'member'`), `foto_profil`, `dibuat_pada`, `diperbarui_pada`
+3. **`kategori`**: `id` (PK), `nama`, `slug` (Unique), `deskripsi`, `dibuat_pada`, `diperbarui_pada`
+4. **`destinasi`**: `id` (PK), `id_kategori` (FK ke `kategori.id`), `kode_kabupaten` (FK ke `kabupaten_kota.kode_kabupaten`), `nama`, `slug` (Unique), `sub_kategori`, `klasifikasi_status`, `kota`, `provinsi` (`'Sumatera Utara'`), `alamat`, `garis_lintang`, `garis_bujur`, `harga_tiket`, `label_harga_tiket`, `keterangan_tiket`, `jam_buka`, `jam_tutup`, `deskripsi`, `fasilitas` (JSON string), `pengelola`, `no_telp`, `email`, `website_sosial`, `foto_utama`, `sumber_data`, `sumber_url`, `rata_rating`, `jumlah_ulasan`, `dibuat_pada`, `diperbarui_pada`
+5. **`fasilitas`** & **`destinasi_fasilitas`**: Master fasilitas (`id`, `nama`, `slug`) dan relasi many-to-many `(id_destinasi, id_fasilitas)`
+6. **`galeri_destinasi`**: `id` (PK), `id_destinasi` (FK ke `destinasi.id`), `url_foto`, `keterangan`, `dibuat_pada`
+7. **`pemesanan`**: `id` (PK), `kode_pemesanan` (Unique, format `JSM-YYYYMMDD-XXX`), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `tanggal_kunjungan`, `jumlah_pengunjung`, `total_harga`, `status` (`'menunggu'` | `'lunas'` | `'dibatalkan'`), `dibuat_pada`, `diperbarui_pada`
+8. **`ulasan`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `rating` (1–5), `komentar`, `dibuat_pada`, `diperbarui_pada`
+9. **`favorit`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `dibuat_pada` (Unique: `id_pengguna + id_destinasi`)
+10. **View `v_wisata_lengkap`**: Gabungan `destinasi`, `kabupaten_kota`, dan `kategori`
 
 ---
 
@@ -126,7 +129,7 @@ Konfigurasi endpoint dan mekanisme fallback disimpan di `frontend/.env`:
 
 Dengan pemisahan folder `backend/` dan `frontend/`, 5 anggota kelompok dapat membagi tugas per fitur tanpa bentrok file:
 
-### 👤 Anggota 1 — Beranda, Katalog Eksplorasi & Detail Destinasi Sumut
+### 👤 Anggota 1 (joxtian) — Beranda, Katalog Eksplorasi & Detail Destinasi Sumut
 - **Backend (`backend/`)**:
   - `backend/app/Models/DestinasiModel.php`, `KategoriModel.php`, `GaleriDestinasiModel.php`
   - `backend/app/Controllers/Api/DestinasiApiController.php` (`GET /api/v1/destinasi`, `GET /api/v1/kategori`, `GET /api/v1/destinasi/{slug}`)
@@ -134,7 +137,7 @@ Dengan pemisahan folder `backend/` dan `frontend/`, 5 anggota kelompok dapat mem
   - `frontend/app/Controllers/Home.php`, `frontend/app/Controllers/DestinasiController.php`
   - `frontend/app/Views/welcome_message.php`, `frontend/app/Views/pages/destinasi/*`
 
-### 👤 Anggota 2 — Integrasi Client-Server (HTTP Client Backend & 4 API Kelompok Mitra)
+### 👤 Anggota 2 (Brian) — Integrasi Client-Server (HTTP Client Backend & 4 API Kelompok Mitra)
 - **Frontend (`frontend/`)**:
   - `frontend/app/Libraries/LayananApiBackend.php` (Helper pemanggil REST API `backend/`)
   - `frontend/app/Libraries/LayananApiMitra.php` (Pemanggil REST API 4 kelompok mitra: **Penyedia Tur Guide**, **Kuliner/Rumah Makan**, **Penginapan**, dan **Transportasi** + Mock Fallback)
@@ -142,7 +145,7 @@ Dengan pemisahan folder `backend/` dan `frontend/`, 5 anggota kelompok dapat mem
 - **Backend (`backend/`)**:
   - Dokumentasi & pengujian koleksi Postman `/api/v1/destinasi` untuk dibagikan ke kelompok lain + deployment ke VM Azure.
 
-### 👤 Anggota 3 — Autentikasi Token (`401`/`403`), Sesi Pengguna & Fitur Favorit
+### 👤 Anggota 3 (hafiz) — Autentikasi Token (`401`/`403`), Sesi Pengguna & Fitur Favorit
 - **Backend (`backend/`)**:
   - `backend/app/Models/PenggunaModel.php`, `backend/app/Models/FavoritModel.php`
   - `backend/app/Controllers/Api/AutentikasiApiController.php`, `backend/app/Controllers/Api/FavoritApiController.php`
@@ -151,7 +154,7 @@ Dengan pemisahan folder `backend/` dan `frontend/`, 5 anggota kelompok dapat mem
   - `frontend/app/Filters/AutentikasiFilter.php`, `frontend/app/Filters/AdminFilter.php`
   - `frontend/app/Views/pages/autentikasi/*`, `frontend/app/Views/pages/member/favorit.php`
 
-### 👤 Anggota 4 — Transaksi Pemesanan Tiket (ACID Transaction), E-Ticket & Sistem Ulasan
+### 👤 Anggota 4 (samuel) — Transaksi Pemesanan Tiket (ACID Transaction), E-Ticket & Sistem Ulasan
 - **Backend (`backend/`)**:
   - `backend/app/Models/PemesananModel.php`, `backend/app/Models/UlasanModel.php`
   - `backend/app/Controllers/Api/PemesananApiController.php`, `backend/app/Controllers/Api/UlasanApiController.php`
@@ -159,7 +162,7 @@ Dengan pemisahan folder `backend/` dan `frontend/`, 5 anggota kelompok dapat mem
   - `frontend/app/Controllers/PemesananController.php`, `frontend/app/Controllers/UlasanController.php`
   - `frontend/app/Views/pages/member/pemesanan.php`, `frontend/app/Views/components/bagian_ulasan.php`
 
-### 👤 Anggota 5 — Database Scraping Sumut, Objek DB (`View`/`Trigger`/`Function`) & Dasbor Admin
+### 👤 Anggota 5 (andreas) — Database Scraping Sumut, Objek DB (`View`/`Trigger`/`Function`) & Dasbor Admin
 - **Database & Backend (`backend/`)**:
   - Scraping dataset destinasi wisata Sumatera Utara, penyusunan skema tabel, `VIEW`, `TRIGGER`, `STORED FUNCTION`, serta endpoint Admin pada `backend/app/Controllers/Api/AdminApiController.php`.
 - **Frontend (`frontend/`)**:

@@ -8,7 +8,7 @@ class CreateDestinationsTable extends Migration
 {
     public function up()
     {
-        // Membuat tabel utama destinasi wisata
+        // Membuat tabel utama destinasi wisata Sumatera Utara
         $this->forge->addField([
             'id' => [
                 'type'           => 'INT',
@@ -17,13 +17,26 @@ class CreateDestinationsTable extends Migration
             'id_kategori' => [
                 'type' => 'INT',
             ],
+            'kode_kabupaten' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 10,
+            ],
             'nama' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 180,
             ],
             'slug' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 200,
+                'constraint' => 220,
+            ],
+            'sub_kategori' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 100,
+            ],
+            'klasifikasi_status' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 80,
+                'null'       => true,
             ],
             // Kolom kota menjadi kunci parameter saat memanggil REST API kelompok lain
             'kota' => [
@@ -33,6 +46,7 @@ class CreateDestinationsTable extends Migration
             'provinsi' => [
                 'type'       => 'VARCHAR',
                 'constraint' => 100,
+                'default'    => 'Sumatera Utara',
             ],
             'alamat' => [
                 'type' => 'TEXT',
@@ -52,6 +66,14 @@ class CreateDestinationsTable extends Migration
                 'type'    => 'INT',
                 'default' => 0,
             ],
+            'label_harga_tiket' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 100,
+            ],
+            'keterangan_tiket' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 200,
+            ],
             'jam_buka' => [
                 'type' => 'TIME',
                 'null' => true,
@@ -68,9 +90,36 @@ class CreateDestinationsTable extends Migration
                 'type' => 'TEXT',
                 'null' => true,
             ],
-            'foto_utama' => [
+            'pengelola' => [
                 'type'       => 'VARCHAR',
-                'constraint' => 255,
+                'constraint' => 150,
+                'null'       => true,
+            ],
+            'no_telp' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 60,
+                'null'       => true,
+            ],
+            'email' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 120,
+                'null'       => true,
+            ],
+            'website_sosial' => [
+                'type' => 'TEXT',
+                'null' => true,
+            ],
+            'foto_utama' => [
+                'type' => 'TEXT',
+            ],
+            'sumber_data' => [
+                'type'       => 'VARCHAR',
+                'constraint' => 200,
+                'null'       => true,
+            ],
+            'sumber_url' => [
+                'type' => 'TEXT',
+                'null' => true,
             ],
             'rata_rating' => [
                 'type'       => 'DECIMAL',
@@ -93,9 +142,12 @@ class CreateDestinationsTable extends Migration
 
         $this->forge->addKey('id', true);
         $this->forge->addUniqueKey('slug');
-        $this->forge->addKey('kota');
         $this->forge->addKey('id_kategori');
+        $this->forge->addKey('kode_kabupaten');
+        $this->forge->addKey('kota');
+        $this->forge->addKey('harga_tiket');
         $this->forge->addForeignKey('id_kategori', 'kategori', 'id', 'CASCADE', 'RESTRICT');
+        $this->forge->addForeignKey('kode_kabupaten', 'kabupaten_kota', 'kode_kabupaten', 'CASCADE', 'RESTRICT');
         $this->forge->createTable('destinasi', true);
     }
 
