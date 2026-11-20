@@ -14,8 +14,8 @@ $routes->get('/', 'Home::index');
 // ============================================================
 
 // --- Destinasi Wisata (Anggota 1) ---
-// $routes->get('destinasi',           'DestinasiController::index');
-// $routes->get('destinasi/(:segment)', 'DestinasiController::detail/$1');
+$routes->get('destinasi', 'DestinasiController::index');
+$routes->get('destinasi/(:segment)', 'DestinasiController::detail/$1');
 
 // --- Autentikasi & Akun (Anggota 3) ---
 // $routes->get('masuk',   'AutentikasiController::tampilFormMasuk');

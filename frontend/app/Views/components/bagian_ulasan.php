@@ -1,7 +1,7 @@
 <!-- ============================================================
      Komponen: Bagian Ulasan & Rating Bintang
      Dipakai di: Halaman Detail Destinasi (Anggota 1)
-     Cara pakai: <?= view('components/bagian_ulasan', ['id_destinasi' => $destinasi['id'], 'slug_destinasi' => $destinasi['slug']]) ?>
+     Cara pakai: view('components/bagian_ulasan', ['id_destinasi' => ..., 'slug_destinasi' => ...])
      Anggota 4 — Sistem Ulasan & Rating (1–5 Bintang)
      ============================================================ -->
 

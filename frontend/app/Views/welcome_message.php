@@ -1,1240 +1,520 @@
+<?= $this->extend('layout/main') ?>
+
+<?= $this->section('konten') ?>
 <?php
-/**
- * Tampilan Beranda (Landing Page Statis) — JejakSumut: Jelajahi Pesona Sumatera Utara
- *
- * File ini disusun menggunakan standar Clean Code Berbahasa Indonesia
- * (.agents/rules/clean-code-indonesia.md) dan aturan desain Anti-AI-Slop
- * (.agents/rules/anti-ai-slop.md) sebagai gambaran awal untuk seluruh anggota kelompok.
- */
+$totalDestinasiTampil = (int) ($totalDestinasi ?? 0);
+$totalWilayahTampil   = (int) ($totalKabupatenKota ?? 0);
+$totalKategoriTampil  = (int) ($totalKategori ?? 0);
 
-if (! function_exists('formatHargaRupiah')) {
-    /**
-     * Memformat angka harga tiket menjadi format mata uang Rupiah yang rapi.
-     */
-    function formatHargaRupiah(int $hargaTiket): string
-    {
-        if ($hargaTiket > 0) {
-            $hargaTerformat = 'Rp ' . number_format($hargaTiket, 0, ',', '.');
-        } else {
-            $hargaTerformat = 'Gratis';
-        }
-
-        return $hargaTerformat;
-    }
-}
-
-if (! function_exists('formatKoordinatLokasi')) {
-    /**
-     * Memformat titik garis lintang dan garis bujur menjadi teks koordinat GPS.
-     */
-    function formatKoordinatLokasi(float $garisLintang, float $garisBujur): string
-    {
-        if ($garisLintang < 0) {
-            $arahLintang = 'S';
-        } else {
-            $arahLintang = 'N';
-        }
-
-        if ($garisBujur < 0) {
-            $arahBujur = 'W';
-        } else {
-            $arahBujur = 'E';
-        }
-
-        $nilaiLintang = number_format(abs($garisLintang), 4, '.', '');
-        $nilaiBujur   = number_format(abs($garisBujur), 4, '.', '');
-
-        return $nilaiLintang . '° ' . $arahLintang . ', ' . $nilaiBujur . '° ' . $arahBujur;
-    }
-}
-
-// Daftar menu navigasi utama pada bagian header
-$daftarMenuNavigasi = [
-    ['label' => 'Beranda', 'tautan' => '#', 'path_data' => 'beranda', 'aktif' => true],
-    ['label' => 'Destinasi Unggulan', 'tautan' => '#destinasi-kurator', 'path_data' => 'destinasi-unggulan', 'aktif' => false],
-    ['label' => 'Kategori Wisata', 'tautan' => '#katalog', 'path_data' => 'kategori-wisata', 'aktif' => false],
-    ['label' => 'Panduan Perjalanan', 'tautan' => '#jelajah-kepulauan', 'path_data' => 'panduan-perjalanan', 'aktif' => false],
-    ['label' => 'Komunitas', 'tautan' => '#komunitas-jurnal', 'path_data' => 'komunitas', 'aktif' => false],
-];
-
-// Daftar kata kunci pencarian populer di bawah kolom pencarian Hero
 $tagPencarianPopuler = [
+    'Danau Toba',
     'Pulau Samosir',
+    'Sipiso-piso',
     'Bukit Lawang',
-    'Air Terjun Sipiso-piso',
-    'Pantai Sorake Nias',
 ];
 
-// Data ringkasan statistik platform pada bagian Hero
 $daftarStatistikUtama = [
     [
-        'angka'       => '140+',
-        'keterangan'  => 'Destinasi Sumut Terkurasi',
+        'angka'       => $totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '971',
+        'keterangan'  => 'Objek Wisata Sumut',
         'kelas_warna' => 'text-primary',
     ],
     [
-        'angka'       => '33',
-        'keterangan'  => 'Kabupaten & Kota Sumut',
+        'angka'       => $totalWilayahTampil > 0 ? (string) $totalWilayahTampil : '33',
+        'keterangan'  => 'Kabupaten & Kota',
         'kelas_warna' => 'text-secondary',
     ],
     [
-        'angka'       => '98%',
-        'keterangan'  => 'Ulasan Wisatawan Positif',
+        'angka'       => $totalKategoriTampil > 0 ? (string) $totalKategoriTampil : '6',
+        'keterangan'  => 'Kategori Resmi',
         'kelas_warna' => 'text-tertiary-container',
     ],
 ];
 
-// Data destinasi utama pada kartu sorotan Hero (Kanan)
-$destinasiUtama = [
-    'nama'             => 'Bukit Holbung & Kaldera Danau Toba',
-    'kawasan'          => ' UNESCO Global Geopark Kaldera Toba',
-    'label_editor'     => 'Pilihan Editor Minggu Ini',
-    'kota'             => 'Kab. Samosir',
-    'provinsi'         => 'Sumatera Utara',
-    'garis_lintang'    => 2.5338,
-    'garis_bujur'      => 98.7042,
-    'rata_rating'      => 4.9,
-    'jumlah_ulasan'    => 1640,
-    'label_harga'      => 'Tiket Masuk Kawasan',
-    'harga_tiket'      => 15000,
-    'daftar_fasilitas' => ['Bukit Savana', 'Camping Ground', 'Panorama Kaldera'],
-    'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuf8-hbhks4cFzx3OLeREDy7YTvNaC8YvC0AnGKkQWPFgPKEU941tN0BVcl_lSnfQ4VZruY2F62uh4dxYxUuWnMyd5wtVOOL5xChFUcUdIwiBnt4VQK017GlSbyZ4mzzPxzItvZ4bXMsAug7_suS3Lntm2wa2Dk4SD-2qS50mDJuuiEbnmj6MnsmOtC6ubXRZKcAZMbKEVHUy2jxGigAq0DKVhyPMTdvwGM3yenKg',
-    'alt_foto'         => 'Panorama perbukitan hijau Bukit Holbung dan kaldera Danau Toba di Kabupaten Samosir Sumatera Utara',
+$destinasiSorotanUtama = $destinasiHero ?? [
+    'nama'               => 'Danau Toba',
+    'slug'               => 'danau-toba',
+    'kategori'           => 'Wisata Alam',
+    'sub_kategori'       => 'Danau',
+    'kode_kabupaten'     => '1217',
+    'kota'               => 'Kabupaten Samosir',
+    'provinsi'           => 'Sumatera Utara',
+    'koordinat'          => ['garis_lintang' => 2.68, 'garis_bujur' => 98.88],
+    'harga_tiket'        => 0,
+    'label_harga_tiket'  => 'Gratis (Rp 0)',
+    'jam_operasional'    => 'Informasi jam operasional belum tersedia',
+    'daftar_fasilitas'   => [],
+    'rata_rating'        => 0,
+    'jumlah_ulasan'      => 0,
+    'foto_utama'         => 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Lake_Toba_and_the_surrounding_hills.jpg?utm_source=id.wikipedia.org&utm_campaign=api&utm_content=original',
 ];
 
-// Data destinasi unggulan utama (Kartu Besar Kiri pada Bento Grid)
-$destinasiUnggulanUtama = [
-    'nama'                => 'Danau Toba & Desa Adat Huta Siallagan Samosir',
-    'kategori'            => 'UNESCO Global Geopark',
-    'lokasi'              => 'Ambarita, Kec. Simanindo, Kab. Samosir, Sumatera Utara',
-    'deskripsi'           => 'Danau vulkanik purba terbesar di dunia yang memeluk Pulau Samosir. Telusuri deretan Rumah Bolon berusia ratusan tahun, situs batu persidangan kuno Raja Siallagan, dan pertunjukan tari Sigale-gale di tepi perairan kaldera yang tenang.',
-    'jam_buka'            => '07.00 – 18.00 WIB',
-    'ringkasan_fasilitas' => 'Pemandu Adat, Dermaga Feri, Galeri Ulos',
-    'rata_rating'         => 4.95,
-    'jumlah_ulasan'       => 2840,
-    'label_harga'         => 'Tiket Masuk Desa Adat',
-    'harga_tiket'         => 20000,
-    'url_foto'            => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuf8-hbhks4cFzx3OLeREDy7YTvNaC8YvC0AnGKkQWPFgPKEU941tN0BVcl_lSnfQ4VZruY2F62uh4dxYxUuWnMyd5wtVOOL5xChFUcUdIwiBnt4VQK017GlSbyZ4mzzPxzItvZ4bXMsAug7_suS3Lntm2wa2Dk4SD-2qS50mDJuuiEbnmj6MnsmOtC6ubXRZKcAZMbKEVHUy2jxGigAq0DKVhyPMTdvwGM3yenKg',
-    'alt_foto'            => 'Pemandangan kaldera Danau Toba dan Pulau Samosir di Sumatera Utara',
-];
-
-// Daftar 2 destinasi unggulan pendamping (Kartu Bertumpuk Kanan pada Bento Grid)
-$daftarDestinasiUnggulanPendamping = [
-    [
-        'nama'          => 'Bukit Lawang & Suaka Orangutan Sumatera',
-        'kategori'      => 'Ekowisata Rimba Leuser',
-        'kelas_badge'   => 'bg-secondary text-on-secondary shadow-sm',
-        'lokasi'        => 'Bahorok, Kab. Langkat, Sumatera Utara',
-        'deskripsi'     => 'Gerbang hutan hujan tropis Taman Nasional Gunung Leuser, habitat asli Orangutan Sumatera dan petualangan river tubing Sungai Bahorok.',
-        'jam_buka'      => '07.30 – 16.30 WIB',
-        'ikon_jam'      => 'wb_sunny',
-        'info_tambahan' => 'Trekking Hutan Leuser',
-        'ikon_info'     => 'hiking',
-        'rata_rating'   => 4.91,
-        'jumlah_ulasan' => 1890,
-        'harga_tiket'   => 25000,
-        'url_foto'      => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDoCutxtBU9_Fh5bbP7fYzUEILVXsYb6zrTw2TozBZH-KfqgAT5t0FnK7NI1Ji1zl-ln0weO4HpR2KLJKvBuctL0k9tD4PlwoHRaNQ_mR3FfLsKiqOI3T9y4XzaJHvgbuhCV3u8F3puw1PK6RMOdXT3fSz9td7bQ5X5Z4sUsXb_KiXiQLptl7kJzsm_zEbwEZCwGwWLiCbOqr_htlCZ8Z3HEkST0IXiFkKzw_SL24g',
-        'alt_foto'      => 'Ekowisata hutan hujan tropis Bukit Lawang di Kabupaten Langkat Sumatera Utara',
-    ],
-    [
-        'nama'          => 'Air Terjun Sipiso-piso & Gardu Pandang Tongging',
-        'kategori'      => 'Alam & Dataran Tinggi',
-        'kelas_badge'   => 'bg-surface-container-lowest/90 backdrop-blur-sm text-tertiary-container font-bold',
-        'lokasi'        => 'Merek, Kab. Karo, Sumatera Utara',
-        'deskripsi'     => 'Air terjun setinggi 120 meter yang mengalir deras dari sungai bawah tanah menuju bibir utara kaldera Danau Toba.',
-        'jam_buka'      => '06.00 – 18.00 WIB',
-        'ikon_jam'      => 'schedule',
-        'info_tambahan' => '17°C – 22°C',
-        'ikon_info'     => 'thermostat',
-        'rata_rating'   => 4.88,
-        'jumlah_ulasan' => 2120,
-        'harga_tiket'   => 10000,
-        'url_foto'      => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBual-AfAM7eIHLJW-_6mVEwXlIE5NDSeSm0x-R4p0fwIHR15pmMS03phJcd47GXDxWUvaFp09cCjL2bqqWHaQ7s5U3YrsDT-aYItE7pXRjphzISLftLsowaqOjMw-EwdF13ykSZLqY4HAjncqhjaLLoRArSe8kdpkpYCaOPivB5ghiAjC7tS6RnZhVmYAJ4Lt0abYufaKbuB6fiRVId7v0Xnto2OJ5gYMKCOlcuIQ',
-        'alt_foto'      => 'Air Terjun Sipiso-piso dan lanskap tebing kaldera di Kabupaten Karo Sumatera Utara',
-    ],
-];
-
-// Daftar tombol filter kategori pada bagian Katalog Sumatera Utara
-$daftarFilterKategori = [
-    ['label' => 'Semua Destinasi (142)', 'aktif' => true],
-    ['label' => 'Kaldera & Geopark (44)', 'aktif' => false],
-    ['label' => 'Ekowisata & Rimba (32)', 'aktif' => false],
-    ['label' => 'Budaya & Sejarah (36)', 'aktif' => false],
-    ['label' => 'Bahari & Kepulauan (30)', 'aktif' => false],
-];
-
-// Daftar 6 destinasi wisata pada grid Eksplorasi Katalog Sumatera Utara
-$daftarKatalogDestinasi = [
-    [
-        'nama'             => 'Pantai Sorake & Teluk Lagundri',
-        'kategori'         => 'Wisata Bahari',
-        'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-primary font-bold',
-        'lokasi'           => 'Teluk Dalam, Kab. Nias Selatan',
-        'jam_buka'         => 'Buka 24 Jam',
-        'deskripsi'        => 'Salah satu spot selancar ombak kanan terbaik di dunia dengan gulungan ombak lima tingkat di pesisir Samudra Hindia.',
-        'daftar_fasilitas' => ['Surf Camp', 'Homestay Pantai', 'Sewa Papan Surf'],
-        'rata_rating'      => 4.96,
-        'jumlah_ulasan'    => 940,
-        'label_harga'      => 'Retribusi Pantai',
-        'harga_tiket'      => 10000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuA1QLu1JDTQzVSVcx2sYivwhnZ_NZHrtiMI_qJtXzMFLM3I0_i8u5-Ii_lb7Vyp2Xw7Ok5Zij9g7WhHYdOc5cedXYxS35u3mdtHe9auAnq-JuqUqXRh07BEY0iI9oD1zIsf8ZYq6_H48R52ov5zF9-a8r3WRp3L9gvbGJZPXrMV8_0VLcAqp3Ux7wDbEY7fdMR2-3RUWB5UoM11p4xtcu7VqzCHA7DSXQlpc1xv2iY',
-        'alt_foto'         => 'Perairan biru jernih Pantai Sorake dan Teluk Lagundri di Nias Selatan Sumatera Utara',
-    ],
-    [
-        'nama'             => 'Ekowisata Gajah Tangkahan',
-        'kategori'         => 'Ekowisata Rimba',
-        'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-secondary font-bold',
-        'lokasi'           => 'Batang Serangan, Kab. Langkat',
-        'jam_buka'         => '08.00 – 17.00 WIB',
-        'deskripsi'        => 'Surga tersembunyi di tepi Sungai Buluh dan Sungai Batang Serangan, pusat konservasi Gajah Sumatera jinak di TNGL.',
-        'daftar_fasilitas' => ['Pemandu Ranger', 'Jembatan Gantung', 'River Tubing'],
-        'rata_rating'      => 4.92,
-        'jumlah_ulasan'    => 1380,
-        'label_harga'      => 'Tiket Kawasan',
-        'harga_tiket'      => 20000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuf8-hbhks4cFzx3OLeREDy7YTvNaC8YvC0AnGKkQWPFgPKEU941tN0BVcl_lSnfQ4VZruY2F62uh4dxYxUuWnMyd5wtVOOL5xChFUcUdIwiBnt4VQK017GlSbyZ4mzzPxzItvZ4bXMsAug7_suS3Lntm2wa2Dk4SD-2qS50mDJuuiEbnmj6MnsmOtC6ubXRZKcAZMbKEVHUy2jxGigAq0DKVhyPMTdvwGM3yenKg',
-        'alt_foto'         => 'Lanskap sungai dan hutan tropis Ekowisata Tangkahan di Kabupaten Langkat Sumatera Utara',
-    ],
-    [
-        'nama'             => 'Pulau Mursala & Pantai Pandan',
-        'kategori'         => 'Wisata Bahari',
-        'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-primary font-bold',
-        'lokasi'           => 'Pandan, Kab. Tapanuli Tengah',
-        'jam_buka'         => '07.00 – 18.00 WIB',
-        'deskripsi'        => 'Keunikan air terjun Pulau Mursala yang terjun langsung dari tebing granit merah ke perairan laut lepas Teluk Tapian Nauli.',
-        'daftar_fasilitas' => ['Speedboat', 'Alat Snorkeling', 'Kuliner Seafood'],
-        'rata_rating'      => 4.86,
-        'jumlah_ulasan'    => 870,
-        'label_harga'      => 'Retribusi Dermaga',
-        'harga_tiket'      => 25000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAzYpDnCnVstjTZtMV1ZR2fpaqxPwJOsIH08AD4VbRH2nOR1Sh4kLOXpLm1F7oWLN0Sxm0YHbqN601Ku-LJYScc75H1xycT3VCfd8UcMybBkXEd67VUqSEI8kv43kyc795qNZ9pIApZv0rP8Dy_x91oMqyzrxDbcmYcX8N47rauE3G-OnNnLp-ZvlHWghQE3ncvRWHbBtajYHpMffDyQbzIPYczbReqgJ9U1mH-TI',
-        'alt_foto'         => 'Pesisir pantai pasir putih dan laut biru Pulau Mursala Tapanuli Tengah Sumatera Utara',
-    ],
-    [
-        'nama'             => 'Gunung Sibayak & Air Panas Lau Sidebuk-debuk',
-        'kategori'         => 'Alam & Vulkanik',
-        'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-tertiary-container font-bold',
-        'lokasi'           => 'Berastagi, Kab. Karo',
-        'jam_buka'         => 'Buka 24 Jam',
-        'deskripsi'        => 'Pendakian ramah pemula menuju puncak kawah belerang Gunung Sibayak dilanjutkan relaksasi pemandian air panas alami di kaki gunung.',
-        'daftar_fasilitas' => ['Kolam Air Panas', 'Pos Pendakian', 'Warung Kopi Karo'],
-        'rata_rating'      => 4.89,
-        'jumlah_ulasan'    => 2450,
-        'label_harga'      => 'Tiket Masuk',
-        'harga_tiket'      => 15000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDj6pu0GBTBtu_YeZj06pAk3NjaeXss2HtuubF6YlWMoFzYQN6S0_5ZWuHMoHrg2c5AvFX2hLaC8tKOGMAgDECWyQYHxKiDqkywi8-kfKJ5DQC82-HUq2r3DaQR1ggiuxOOK_SEkGmfI0xT3nija2Fx6cbS7nM7PCeiq5JtW9kpuJPTZvzh6XtmScyA7reWKxpRYXcLT293ea1DiaoQH2UBb_u4JLIhLbZimkzhlT0',
-        'alt_foto'         => 'Puncak kawah vulkanik Gunung Sibayak saat matahari terbit di Berastagi Kabupaten Karo',
-    ],
-    [
-        'nama'             => 'Istana Maimun & Rumah Tjong A Fie',
-        'kategori'         => 'Budaya & Sejarah',
-        'kelas_badge'      => 'bg-secondary text-on-secondary shadow-sm',
-        'lokasi'           => 'Medan Maimun, Kota Medan',
-        'jam_buka'         => '08.00 – 17.00 WIB',
-        'deskripsi'        => 'Ikon warisan Kesultanan Deli tahun 1888 dengan arsitektur perpaduan Melayu, Islam, Spanyol, India, dan Italia di jantung Kota Medan.',
-        'daftar_fasilitas' => ['Pemandu Sejarah', 'Busana Adat Melayu', 'Parkir Bus'],
-        'rata_rating'      => 4.85,
-        'jumlah_ulasan'    => 3120,
-        'label_harga'      => 'Tiket Masuk',
-        'harga_tiket'      => 10000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFiZSZW6kpK1Du-tnf5U5Gb6JUrsanZCGvxHCXauVCk-DCmo28dqp0oIWhWJXKZrL95fl3LCKOnfiZ_B1fNWWRz0hTPxzmRcnFCQC03l31glAZNSJzxkb9bZyz5WqVJE7NwNv6WJU0dx0J8DG2ipnylof6kC7u3Cw9HUYA-tfLlkvayLY_zZ2PJ98ZCg_Nho6BZBjlg5E74WL_ZeLaXMk0ya2cWZQlEr5cYKr0osQ',
-        'alt_foto'         => 'Kawasan wisata budaya dan sejarah Istana Maimun di Kota Medan Sumatera Utara',
-    ],
-    [
-        'nama'             => 'Kawah Putih Tinggi Raja (Dolok Tinggi Raja)',
-        'kategori'         => 'Geopark & Alam',
-        'kelas_badge'      => 'bg-secondary text-on-secondary shadow-sm',
-        'lokasi'           => 'Silau Kahean, Kab. Simalungun',
-        'jam_buka'         => '07.00 – 17.00 WIB',
-        'deskripsi'        => 'Bukit kapur travertin putih berkilau dengan telaga air panas biru kehijauan di tengah kawasan hutan cagar alam Simalungun.',
-        'daftar_fasilitas' => ['Spot Foto Travertin', 'Pemandu Lokal', 'Area Parkir'],
-        'rata_rating'      => 4.81,
-        'jumlah_ulasan'    => 690,
-        'label_harga'      => 'Tiket Masuk',
-        'harga_tiket'      => 15000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuAy7AP2hYABilutqDOcoQPvZtqaBop9XbvSepsc-6s8q-AW_1tZAlUtzhyZnYcnInKQ784ZtWHYstr4w5vtYN1W8Z9ygvOrXulEbqBtisou4z1CQTpRCtWNt4Op3-viglWxiFictCq7-IYecIhJ1kotS2C7kvFVhT4cygOrHlC4lrxqQRBsl97sXlvGSwaykOltxBmETS0zy6XXJgUwNhyoMmzCH_GUVtsNnQqlVq0',
-        'alt_foto'         => 'Telaga biru kehijauan Kawah Putih Tinggi Raja di Kabupaten Simalungun Sumatera Utara',
-    ],
-];
-
-// Daftar 6 kawasan wisata utama di Sumatera Utara
-$daftarWilayahKepulauan = [
-    [
-        'nama_kepulauan'   => 'Kawasan Danau Toba',
-        'jumlah_destinasi' => 42,
-        'ikon'             => 'kayaking',
-        'kelas_ikon'       => 'bg-primary/10 text-primary',
-    ],
-    [
-        'nama_kepulauan'   => 'Medan & Deli Serdang',
-        'jumlah_destinasi' => 28,
-        'ikon'             => 'temple_buddhist',
-        'kelas_ikon'       => 'bg-secondary/10 text-secondary',
-    ],
-    [
-        'nama_kepulauan'   => 'Dataran Tinggi Karo',
-        'jumlah_destinasi' => 24,
-        'ikon'             => 'park',
-        'kelas_ikon'       => 'bg-tertiary-container/10 text-tertiary-container',
-    ],
-    [
-        'nama_kepulauan'   => 'Langkat & Leuser',
-        'jumlah_destinasi' => 18,
-        'ikon'             => 'forest',
-        'kelas_ikon'       => 'bg-secondary/10 text-secondary',
-    ],
-    [
-        'nama_kepulauan'   => 'Tapanuli & Sibolga',
-        'jumlah_destinasi' => 16,
-        'ikon'             => 'anchor',
-        'kelas_ikon'       => 'bg-primary/10 text-primary',
-    ],
-    [
-        'nama_kepulauan'   => 'Kepulauan Nias',
-        'jumlah_destinasi' => 14,
-        'ikon'             => 'surfing',
-        'kelas_ikon'       => 'bg-tertiary-container/10 text-tertiary-container',
-    ],
-];
+$daftarBento                       = $daftarSorotanBento ?? [];
+$destinasiUnggulanUtama            = $daftarBento[0] ?? $destinasiSorotanUtama;
+$daftarDestinasiUnggulanPendamping = array_slice($daftarBento, 1, 2);
+$daftarWilayahUnggulan             = array_slice($daftarKabupatenKota ?? [], 0, 6);
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="shell-type" content="web_standard" />
-    <title>JejakSumut — Jelajahi Pesona Sumatera Utara</title>
 
-    <!-- Google Fonts: Playfair Display (Heading Serif) & Plus Jakarta Sans (Body Sans) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
-        rel="stylesheet"
-    />
-    <link
-        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
-        rel="stylesheet"
-    />
+<div class="flex flex-col w-full">
 
-    <!-- Reset Dasar Halaman -->
-    <style>
-        @layer base {
-            html,
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            body {
-                overscroll-behavior: none;
-            }
-            main > :first-child {
-                margin-top: 0 !important;
-            }
-            main > :last-child {
-                margin-bottom: 0 !important;
-            }
-        }
-        ::-webkit-scrollbar {
-            display: none;
-        }
-    </style>
-
-    <!-- Tailwind CSS CDN & Konfigurasi Design Tokens Resmi JejakSumut -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "outline": "#6f797a",
-                        "error-container": "#ffdad6",
-                        "surface-tint": "#006972",
-                        "tertiary": "#8c2900",
-                        "on-secondary-fixed-variant": "#23502d",
-                        "secondary": "#3b6843",
-                        "inverse-surface": "#33302d",
-                        "surface-container-lowest": "#ffffff",
-                        "surface-container": "#f4ece8",
-                        "tertiary-fixed": "#ffdbd0",
-                        "tertiary-container": "#b53801",
-                        "inverse-on-surface": "#f7efeb",
-                        "on-surface": "#1e1b19",
-                        "surface": "#fff8f5",
-                        "surface-container-low": "#faf2ee",
-                        "on-primary-container": "#9eedf7",
-                        "on-error-container": "#93000a",
-                        "on-tertiary-container": "#ffd9cd",
-                        "surface-variant": "#e9e1dd",
-                        "on-secondary-fixed": "#00210a",
-                        "on-error": "#ffffff",
-                        "surface-dim": "#e0d8d5",
-                        "on-surface-variant": "#3f494a",
-                        "on-secondary": "#ffffff",
-                        "surface-container-high": "#eee7e3",
-                        "on-tertiary": "#ffffff",
-                        "inverse-primary": "#84d3dd",
-                        "on-primary": "#ffffff",
-                        "primary-container": "#0b6e77",
-                        "tertiary-fixed-dim": "#ffb59d",
-                        "primary-fixed-dim": "#84d3dd",
-                        "outline-variant": "#bec8ca",
-                        "on-secondary-container": "#3f6c47",
-                        "secondary-fixed": "#bcefc0",
-                        "on-primary-fixed": "#001f23",
-                        "on-tertiary-fixed-variant": "#832600",
-                        "on-background": "#1e1b19",
-                        "surface-bright": "#fff8f5",
-                        "background": "#fff8f5",
-                        "primary-fixed": "#a0eff9",
-                        "secondary-fixed-dim": "#a1d3a5",
-                        "secondary-container": "#b9ecbd",
-                        "on-primary-fixed-variant": "#004f56",
-                        "error": "#ba1a1a",
-                        "on-tertiary-fixed": "#390c00",
-                        "surface-container-highest": "#e9e1dd",
-                        "primary": "#00545b"
-                    },
-                    borderRadius: {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    spacing: {
-                        "space-xs": "0.25rem",
-                        "space-sm": "0.5rem",
-                        "space-md": "1rem",
-                        "space-lg": "1.5rem",
-                        "space-xl": "2.5rem",
-                        "gutter-mobile": "1rem",
-                        "margin-mobile": "1rem",
-                        "gutter": "1.5rem",
-                        "margin": "2.5rem"
-                    },
-                    fontFamily: {
-                        "body-lg": ["Plus Jakarta Sans"],
-                        "display-hero": ["Playfair Display"],
-                        "headline-md": ["Playfair Display"],
-                        "metric-price": ["Plus Jakarta Sans"],
-                        "label-md": ["Plus Jakarta Sans"],
-                        "headline-lg": ["Playfair Display"],
-                        "title-editorial": ["Playfair Display"],
-                        "display-hero-mobile": ["Playfair Display"],
-                        "body-sm": ["Plus Jakarta Sans"],
-                        "body-md": ["Plus Jakarta Sans"],
-                        "headline-lg-mobile": ["Playfair Display"],
-                        "headline-sm": ["Playfair Display"],
-                        "label-caps": ["Plus Jakarta Sans"],
-                        "metric-rating": ["Plus Jakarta Sans"]
-                    },
-                    fontSize: {
-                        "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "400" }],
-                        "display-hero": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
-                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
-                        "metric-price": ["18px", { "lineHeight": "22px", "fontWeight": "700" }],
-                        "label-md": ["13px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "600" }],
-                        "headline-lg": ["36px", { "lineHeight": "44px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
-                        "title-editorial": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
-                        "display-hero-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
-                        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
-                        "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
-                        "headline-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
-                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
-                        "label-caps": ["11px", { "lineHeight": "14px", "letterSpacing": "0.08em", "fontWeight": "700" }],
-                        "metric-rating": ["14px", { "lineHeight": "18px", "fontWeight": "700" }]
-                    }
-                }
-            }
-        };
-    </script>
-</head>
-
-<body class="bg-surface font-body-md text-on-surface antialiased">
-    <!-- =====================================================================
-         BAGIAN HEADER & NAVIGASI UTAMA (STICKY TOP NAVBAR)
-         ===================================================================== -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-surface-variant/40">
-        <div class="h-20 max-w-7xl mx-auto px-6 flex items-center justify-between gap-space-md">
-            <!-- Identitas Brand & Logo JejakSumut -->
-            <a href="<?= base_url('/') ?>" class="flex items-center gap-3 shrink-0">
-                <svg class="w-9 h-9 shrink-0" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-                    <rect width="36" height="36" rx="10" fill="#0B6E77" />
-                    <path d="M6 25L14 13L20 21L24 16L30 25H6Z" fill="#2D5A36" />
-                    <path d="M6 25C10 22.5 14 27 18 24.5C22 22 26 26.5 30 24.5V29C30 29.55 29.55 30 29 30H7C6.45 30 6 29.55 6 29V25Z" fill="#FAF8F5" fill-opacity="0.92" />
-                    <circle cx="24" cy="11" r="2.5" fill="#D97706" />
-                </svg>
-                <div class="flex flex-col">
-                    <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">
-                        JejakSumut
-                    </span>
-                    <span class="font-label-caps text-label-caps text-tertiary-container uppercase mt-0.5">
-                        Sumatera Utara
-                    </span>
-                </div>
-            </a>
-
-            <!-- Tautan Navigasi Tengah -->
-            <nav
-                class="hidden xl:flex items-center gap-1"
-                data-active-classes="bg-primary-container text-on-primary font-label-md rounded-lg"
-            >
-                <?php foreach ($daftarMenuNavigasi as $menuItem) : ?>
-                    <?php
-                    if ($menuItem['aktif']) {
-                        $kelasNavigasi = 'px-3 py-2 transition-all bg-primary-container text-on-primary font-label-md rounded-lg';
-                    } else {
-                        $kelasNavigasi = 'font-label-md text-label-md px-3 py-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all';
-                    }
-                    ?>
-                    <a
-                        href="<?= esc($menuItem['tautan']) ?>"
-                        data-path="<?= esc($menuItem['path_data']) ?>"
-                        class="<?= esc($kelasNavigasi) ?>"
-                        <?= $menuItem['aktif'] ? 'aria-current="page"' : '' ?>
-                    >
-                        <?= esc($menuItem['label']) ?>
-                    </a>
-                <?php endforeach; ?>
-            </nav>
-
-            <!-- Tombol Aksi Kanan (Mata Uang, Masuk, Jelajahi Sekarang) -->
-            <div class="flex items-center gap-space-sm sm:gap-3 shrink-0">
-                <div class="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md">
-                    <span class="text-tertiary-container font-bold">Rp</span>
-                    <span>IDR</span>
-                </div>
-                <a
-                    href="#masuk"
-                    data-path="login"
-                    class="hidden md:inline-flex items-center justify-center px-4 py-2 rounded-lg border border-primary text-primary hover:bg-primary-container hover:text-on-primary font-label-md text-label-md transition-all"
-                >
-                    Masuk
-                </a>
-                <a
-                    href="#destinasi-kurator"
-                    data-path="destinasi-unggulan"
-                    class="inline-flex items-center justify-center px-5 py-2.5 rounded-full bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors shadow-[0_1px_3px_0_rgba(28,25,23,0.04)]"
-                >
-                    Jelajahi Sekarang
-                </a>
-                <a href="#profil" data-path="profil-petualang" class="flex items-center shrink-0 ml-1">
-                    <img
-                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeiO-qKMIBqy30kLvxlFMODby1p8aOdFQ0mIyG90PWEpaWO__UE948okMlpXhJ5ENI1ZLxKrlU9t4sU6v-hlbR4Swc_aPTwDnlWFjzz-OvpiN6b_1a4tK9WNRou-JjKJ0YVn-88mqx3cpPTTBjkKJpeCKMa3pUJbtSpFNv7APUZadHSDscLaj7BLzM0V-Y56cRZa5ujbKczsnYgClQ33I4aCyuBCV3mb6e_RJQ-rs"
-                        alt="Profil Petualang"
-                        class="w-8 h-8 rounded-full object-cover ring-2 ring-surface-variant"
-                    />
-                </a>
+    <?php if (isset($terhubungBackend) && ! $terhubungBackend) : ?>
+        <div class="max-w-7xl mx-auto px-6 pt-6 w-full">
+            <div class="rounded-xl bg-error-container text-on-error-container px-4 py-3 text-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-base">cloud_off</span>
+                <span><?= esc($pesanErrorApi ?: 'Server REST API Backend belum aktif. Pastikan server backend berjalan di port 8080.') ?></span>
             </div>
         </div>
-    </header>
+    <?php endif; ?>
 
-    <!-- =====================================================================
-         KONTEN UTAMA HALAMAN BERANDA
-         ===================================================================== -->
-    <main class="w-full pt-20 bg-surface min-h-[calc(100vh-80px)]">
-        <div class="flex flex-col w-full">
+    <!-- 1. SEKSI HERO ASIMETRIS & PENCARIAN DESTINASI SUMATERA UTARA -->
+    <div class="relative w-full overflow-hidden">
+        <div class="absolute -top-40 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute top-96 -left-32 w-80 h-80 bg-tertiary-container/5 rounded-full blur-3xl pointer-events-none"></div>
 
-            <!-- 1. SEKSI HERO ASIMETRIS & PENCARIAN DESTINASI -->
-            <div class="relative w-full overflow-hidden">
-                <div class="absolute -top-40 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="absolute top-96 -left-32 w-80 h-80 bg-tertiary-container/5 rounded-full blur-3xl pointer-events-none"></div>
+        <section class="max-w-7xl mx-auto px-6 pt-8 pb-16">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
 
-                <section class="max-w-7xl mx-auto px-6 pt-8 pb-16">
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-
-                        <!-- Kolom Kiri (7 Kolom): Judul Editorial & Bar Pencarian 4 Kolom -->
-                        <div class="lg:col-span-7 flex flex-col justify-center">
-                            <div class="inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full bg-secondary-container/50 text-on-secondary-container">
-                                <span class="text-xs">✦</span>
-                                <span class="font-label-caps text-label-caps uppercase tracking-wider text-secondary">
-                                    KURASI WISATA SUMATERA UTARA 2026
-                                </span>
-                            </div>
-
-                            <h1 class="font-display-hero text-display-hero text-on-surface tracking-tight mt-4 max-w-2xl">
-                                Jelajahi Pesona Alam &amp; Budaya Luhur Sumatera Utara
-                            </h1>
-
-                            <p class="font-body-lg text-body-lg text-on-surface-variant mt-5 max-w-xl leading-relaxed">
-                                Dari kemegahan kaldera purba Danau Toba, rimba tropis Gunung Leuser di Langkat, hingga gulungan ombak kelas dunia di Kepulauan Nias. Temukan panduan wisata, jadwal operasional, serta rekomendasi tur, kuliner, penginapan, dan transportasi terintegrasi.
-                            </p>
-
-                            <!-- Kartu Pencarian & Filter Interaktif (4 Kolom) -->
-                            <div class="bg-surface-container-lowest rounded-2xl p-3 shadow-md mt-8 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                                <!-- Input 1: Lokasi / Tujuan -->
-                                <div class="sm:col-span-3 flex flex-col px-3 py-2 rounded-xl hover:bg-surface-container transition-colors">
-                                    <span class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-sm text-primary">location_on</span>
-                                        Kabupaten / Kota
-                                    </span>
-                                    <input
-                                        type="text"
-                                        value="Pulau Samosir"
-                                        placeholder="Tujuan Anda"
-                                        class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none truncate mt-0.5"
-                                    />
-                                    <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
-                                        Kawasan Danau Toba
-                                    </span>
-                                </div>
-
-                                <!-- Input 2: Pilihan Kategori Wisata -->
-                                <div class="sm:col-span-3 flex flex-col px-3 py-2 rounded-xl hover:bg-surface-container transition-colors">
-                                    <span class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-sm text-secondary">explore</span>
-                                        Kategori
-                                    </span>
-                                    <select class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none mt-0.5 cursor-pointer">
-                                        <option selected>Kaldera &amp; Geopark</option>
-                                        <option>Ekowisata Rimba Leuser</option>
-                                        <option>Budaya &amp; Sejarah</option>
-                                        <option>Bahari &amp; Kepulauan</option>
-                                    </select>
-                                    <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
-                                        44 Destinasi Tersedia
-                                    </span>
-                                </div>
-
-                                <!-- Input 3: Pilihan Rentang Budget -->
-                                <div class="sm:col-span-3 flex flex-col px-3 py-2 rounded-xl hover:bg-surface-container transition-colors">
-                                    <span class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-1">
-                                        <span class="material-symbols-outlined text-sm text-tertiary-container">payments</span>
-                                        Rentang Budget
-                                    </span>
-                                    <select class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none mt-0.5 cursor-pointer">
-                                        <option selected>Rp 500rb - 2jt</option>
-                                        <option>Di bawah Rp 500rb</option>
-                                        <option>Rp 2jt - Rp 5jt</option>
-                                        <option>Ekspedisi Khusus</option>
-                                    </select>
-                                    <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
-                                        Per Wisatawan
-                                    </span>
-                                </div>
-
-                                <!-- Input 4: Tombol Aksi Cari Destinasi -->
-                                <div class="sm:col-span-3">
-                                    <button
-                                        type="button"
-                                        class="w-full py-3.5 px-4 rounded-xl bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md flex items-center justify-center gap-2 transition-all shadow-sm"
-                                    >
-                                        <span>Cari Destinasi</span>
-                                        <span class="material-symbols-outlined text-base">arrow_forward</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Tag Pencarian Cepat -->
-                            <div class="flex flex-wrap items-center gap-2 mt-4 text-on-surface-variant">
-                                <span class="font-label-caps text-label-caps uppercase text-outline">Populer:</span>
-                                <?php foreach ($tagPencarianPopuler as $namaTag) : ?>
-                                    <a
-                                        href="#katalog"
-                                        class="font-label-md text-label-md px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface"
-                                    >
-                                        <?= esc($namaTag) ?>
-                                    </a>
-                                <?php endforeach; ?>
-                            </div>
-
-                            <!-- Baris Ringkasan Statistik Platform -->
-                            <div class="grid grid-cols-3 gap-4 mt-8 pt-6 bg-surface-container-low/70 rounded-2xl p-4">
-                                <?php foreach ($daftarStatistikUtama as $itemStatistik) : ?>
-                                    <div class="flex flex-col">
-                                        <div class="font-headline-md text-headline-md <?= esc($itemStatistik['kelas_warna']) ?> font-bold tabular-nums">
-                                            <?= esc($itemStatistik['angka']) ?>
-                                        </div>
-                                        <span class="font-body-sm text-body-sm text-on-surface-variant">
-                                            <?= esc($itemStatistik['keterangan']) ?>
-                                        </span>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        </div>
-
-                        <!-- Kolom Kanan (5 Kolom): Kartu Foto Sorotan Destinasi Utama -->
-                        <div class="lg:col-span-5 relative">
-                            <div class="relative h-[560px] w-full rounded-3xl overflow-hidden shadow-xl bg-surface-container group">
-                                <img
-                                    src="<?= esc($destinasiUtama['url_foto']) ?>"
-                                    alt="<?= esc($destinasiUtama['alt_foto']) ?>"
-                                    class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                                />
-
-                                <!-- Badge Atas & Tombol Simpan Favorit -->
-                                <div class="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
-                                    <span class="font-label-caps text-label-caps px-3.5 py-1.5 rounded-full bg-surface-container-lowest/90 text-primary font-bold shadow-sm backdrop-blur-sm">
-                                        <?= esc($destinasiUtama['label_editor']) ?>
-                                    </span>
-                                    <button
-                                        type="button"
-                                        aria-label="Simpan rute"
-                                        class="w-10 h-10 rounded-full bg-surface-container-lowest/90 hover:bg-surface-container-lowest text-on-surface flex items-center justify-center shadow-sm transition-all"
-                                    >
-                                        <span class="material-symbols-outlined text-lg">bookmark</span>
-                                    </button>
-                                </div>
-
-                                <!-- Overlay Gelap Bawah (Kontras Terjamin di Atas Foto) -->
-                                <div class="absolute inset-x-0 bottom-0 pt-28 pb-6 px-6 bg-gradient-to-t from-inverse-surface via-inverse-surface/80 to-transparent text-inverse-on-surface flex flex-col justify-end">
-                                    <div class="flex items-center gap-2 mb-1">
-                                        <span class="font-label-caps text-label-caps text-secondary-fixed uppercase tracking-wider">
-                                            <?= esc($destinasiUtama['kawasan']) ?>
-                                        </span>
-                                        <span class="text-surface-variant text-xs">•</span>
-                                        <span class="font-metric-rating text-metric-rating text-tertiary-fixed-dim flex items-center gap-0.5 tabular-nums">
-                                            <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
-                                            <?= esc((string) $destinasiUtama['rata_rating']) ?> (<?= esc(number_format($destinasiUtama['jumlah_ulasan'], 0, ',', '.')) ?> ulasan)
-                                        </span>
-                                    </div>
-
-                                    <h2 class="font-headline-lg text-headline-lg text-inverse-on-surface leading-tight">
-                                        <?= esc($destinasiUtama['nama']) ?>
-                                    </h2>
-
-                                    <p class="font-body-sm text-body-sm text-surface-variant mt-1.5 flex items-center gap-1.5 font-mono tabular-nums">
-                                        <span class="material-symbols-outlined text-xs">my_location</span>
-                                        <?= esc(formatKoordinatLokasi($destinasiUtama['garis_lintang'], $destinasiUtama['garis_bujur'])) ?> • <?= esc($destinasiUtama['kota']) ?>, <?= esc($destinasiUtama['provinsi']) ?>
-                                    </p>
-
-                                    <!-- Daftar Tag Aktivitas / Fasilitas Unggulan -->
-                                    <div class="flex flex-wrap gap-1.5 mt-3">
-                                        <?php foreach ($destinasiUtama['daftar_fasilitas'] as $namaFasilitas) : ?>
-                                            <span class="font-body-sm text-body-sm px-2.5 py-0.5 rounded-md bg-inverse-surface/60 text-inverse-on-surface backdrop-blur-sm">
-                                                <?= esc($namaFasilitas) ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    </div>
-
-                                    <!-- Informasi Harga Tiket & Tombol Lihat Rute -->
-                                    <div class="flex items-center justify-between mt-5 pt-4 bg-inverse-surface/40 backdrop-blur-md rounded-xl px-4 py-2.5">
-                                        <div class="flex flex-col">
-                                            <span class="font-label-caps text-label-caps text-surface-variant uppercase">
-                                                <?= esc($destinasiUtama['label_harga']) ?>
-                                            </span>
-                                            <span class="font-metric-price text-metric-price text-inverse-on-surface tabular-nums">
-                                                <?= esc(formatHargaRupiah($destinasiUtama['harga_tiket'])) ?>
-                                                <span class="font-body-sm text-body-sm text-surface-variant font-normal">/ orang</span>
-                                            </span>
-                                        </div>
-                                        <a
-                                            href="#borobudur"
-                                            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md transition-colors shadow-sm"
-                                        >
-                                            <span>Lihat Rute</span>
-                                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </section>
-            </div>
-
-            <!-- 2. SEKSI BENTO GRID ASIMETRIS (DESTINASI UNGGULAN PILIHAN KURATOR) -->
-            <section id="destinasi-kurator" class="w-full bg-surface-container-low py-16">
-                <div class="max-w-7xl mx-auto px-6">
-                    <!-- Judul Seksi Bento Grid -->
-                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
-                                <span class="font-label-caps text-label-caps uppercase text-tertiary-container tracking-wider">
-                                    TERPOPULER DI SUMATERA UTARA
-                                </span>
-                            </div>
-                            <h2 class="font-headline-lg text-headline-lg text-on-surface mt-2 max-w-xl">
-                                Ikon Wisata Alam &amp; Budaya Sumatera Utara yang Wajib Dikunjungi
-                            </h2>
-                        </div>
-                        <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
-                            Tiga destinasi unggulan di Sumatera Utara dengan indeks kelestarian dan kepuasan pengunjung tertinggi musim ini.
-                        </p>
+                <!-- Kolom Kiri (7 Kolom): Judul Editorial & Bar Pencarian -->
+                <div class="lg:col-span-7 flex flex-col justify-center">
+                    <div class="inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full bg-secondary-container/50 text-on-secondary-container">
+                        <span class="font-label-caps text-label-caps uppercase tracking-wider text-secondary">
+                            KURASI WISATA SUMATERA UTARA 2026
+                        </span>
                     </div>
 
-                    <!-- Susunan Bento Grid (7 Kolom Kiri + 5 Kolom Kanan) -->
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-10">
+                    <h1 class="font-display-hero text-display-hero-mobile sm:text-display-hero text-on-surface tracking-tight mt-4 max-w-2xl">
+                        Jelajahi Pesona Alam &amp; Budaya Luhur Sumatera Utara
+                    </h1>
 
-                        <!-- Kartu Bento Utama Kiri (7 Kolom: Candi Borobudur) -->
-                        <article class="lg:col-span-7 bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm flex flex-col justify-between group">
-                            <div class="relative h-80 sm:h-96 w-full overflow-hidden">
-                                <img
-                                    src="<?= esc($destinasiUnggulanUtama['url_foto']) ?>"
-                                    alt="<?= esc($destinasiUnggulanUtama['alt_foto']) ?>"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                                />
-                                <div class="absolute top-4 left-4">
-                                    <span class="font-label-caps text-label-caps px-3 py-1.5 rounded-full bg-secondary text-on-secondary shadow-sm">
-                                        <?= esc($destinasiUnggulanUtama['kategori']) ?>
-                                    </span>
-                                </div>
-                                <div class="absolute bottom-4 right-4 bg-surface-container-lowest/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-on-surface shadow-sm flex items-center gap-1 font-metric-rating text-metric-rating tabular-nums">
-                                    <span class="material-symbols-outlined text-sm text-tertiary-container" style="font-variation-settings: 'FILL' 1;">star</span>
-                                    <span><?= esc((string) $destinasiUnggulanUtama['rata_rating']) ?></span>
-                                    <span class="text-outline font-normal text-xs">
-                                        (<?= esc(number_format($destinasiUnggulanUtama['jumlah_ulasan'], 0, ',', '.')) ?> ulasan)
-                                    </span>
-                                </div>
-                            </div>
+                    <p class="font-body-lg text-body-lg text-on-surface-variant mt-5 max-w-xl leading-relaxed">
+                        Direktori resmi <?= esc($totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '971') ?> objek wisata di 33 kabupaten dan kota Sumatera Utara — lengkap dengan tarif tiket transparan, titik koordinat GPS, fasilitas, serta informasi pengelola.
+                    </p>
 
-                            <div class="p-6 sm:p-8 flex flex-col justify-between flex-grow">
-                                <div>
-                                    <div class="flex items-center gap-2 text-outline font-body-sm text-body-sm">
-                                        <span class="material-symbols-outlined text-sm text-primary">pin_drop</span>
-                                        <span><?= esc($destinasiUnggulanUtama['lokasi']) ?></span>
-                                    </div>
-                                    <h3 id="borobudur" class="font-headline-md text-headline-md text-on-surface mt-2">
-                                        <?= esc($destinasiUnggulanUtama['nama']) ?>
-                                    </h3>
-                                    <p class="font-body-md text-body-md text-on-surface-variant mt-3 leading-relaxed">
-                                        <?= esc($destinasiUnggulanUtama['deskripsi']) ?>
-                                    </p>
-
-                                    <!-- Kotak Informasi Jam Operasional & Fasilitas -->
-                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-6 bg-surface-container/50 rounded-2xl p-4">
-                                        <div class="flex items-center gap-2.5">
-                                            <span class="material-symbols-outlined text-primary text-xl">schedule</span>
-                                            <div class="flex flex-col">
-                                                <span class="font-label-caps text-label-caps text-outline uppercase">Jam Buka</span>
-                                                <span class="font-label-md text-label-md text-on-surface tabular-nums">
-                                                    <?= esc($destinasiUnggulanUtama['jam_buka']) ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-2.5">
-                                            <span class="material-symbols-outlined text-secondary text-xl">accessible_forward</span>
-                                            <div class="flex flex-col">
-                                                <span class="font-label-caps text-label-caps text-outline uppercase">Fasilitas</span>
-                                                <span class="font-label-md text-label-md text-on-surface">
-                                                    <?= esc($destinasiUnggulanUtama['ringkasan_fasilitas']) ?>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Bagian Bawah Kartu: Harga Tiket & Tombol Rencanakan Kunjungan -->
-                                <div class="flex items-center justify-between mt-8 pt-4">
-                                    <div>
-                                        <span class="font-label-caps text-label-caps text-outline uppercase block">
-                                            <?= esc($destinasiUnggulanUtama['label_harga']) ?>
-                                        </span>
-                                        <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
-                                            <?= esc(formatHargaRupiah($destinasiUnggulanUtama['harga_tiket'])) ?>
-                                            <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">/ orang</span>
-                                        </span>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        class="px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md flex items-center gap-2"
-                                    >
-                                        <span>Rencanakan Kunjungan</span>
-                                        <span class="material-symbols-outlined text-sm">north_east</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </article>
-
-                        <!-- Kolom Kanan Bento (5 Kolom: 2 Kartu Pendamping Bertumpuk) -->
-                        <div class="lg:col-span-5 flex flex-col gap-6">
-                            <?php foreach ($daftarDestinasiUnggulanPendamping as $destinasiPendamping) : ?>
-                                <article class="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm flex flex-col sm:flex-row lg:flex-col group">
-                                    <div class="relative h-52 sm:w-1/2 lg:w-full overflow-hidden shrink-0">
-                                        <img
-                                            src="<?= esc($destinasiPendamping['url_foto']) ?>"
-                                            alt="<?= esc($destinasiPendamping['alt_foto']) ?>"
-                                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                                        />
-                                        <div class="absolute top-3 left-3">
-                                            <span class="font-label-caps text-label-caps px-3 py-1 rounded-full <?= esc($destinasiPendamping['kelas_badge']) ?>">
-                                                <?= esc($destinasiPendamping['kategori']) ?>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div class="p-6 flex flex-col justify-between flex-grow">
-                                        <div>
-                                            <div class="flex items-center justify-between">
-                                                <span class="font-body-sm text-body-sm text-outline flex items-center gap-1">
-                                                    <span class="material-symbols-outlined text-xs text-primary">pin_drop</span>
-                                                    <?= esc($destinasiPendamping['lokasi']) ?>
-                                                </span>
-                                                <span class="font-metric-rating text-metric-rating text-on-surface flex items-center gap-0.5 tabular-nums">
-                                                    <span class="material-symbols-outlined text-xs text-tertiary-container" style="font-variation-settings: 'FILL' 1;">star</span>
-                                                    <?= esc((string) $destinasiPendamping['rata_rating']) ?> (<?= esc(number_format($destinasiPendamping['jumlah_ulasan'], 0, ',', '.')) ?>)
-                                                </span>
-                                            </div>
-
-                                            <h3 class="font-headline-sm text-headline-sm text-on-surface mt-2">
-                                                <?= esc($destinasiPendamping['nama']) ?>
-                                            </h3>
-
-                                            <p class="font-body-sm text-body-sm text-on-surface-variant mt-1.5 line-clamp-2">
-                                                <?= esc($destinasiPendamping['deskripsi']) ?>
-                                            </p>
-
-                                            <div class="flex items-center gap-3 mt-3 text-on-surface-variant font-body-sm text-body-sm tabular-nums">
-                                                <span class="flex items-center gap-1">
-                                                    <span class="material-symbols-outlined text-xs"><?= esc($destinasiPendamping['ikon_jam']) ?></span>
-                                                    <?= esc($destinasiPendamping['jam_buka']) ?>
-                                                </span>
-                                                <span class="flex items-center gap-1">
-                                                    <span class="material-symbols-outlined text-xs"><?= esc($destinasiPendamping['ikon_info']) ?></span>
-                                                    <?= esc($destinasiPendamping['info_tambahan']) ?>
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div class="flex items-center justify-between mt-4 pt-3">
-                                            <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
-                                                <?= esc(formatHargaRupiah($destinasiPendamping['harga_tiket'])) ?>
-                                                <span class="font-body-sm text-body-sm text-outline font-normal">/ orang</span>
-                                            </span>
-                                            <span class="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">
-                                                arrow_forward
-                                            </span>
-                                        </div>
-                                    </div>
-                                </article>
-                            <?php endforeach; ?>
-                        </div>
-
-                    </div>
-                </div>
-            </section>
-
-            <!-- 3. SEKSI FILTER KATEGORI & KATALOG DESTINASI NUSANTARA -->
-            <section id="katalog" class="w-full max-w-7xl mx-auto px-6 py-16">
-                <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6">
-                    <div>
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sm text-primary">travel_explore</span>
-                            <span class="font-label-caps text-label-caps uppercase text-primary tracking-wider">
-                                KURASI LENGKAP
+                    <!-- Form Pencarian Interaktif (mengarah ke /destinasi) -->
+                    <form action="<?= base_url('destinasi') ?>" method="get" class="bg-surface-container-lowest rounded-2xl p-3 shadow-md border border-surface-variant/40 mt-8 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                        <div class="sm:col-span-4 flex flex-col px-3 py-2 rounded-xl hover:bg-surface-container transition-colors">
+                            <label for="hero-kata-kunci" class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm text-primary">location_on</span>
+                                Destinasi
+                            </label>
+                            <input
+                                id="hero-kata-kunci"
+                                type="text"
+                                name="q"
+                                placeholder="Cari wisata atau kota..."
+                                class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none truncate mt-0.5"
+                            />
+                            <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
+                                Sumatera Utara
                             </span>
                         </div>
-                        <h2 class="font-headline-lg text-headline-lg text-on-surface mt-1">
-                            Eksplorasi Katalog Wisata Sumatera Utara
-                        </h2>
-                    </div>
 
-                    <!-- Dropdown Pengurutan Katalog -->
-                    <div class="flex items-center gap-3 self-start md:self-auto">
-                        <div class="flex items-center gap-2 px-3 py-2 bg-surface-container rounded-xl">
-                            <span class="material-symbols-outlined text-sm text-outline">sort</span>
-                            <select class="bg-transparent font-label-md text-label-md text-on-surface focus:outline-none cursor-pointer">
-                                <option>Rating Tertinggi</option>
-                                <option>Paling Banyak Dikunjungi</option>
-                                <option>Tarif Terendah</option>
-                                <option>Rute Paling Menantang</option>
+                        <div class="sm:col-span-3 flex flex-col px-3 py-2 rounded-xl hover:bg-surface-container transition-colors">
+                            <label for="hero-kategori" class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm text-secondary">explore</span>
+                                Kategori
+                            </label>
+                            <select id="hero-kategori" name="kategori" class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none mt-0.5 cursor-pointer">
+                                <option value="">Semua Kategori</option>
+                                <?php foreach ($daftarKategori ?? [] as $kat) : ?>
+                                    <option value="<?= esc($kat['slug']) ?>"><?= esc($kat['nama']) ?></option>
+                                <?php endforeach; ?>
                             </select>
+                            <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
+                                <?= esc((string) count($daftarKategori ?? [])) ?> Kategori
+                            </span>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Baris Pill Filter Kategori Wisata -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                    <?php foreach ($daftarFilterKategori as $filterItem) : ?>
-                        <?php
-                        if ($filterItem['aktif']) {
-                            $kelasTombolFilter = 'px-4 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm';
-                        } else {
-                            $kelasTombolFilter = 'px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap transition-colors';
-                        }
-                        ?>
-                        <button type="button" class="<?= esc($kelasTombolFilter) ?>">
-                            <?= esc($filterItem['label']) ?>
-                        </button>
-                    <?php endforeach; ?>
-                </div>
+                        <div class="sm:col-span-2 flex flex-col px-3 py-2 rounded-xl hover:bg-surface-container transition-colors">
+                            <label for="hero-kabupaten" class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-1">
+                                <span class="material-symbols-outlined text-sm text-tertiary-container">map</span>
+                                Wilayah
+                            </label>
+                            <select id="hero-kabupaten" name="kabupaten" class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none mt-0.5 cursor-pointer">
+                                <option value="">Semua (33)</option>
+                                <?php foreach ($daftarKabupatenKota ?? [] as $wil) : ?>
+                                    <option value="<?= esc($wil['kode_kabupaten']) ?>"><?= esc($wil['nama_kabupaten_kota']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
+                                Kab/Kota
+                            </span>
+                        </div>
 
-                <!-- Grid Katalog 3 Kolom -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-                    <?php foreach ($daftarKatalogDestinasi as $destinasi) : ?>
-                        <article class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm flex flex-col justify-between group hover:shadow-md transition-shadow">
-                            <div>
-                                <!-- Foto Destinasi & Badge Kategori -->
-                                <div class="relative h-56 w-full overflow-hidden">
-                                    <img
-                                        src="<?= esc($destinasi['url_foto']) ?>"
-                                        alt="<?= esc($destinasi['alt_foto']) ?>"
-                                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-                                    />
-                                    <span class="absolute top-3 left-3 font-label-caps text-label-caps px-3 py-1 rounded-full <?= esc($destinasi['kelas_badge']) ?>">
-                                        <?= esc($destinasi['kategori']) ?>
-                                    </span>
-                                </div>
-
-                                <!-- Detail Lokasi, Rating, Deskripsi & Tag Fasilitas -->
-                                <div class="p-5">
-                                    <div class="flex items-center justify-between text-outline font-body-sm text-body-sm">
-                                        <span class="truncate flex items-center gap-1">
-                                            <span class="material-symbols-outlined text-xs text-primary">pin_drop</span>
-                                            <?= esc($destinasi['lokasi']) ?>
-                                        </span>
-                                        <span class="font-metric-rating text-metric-rating text-on-surface flex items-center gap-0.5 shrink-0 tabular-nums">
-                                            <span class="material-symbols-outlined text-xs text-tertiary-container" style="font-variation-settings: 'FILL' 1;">star</span>
-                                            <?= esc(number_format($destinasi['rata_rating'], 2, '.', '')) ?> (<?= esc(number_format($destinasi['jumlah_ulasan'], 0, ',', '.')) ?>)
-                                        </span>
-                                    </div>
-
-                                    <h3 class="font-headline-sm text-headline-sm text-on-surface mt-2 group-hover:text-primary transition-colors">
-                                        <?= esc($destinasi['nama']) ?>
-                                    </h3>
-
-                                    <p class="font-body-sm text-body-sm text-on-surface-variant mt-1.5">
-                                        <?= esc($destinasi['jam_buka']) ?> • <?= esc($destinasi['deskripsi']) ?>
-                                    </p>
-
-                                    <div class="flex flex-wrap gap-1.5 mt-3">
-                                        <?php foreach ($destinasi['daftar_fasilitas'] as $fasilitasItem) : ?>
-                                            <span class="font-body-sm text-body-sm px-2 py-0.5 rounded bg-surface-container text-on-surface-variant">
-                                                <?= esc($fasilitasItem) ?>
-                                            </span>
-                                        <?php endforeach; ?>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Footer Kartu: Harga Tiket & Tombol Detail -->
-                            <div class="px-5 pb-5 pt-3 flex items-center justify-between">
-                                <div>
-                                    <span class="font-label-caps text-label-caps text-outline uppercase block">
-                                        <?= esc($destinasi['label_harga']) ?>
-                                    </span>
-                                    <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
-                                        <?= esc(formatHargaRupiah($destinasi['harga_tiket'])) ?>
-                                        <span class="font-body-sm text-body-sm text-outline font-normal">/ orang</span>
-                                    </span>
-                                </div>
-                                <button
-                                    type="button"
-                                    aria-label="Lihat detail <?= esc($destinasi['nama']) ?>"
-                                    class="w-9 h-9 rounded-lg bg-surface-container hover:bg-primary-container hover:text-on-primary text-on-surface flex items-center justify-center transition-colors"
-                                >
-                                    <span class="material-symbols-outlined text-base">arrow_forward</span>
-                                </button>
-                            </div>
-                        </article>
-                    <?php endforeach; ?>
-                </div>
-
-                <!-- Tombol Muat Lebih Banyak Destinasi -->
-                <div class="flex justify-center mt-12">
-                    <button
-                        type="button"
-                        class="px-6 py-3 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface font-label-md text-label-md flex items-center gap-2 transition-all shadow-sm"
-                    >
-                        <span>Muat Lebih Banyak Destinasi (122 lainnya)</span>
-                        <span class="material-symbols-outlined text-sm">expand_more</span>
-                    </button>
-                </div>
-            </section>
-
-            <!-- 4. SEKSI JELAJAH BERDASARKAN WILAYAH SUMATERA UTARA -->
-            <section id="jelajah-kepulauan" class="w-full bg-surface-container-low/60 py-16">
-                <div class="max-w-7xl mx-auto px-6">
-                    <div class="flex flex-col items-center text-center">
-                        <span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">
-                            GEOGRAFI SUMATERA UTARA
-                        </span>
-                        <h2 class="font-headline-lg text-headline-lg text-on-surface mt-2">
-                            Jelajah Berdasarkan Kawasan Wisata
-                        </h2>
-                        <p class="font-body-md text-body-md text-on-surface-variant max-w-lg mt-2">
-                            Dari dataran tinggi Bukit Barisan hingga pesisir barat Samudra Hindia, setiap kawasan di Sumatera Utara menyimpan kekayaan alam dan budaya yang khas.
-                        </p>
-                    </div>
-
-                    <!-- Grid 6 Gugusan Kepulauan -->
-                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-10">
-                        <?php foreach ($daftarWilayahKepulauan as $wilayah) : ?>
-                            <a
-                                href="#katalog"
-                                class="flex flex-col items-center p-5 rounded-2xl bg-surface-container-lowest hover:bg-surface-container transition-all text-center group shadow-sm"
+                        <div class="sm:col-span-3">
+                            <button
+                                type="submit"
+                                class="w-full py-3.5 px-4 rounded-xl bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md flex items-center justify-center gap-2 transition-all shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary"
                             >
-                                <div class="w-12 h-12 rounded-full <?= esc($wilayah['kelas_ikon']) ?> flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                                    <span class="material-symbols-outlined"><?= esc($wilayah['ikon']) ?></span>
-                                </div>
-                                <span class="font-label-md text-label-md text-on-surface">
-                                    <?= esc($wilayah['nama_kepulauan']) ?>
-                                </span>
-                                <span class="font-body-sm text-body-sm text-outline mt-0.5 tabular-nums">
-                                    <?= esc((string) $wilayah['jumlah_destinasi']) ?> Destinasi
-                                </span>
+                                <span>Cari Destinasi</span>
+                                <span class="material-symbols-outlined text-base">arrow_forward</span>
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Tag Pencarian Cepat -->
+                    <div class="flex flex-wrap items-center gap-2 mt-4 text-on-surface-variant">
+                        <span class="font-label-caps text-label-caps uppercase text-outline">Populer:</span>
+                        <?php foreach ($tagPencarianPopuler as $namaTag) : ?>
+                            <a
+                                href="<?= base_url('destinasi?q=' . urlencode($namaTag)) ?>"
+                                class="font-label-md text-label-md px-2.5 py-1 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors text-on-surface"
+                            >
+                                <?= esc($namaTag) ?>
                             </a>
                         <?php endforeach; ?>
                     </div>
+
+                    <!-- Ringkasan Statistik Platform -->
+                    <div class="grid grid-cols-3 gap-4 mt-8 bg-surface-container-low/70 rounded-2xl p-4 border border-surface-variant/40">
+                        <?php foreach ($daftarStatistikUtama as $itemStatistik) : ?>
+                            <div class="flex flex-col">
+                                <div class="font-headline-md text-headline-md <?= esc($itemStatistik['kelas_warna']) ?> font-bold tabular-nums">
+                                    <?= esc($itemStatistik['angka']) ?>
+                                </div>
+                                <span class="font-body-sm text-body-sm text-on-surface-variant">
+                                    <?= esc($itemStatistik['keterangan']) ?>
+                                </span>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
                 </div>
-            </section>
 
-            <!-- 5. SEKSI KOMUNITAS & JURNAL PERJALANAN -->
-            <section id="komunitas-jurnal" class="max-w-7xl mx-auto px-6 py-16 w-full">
-                <div class="bg-surface-container-high rounded-3xl p-8 sm:p-12 relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div class="absolute -right-20 -bottom-20 w-80 h-80 rounded-full bg-tertiary-container/10 pointer-events-none blur-2xl"></div>
+                <!-- Kolom Kanan (5 Kolom): Kartu Sorotan Destinasi Utama -->
+                <div class="lg:col-span-5 relative">
+                    <div class="relative h-[540px] w-full rounded-3xl overflow-hidden shadow-xl bg-surface-container group">
+                        <img
+                            src="<?= esc($destinasiSorotanUtama['foto_utama'] ?? '') ?>"
+                            alt="<?= esc($destinasiSorotanUtama['nama'] ?? 'Destinasi Sumut') ?>"
+                            class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                        />
 
-                    <div class="flex flex-col max-w-2xl relative z-10">
-                        <div class="flex items-center gap-2 mb-2">
-                            <span class="material-symbols-outlined text-secondary text-base">award_star</span>
-                            <span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">
-                                INISIATIF EKSPEDISI BERSAMA
+                        <div class="absolute top-5 left-5 right-5 flex items-center justify-between z-10">
+                            <span class="font-label-caps text-label-caps px-3.5 py-1.5 rounded-full bg-surface-container-lowest/90 text-primary font-bold shadow-sm backdrop-blur-sm">
+                                <?= esc($destinasiSorotanUtama['sub_kategori'] ?: ($destinasiSorotanUtama['kategori'] ?? 'Pilihan Utama')) ?>
+                            </span>
+                            <span class="font-label-caps text-label-caps px-3 py-1.5 rounded-full bg-surface-container-lowest/90 text-on-surface font-bold shadow-sm backdrop-blur-sm tabular-nums">
+                                Kode <?= esc($destinasiSorotanUtama['kode_kabupaten'] ?? '1217') ?>
                             </span>
                         </div>
-                        <h2 class="font-headline-lg text-headline-lg text-on-surface">
-                            Bagikan Catatan Perjalanan Anda &amp; Dapatkan Poin Konservasi JejakSumut
-                        </h2>
-                        <p class="font-body-md text-body-md text-on-surface-variant mt-3">
-                            Setiap ulasan rute, titik koordinat baru, dan foto etis yang Anda unggah membantu mendukung ekowisata berkelanjutan dan pemberdayaan komunitas pemandu lokal di Sumatera Utara.
-                        </p>
-                        <div class="flex items-center gap-6 mt-6">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-primary text-xl">loyalty</span>
-                                <span class="font-label-md text-label-md text-on-surface">
-                                    Reward Tiket &amp; Perlengkapan
+
+                        <div class="absolute inset-x-0 bottom-0 pt-28 pb-6 px-6 bg-gradient-to-t from-inverse-surface via-inverse-surface/85 to-transparent text-inverse-on-surface flex flex-col justify-end">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-label-caps text-label-caps text-secondary-fixed uppercase tracking-wider">
+                                    <?= esc($destinasiSorotanUtama['kategori'] ?? 'Wisata Alam') ?>
+                                </span>
+                                <span class="text-surface-variant text-xs">•</span>
+                                <span class="font-metric-rating text-metric-rating text-tertiary-fixed-dim flex items-center gap-0.5 tabular-nums">
+                                    <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span>
+                                    <?= esc(number_format((float) ($destinasiSorotanUtama['rata_rating'] ?? 0), 1, '.', '')) ?>
+                                    (<?= esc(number_format((int) ($destinasiSorotanUtama['jumlah_ulasan'] ?? 0), 0, ',', '.')) ?> ulasan)
                                 </span>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-secondary text-xl">nature_people</span>
-                                <span class="font-label-md text-label-md text-on-surface">
-                                    Dukungan Warga Setempat
-                                </span>
+
+                            <h2 class="font-headline-lg text-headline-lg text-inverse-on-surface leading-tight">
+                                <?= esc($destinasiSorotanUtama['nama'] ?? '') ?>
+                            </h2>
+
+                            <p class="font-body-sm text-body-sm text-surface-variant mt-1.5 flex items-center gap-1.5 tabular-nums">
+                                <span class="material-symbols-outlined text-xs">my_location</span>
+                                <?php
+                                $lintangHero = $destinasiSorotanUtama['koordinat']['garis_lintang'] ?? null;
+                                $bujurHero   = $destinasiSorotanUtama['koordinat']['garis_bujur'] ?? null;
+                                ?>
+                                <?php if ($lintangHero !== null && $bujurHero !== null) : ?>
+                                    <?= esc(formatKoordinatLokasi((float) $lintangHero, (float) $bujurHero)) ?> •
+                                <?php endif; ?>
+                                <?= esc($destinasiSorotanUtama['kota'] ?? '') ?>, <?= esc($destinasiSorotanUtama['provinsi'] ?? 'Sumatera Utara') ?>
+                            </p>
+
+                            <div class="flex items-center justify-between mt-5 pt-4 bg-inverse-surface/50 backdrop-blur-md rounded-xl px-4 py-2.5">
+                                <div class="flex flex-col">
+                                    <span class="font-label-caps text-label-caps text-surface-variant uppercase">
+                                        <?= esc($destinasiSorotanUtama['label_harga_tiket'] ?? 'Tarif Masuk') ?>
+                                    </span>
+                                    <span class="font-metric-price text-metric-price text-inverse-on-surface tabular-nums">
+                                        <?= esc(formatHargaRupiah((int) ($destinasiSorotanUtama['harga_tiket'] ?? 0))) ?>
+                                    </span>
+                                </div>
+                                <a
+                                    href="<?= base_url('destinasi/' . ($destinasiSorotanUtama['slug'] ?? '')) ?>"
+                                    class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container text-on-primary hover:bg-primary font-label-md text-label-md transition-colors shadow-sm"
+                                >
+                                    <span>Lihat Detail</span>
+                                    <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                                </a>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Pasangan Tombol Primary (Solid) & Secondary (Surface) sesuai Sloplint -->
-                    <div class="flex flex-col sm:flex-row gap-3 shrink-0 relative z-10 w-full sm:w-auto">
-                        <button
-                            type="button"
-                            class="px-6 py-3.5 rounded-xl bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors shadow-sm text-center"
-                        >
-                            Mulai Tulis Jurnal
-                        </button>
-                        <button
-                            type="button"
-                            class="px-6 py-3.5 rounded-xl bg-surface-container-lowest hover:bg-surface-container text-on-surface font-label-md text-label-md transition-colors text-center"
-                        >
-                            Pelajari Sistem Poin
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-        </div>
-    </main>
-
-    <!-- =====================================================================
-         BAGIAN FOOTER HALAMAN
-         ===================================================================== -->
-    <footer class="w-full bg-surface-container-low border-t border-surface-variant/40">
-        <div class="max-w-7xl mx-auto px-6 py-space-xl">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-xl">
-
-                <!-- Kolom 1: Tentang JejakSumut -->
-                <div class="lg:col-span-4 flex flex-col gap-space-md">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-9 h-9 shrink-0" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-                            <rect width="36" height="36" rx="10" fill="#0B6E77" />
-                            <path d="M6 25L14 13L20 21L24 16L30 25H6Z" fill="#2D5A36" />
-                            <path d="M6 25C10 22.5 14 27 18 24.5C22 22 26 26.5 30 24.5V29C30 29.55 29.55 30 29 30H7C6.45 30 6 29.55 6 29V25Z" fill="#FAF8F5" fill-opacity="0.92" />
-                            <circle cx="24" cy="11" r="2.5" fill="#D97706" />
-                        </svg>
-                        <span class="font-headline-sm text-headline-sm text-on-surface">JejakSumut</span>
-                    </div>
-                    <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">
-                        JejakSumut — Platform kurasi pariwisata Sumatera Utara yang terintegrasi dengan ekosistem layanan perjalanan lokal.
-                    </p>
-                    <div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
-                        <span class="material-symbols-outlined text-secondary text-base">verified</span>
-                        <span>Ekowisata Terverifikasi &amp; Komunitas Lokal Sumut</span>
-                    </div>
-                </div>
-
-                <!-- Kolom 2: Tautan Jelajah Wilayah -->
-                <div class="lg:col-span-2 flex flex-col gap-space-sm">
-                    <h3 class="font-label-caps text-label-caps text-tertiary-container uppercase tracking-wider mb-2">
-                        Jelajah Wilayah
-                    </h3>
-                    <ul class="flex flex-col gap-2 font-body-md text-body-md text-on-surface-variant">
-                        <?php foreach ($daftarWilayahKepulauan as $wilayahFooter) : ?>
-                            <li>
-                                <a href="#katalog" class="hover:text-on-surface transition-colors">
-                                    <?= esc($wilayahFooter['nama_kepulauan']) ?>
-                                </a>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
-                </div>
-
-                <!-- Kolom 3: Tautan Kategori & Bantuan -->
-                <div class="lg:col-span-3 flex flex-col gap-space-sm">
-                    <h3 class="font-label-caps text-label-caps text-tertiary-container uppercase tracking-wider mb-2">
-                        Kategori
-                    </h3>
-                    <ul class="flex flex-col gap-2 font-body-md text-body-md text-on-surface-variant">
-                        <li><a href="#katalog" class="hover:text-on-surface transition-colors">Bahari</a></li>
-                        <li><a href="#katalog" class="hover:text-on-surface transition-colors">Geopark &amp; Gunung</a></li>
-                        <li><a href="#katalog" class="hover:text-on-surface transition-colors">Budaya &amp; Warisan</a></li>
-                        <li><a href="#katalog" class="hover:text-on-surface transition-colors">Kuliner Lokal</a></li>
-                    </ul>
-
-                    <h3 class="font-label-caps text-label-caps text-tertiary-container uppercase tracking-wider mt-4 mb-2">
-                        Bantuan &amp; Kebijakan
-                    </h3>
-                    <ul class="flex flex-col gap-2 font-body-md text-body-md text-on-surface-variant">
-                        <li><a href="#" class="hover:text-on-surface transition-colors">Panduan Wisata</a></li>
-                        <li><a href="#" class="hover:text-on-surface transition-colors">Standar Etika Alam</a></li>
-                        <li><a href="#" class="hover:text-on-surface transition-colors">Hubungi Kami</a></li>
-                        <li><a href="#" class="hover:text-on-surface transition-colors">Privasi</a></li>
-                    </ul>
-                </div>
-
-                <!-- Kolom 4: Langganan Kabar Ekspedisi -->
-                <div class="lg:col-span-3 flex flex-col gap-space-md">
-                    <h3 class="font-label-caps text-label-caps text-tertiary-container uppercase tracking-wider">
-                        Kabar Ekspedisi
-                    </h3>
-                    <p class="font-body-sm text-body-sm text-on-surface-variant">
-                        Dapatkan jurnal mingguan rute tersembunyi dan kabar konservasi nusantara.
-                    </p>
-                    <form class="flex flex-col gap-2" onsubmit="event.preventDefault();">
-                        <input
-                            type="email"
-                            placeholder="Masukkan alamat surel..."
-                            class="w-full px-3 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/60 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary"
-                        />
-                        <button
-                            type="submit"
-                            class="w-full py-2.5 rounded-lg bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors"
-                        >
-                            Langganan
-                        </button>
-                    </form>
                 </div>
 
             </div>
+        </section>
+    </div>
 
-            <!-- Baris Hak Cipta Bawah -->
-            <div class="mt-space-xl pt-space-lg border-t border-surface-variant/40 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <p class="font-body-sm text-body-sm text-on-surface-variant text-center sm:text-left">
-                    © 2026 JejakSumut — Politeknik Negeri Medan. Dibuat dengan bangga untuk pariwisata Sumatera Utara.
+    <!-- 2. SEKSI BENTO GRID ASIMETRIS (DESTINASI UNGGULAN SUMATERA UTARA) -->
+    <?php if (! empty($destinasiUnggulanUtama['nama'])) : ?>
+    <section id="destinasi-kurator" class="w-full bg-surface-container-low py-16">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
+                        <span class="font-label-caps text-label-caps uppercase text-tertiary-container tracking-wider">
+                            DESTINASI PILIHAN SUMATERA UTARA
+                        </span>
+                    </div>
+                    <h2 class="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface mt-2 max-w-xl">
+                        Lanskap Alam, Bahari &amp; Warisan Budaya Tanah Batak–Melayu
+                    </h2>
+                </div>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
+                    Sorotan destinasi dari basis data resmi JejakSumut lengkap dengan informasi tiket, pengelola, dan fasilitas lapangan.
                 </p>
-                <div class="flex items-center gap-4 font-body-sm text-body-sm text-on-surface-variant">
-                    <span class="flex items-center gap-1">
-                        <span class="material-symbols-outlined text-sm text-secondary">eco</span>
-                        Berkelanjutan
-                    </span>
-                    <span class="flex items-center gap-1">
-                        <span class="material-symbols-outlined text-sm text-primary">explore</span>
-                        Sumatera Utara
-                    </span>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-10">
+                <!-- Kartu Bento Utama Kiri (7 Kolom) -->
+                <article class="lg:col-span-7 bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm border border-surface-variant/40 flex flex-col justify-between group">
+                    <a href="<?= base_url('destinasi/' . ($destinasiUnggulanUtama['slug'] ?? '')) ?>" class="block relative h-80 sm:h-96 w-full overflow-hidden">
+                        <img
+                            src="<?= esc($destinasiUnggulanUtama['foto_utama'] ?? '') ?>"
+                            alt="<?= esc($destinasiUnggulanUtama['nama'] ?? '') ?>"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                        />
+                        <div class="absolute top-4 left-4 flex items-center gap-2">
+                            <span class="font-label-caps text-label-caps px-3 py-1.5 rounded-full bg-secondary text-on-secondary shadow-sm">
+                                <?= esc($destinasiUnggulanUtama['kategori'] ?? 'Wisata Sumut') ?>
+                            </span>
+                            <?php if (! empty($destinasiUnggulanUtama['sub_kategori'])) : ?>
+                                <span class="font-label-caps text-label-caps px-3 py-1.5 rounded-full bg-surface-container-lowest/90 text-on-surface shadow-sm backdrop-blur-sm">
+                                    <?= esc($destinasiUnggulanUtama['sub_kategori']) ?>
+                                </span>
+                            <?php endif; ?>
+                        </div>
+                        <div class="absolute bottom-4 right-4 bg-surface-container-lowest/95 backdrop-blur-md px-3 py-1.5 rounded-xl text-on-surface shadow-sm flex items-center gap-1 font-metric-rating text-metric-rating tabular-nums">
+                            <span class="material-symbols-outlined text-sm text-amber-600" style="font-variation-settings: 'FILL' 1;">star</span>
+                            <span><?= esc(number_format((float) ($destinasiUnggulanUtama['rata_rating'] ?? 0), 2, '.', '')) ?></span>
+                            <span class="text-outline font-normal text-xs">
+                                (<?= esc(number_format((int) ($destinasiUnggulanUtama['jumlah_ulasan'] ?? 0), 0, ',', '.')) ?> ulasan)
+                            </span>
+                        </div>
+                    </a>
+
+                    <div class="p-6 sm:p-8 flex flex-col justify-between flex-grow">
+                        <div>
+                            <div class="flex items-center gap-2 text-outline font-body-sm text-body-sm">
+                                <span class="material-symbols-outlined text-sm text-primary">pin_drop</span>
+                                <span><?= esc(($destinasiUnggulanUtama['alamat'] ?? '') !== '' ? $destinasiUnggulanUtama['alamat'] : ($destinasiUnggulanUtama['kota'] . ', Sumatera Utara')) ?></span>
+                            </div>
+                            <h3 class="font-headline-md text-headline-md text-on-surface mt-2">
+                                <a href="<?= base_url('destinasi/' . ($destinasiUnggulanUtama['slug'] ?? '')) ?>" class="hover:text-primary transition-colors">
+                                    <?= esc($destinasiUnggulanUtama['nama'] ?? '') ?>
+                                </a>
+                            </h3>
+                            <p class="font-body-md text-body-md text-on-surface-variant mt-3 leading-relaxed line-clamp-3">
+                                <?= esc($destinasiUnggulanUtama['deskripsi'] ?? '') ?>
+                            </p>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 bg-surface-container/50 rounded-2xl p-4">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="material-symbols-outlined text-primary text-xl">schedule</span>
+                                    <div class="flex flex-col">
+                                        <span class="font-label-caps text-label-caps text-outline uppercase">Jam Operasional</span>
+                                        <span class="font-label-md text-label-md text-on-surface tabular-nums">
+                                            <?= esc(ambilTeksJamOperasional($destinasiUnggulanUtama['jam_operasional'] ?? null)) ?>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2.5">
+                                    <span class="material-symbols-outlined text-secondary text-xl">domain</span>
+                                    <div class="flex flex-col">
+                                        <span class="font-label-caps text-label-caps text-outline uppercase">Pengelola / Fasilitas</span>
+                                        <span class="font-label-md text-label-md text-on-surface">
+                                            <?php
+                                            $daftarFasilitasUtama = $destinasiUnggulanUtama['daftar_fasilitas'] ?? [];
+                                            $ringkasanUtama       = $daftarFasilitasUtama !== []
+                                                ? implode(', ', array_slice($daftarFasilitasUtama, 0, 3))
+                                                : ($destinasiUnggulanUtama['pengelola'] ?: 'Pengelola Lokal / Pemda');
+                                            ?>
+                                            <?= esc($ringkasanUtama) ?>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between mt-8 pt-4 gap-4">
+                            <div>
+                                <span class="font-label-caps text-label-caps text-outline uppercase block">
+                                    <?= esc($destinasiUnggulanUtama['label_harga_tiket'] ?? 'Tarif Masuk') ?>
+                                </span>
+                                <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
+                                    <?= esc(formatHargaRupiah((int) ($destinasiUnggulanUtama['harga_tiket'] ?? 0))) ?>
+                                </span>
+                                <?php if (! empty($destinasiUnggulanUtama['keterangan_tiket'])) : ?>
+                                    <span class="font-body-sm text-body-sm text-on-surface-variant block mt-0.5">
+                                        <?= esc($destinasiUnggulanUtama['keterangan_tiket']) ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+                            <a
+                                href="<?= base_url('destinasi/' . ($destinasiUnggulanUtama['slug'] ?? '')) ?>"
+                                class="px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-md text-label-md flex items-center gap-2 shrink-0"
+                            >
+                                <span>Lihat Detail</span>
+                                <span class="material-symbols-outlined text-sm">north_east</span>
+                            </a>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Kolom Kanan Bento (5 Kolom: 2 Kartu Pendamping) -->
+                <div class="lg:col-span-5 flex flex-col gap-6">
+                    <?php foreach ($daftarDestinasiUnggulanPendamping as $destinasiPendamping) : ?>
+                        <article class="bg-surface-container-lowest rounded-3xl overflow-hidden shadow-sm border border-surface-variant/40 flex flex-col sm:flex-row lg:flex-col group">
+                            <a href="<?= base_url('destinasi/' . ($destinasiPendamping['slug'] ?? '')) ?>" class="block relative h-52 sm:w-1/2 lg:w-full overflow-hidden shrink-0">
+                                <img
+                                    src="<?= esc($destinasiPendamping['foto_utama'] ?? '') ?>"
+                                    alt="<?= esc($destinasiPendamping['nama'] ?? '') ?>"
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                                />
+                                <div class="absolute top-3 left-3">
+                                    <span class="font-label-caps text-label-caps px-3 py-1 rounded-full bg-surface-container-lowest/95 backdrop-blur-sm text-primary font-bold">
+                                        <?= esc($destinasiPendamping['kategori'] ?? 'Wisata Sumut') ?>
+                                    </span>
+                                </div>
+                            </a>
+
+                            <div class="p-6 flex flex-col justify-between flex-grow">
+                                <div>
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="font-body-sm text-body-sm text-outline flex items-center gap-1 truncate">
+                                            <span class="material-symbols-outlined text-xs text-primary">pin_drop</span>
+                                            <?= esc($destinasiPendamping['kota'] ?? '') ?>
+                                        </span>
+                                        <span class="font-metric-rating text-metric-rating text-on-surface flex items-center gap-0.5 tabular-nums shrink-0">
+                                            <span class="material-symbols-outlined text-xs text-amber-600" style="font-variation-settings: 'FILL' 1;">star</span>
+                                            <?= esc(number_format((float) ($destinasiPendamping['rata_rating'] ?? 0), 2, '.', '')) ?>
+                                            (<?= esc(number_format((int) ($destinasiPendamping['jumlah_ulasan'] ?? 0), 0, ',', '.')) ?>)
+                                        </span>
+                                    </div>
+
+                                    <h3 class="font-headline-sm text-headline-sm text-on-surface mt-2">
+                                        <a href="<?= base_url('destinasi/' . ($destinasiPendamping['slug'] ?? '')) ?>" class="hover:text-primary transition-colors">
+                                            <?= esc($destinasiPendamping['nama'] ?? '') ?>
+                                        </a>
+                                    </h3>
+
+                                    <p class="font-body-sm text-body-sm text-on-surface-variant mt-1.5 line-clamp-2">
+                                        <?= esc($destinasiPendamping['deskripsi'] ?? '') ?>
+                                    </p>
+
+                                    <div class="flex items-center gap-2 mt-3 text-on-surface-variant font-body-sm text-body-sm tabular-nums">
+                                        <span class="material-symbols-outlined text-xs text-primary">schedule</span>
+                                        <span class="truncate"><?= esc(ambilTeksJamOperasional($destinasiPendamping['jam_operasional'] ?? null)) ?></span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center justify-between mt-4 pt-3">
+                                    <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
+                                        <?= esc($destinasiPendamping['label_harga_tiket'] ?? formatHargaRupiah((int) ($destinasiPendamping['harga_tiket'] ?? 0))) ?>
+                                    </span>
+                                    <a href="<?= base_url('destinasi/' . ($destinasiPendamping['slug'] ?? '')) ?>" class="text-primary hover:underline font-label-md text-label-md flex items-center gap-1">
+                                        <span>Detail</span>
+                                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                                    </a>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
                 </div>
             </div>
         </div>
-    </footer>
-</body>
-</html>
+    </section>
+    <?php endif; ?>
+
+    <!-- 3. SEKSI KATALOG PREVIEW & FILTER KATEGORI -->
+    <section id="katalog" class="w-full max-w-7xl mx-auto px-6 py-16">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6">
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sm text-primary">travel_explore</span>
+                    <span class="font-label-caps text-label-caps uppercase text-primary tracking-wider">
+                        KURASI LENGKAP JEJAKSUMUT
+                    </span>
+                </div>
+                <h2 class="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface mt-1">
+                    Eksplorasi Katalog Wisata Sumatera Utara
+                </h2>
+            </div>
+
+            <a href="<?= base_url('destinasi') ?>" class="px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-colors self-start md:self-auto flex items-center gap-2">
+                <span>Buka Katalog Lengkap (<?= esc(number_format($totalDestinasiTampil, 0, ',', '.')) ?>)</span>
+                <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </a>
+        </div>
+
+        <!-- Pill Kategori Menuju Katalog -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-2">
+            <a href="<?= base_url('destinasi') ?>" class="px-4 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm">
+                Semua Destinasi (<?= esc(number_format($totalDestinasiTampil, 0, ',', '.')) ?>)
+            </a>
+            <?php foreach ($daftarKategori ?? [] as $kategoriItem) : ?>
+                <a
+                    href="<?= base_url('destinasi?kategori=' . urlencode($kategoriItem['slug'])) ?>"
+                    class="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap transition-colors"
+                >
+                    <?= esc($kategoriItem['nama']) ?> (<?= esc((string) $kategoriItem['jumlah_destinasi']) ?>)
+                </a>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Grid 6 Destinasi -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+            <?php foreach ($daftarKatalogDestinasi ?? [] as $destinasi) : ?>
+                <?= view('components/kartu_destinasi', ['destinasi' => $destinasi]) ?>
+            <?php endforeach; ?>
+        </div>
+    </section>
+
+    <!-- 4. SEKSI JELAJAH BERDASARKAN KABUPATEN & KOTA SUMATERA UTARA -->
+    <?php if ($daftarWilayahUnggulan !== []) : ?>
+    <section id="jelajah-kepulauan" class="w-full bg-surface-container-low/60 py-16">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="flex flex-col items-center text-center">
+                <span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">
+                    GEOGRAFI SUMATERA UTARA
+                </span>
+                <h2 class="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface mt-2">
+                    Jelajah Berdasarkan Kabupaten &amp; Kota
+                </h2>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-lg mt-2">
+                    Dari pesisir barat Nias hingga kaldera Toba dan dataran tinggi Karo, temukan objek wisata terdata di setiap wilayah.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-10">
+                <?php foreach ($daftarWilayahUnggulan as $wilayah) : ?>
+                    <a
+                        href="<?= base_url('destinasi?kabupaten=' . urlencode($wilayah['kode_kabupaten'])) ?>"
+                        class="flex flex-col items-center p-5 rounded-2xl bg-surface-container-lowest hover:bg-surface-container transition-all text-center group shadow-sm border border-surface-variant/30"
+                    >
+                        <div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                            <span class="material-symbols-outlined">location_city</span>
+                        </div>
+                        <span class="font-label-md text-label-md text-on-surface">
+                            <?= esc($wilayah['nama_kabupaten_kota']) ?>
+                        </span>
+                        <span class="font-body-sm text-body-sm text-outline mt-0.5 tabular-nums">
+                            <?= esc((string) $wilayah['jumlah_destinasi']) ?> Destinasi
+                        </span>
+                    </a>
+                <?php endforeach; ?>
+            </div>
+        </div>
+    </section>
+    <?php endif; ?>
+
+</div>
+<?= $this->endSection() ?>
