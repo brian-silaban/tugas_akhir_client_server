@@ -62,6 +62,49 @@ class DestinasiModel extends Model
             ->join('kategori', 'kategori.id = destinasi.id_kategori')
             ->join('kabupaten_kota', 'kabupaten_kota.kode_kabupaten = destinasi.kode_kabupaten');
 
+        $this->terapkanFilterKatalog($builder, $filterPencarian);
+
+        $urutan = $filterPencarian['urutan'] ?? 'terbaik';
+        if ($urutan === 'harga_terendah') {
+            $builder->orderBy('destinasi.harga_tiket', 'ASC')->orderBy('destinasi.id', 'ASC');
+        } elseif ($urutan === 'terbaru') {
+            $builder->orderBy('destinasi.id', 'DESC');
+        } else {
+            // Prioritaskan destinasi dengan rating tertinggi, jumlah ulasan terbanyak, dan data kaya
+            $builder->orderBy('destinasi.rata_rating', 'DESC')
+                ->orderBy('destinasi.jumlah_ulasan', 'DESC')
+                ->orderBy('destinasi.id', 'ASC');
+        }
+
+        $hasil = $builder->findAll($batas, $offset);
+
+        return array_map(fn (array $baris): array => $this->lengkapiAtributTampilan($baris), $hasil);
+    }
+
+    /**
+     * Menghitung total destinasi yang memenuhi kriteria filter untuk kebutuhan paginasi.
+     *
+     * @param array<string, mixed> $filterPencarian
+     */
+    public function hitungKatalogTerfilter(array $filterPencarian = []): int
+    {
+        $builder = $this->builder()
+            ->join('kategori', 'kategori.id = destinasi.id_kategori')
+            ->join('kabupaten_kota', 'kabupaten_kota.kode_kabupaten = destinasi.kode_kabupaten');
+
+        $this->terapkanFilterKatalog($builder, $filterPencarian);
+
+        return (int) $builder->countAllResults();
+    }
+
+    /**
+     * Menerapkan kondisi pencarian dan filter yang sama untuk pengambilan maupun penghitungan data.
+     *
+     * @param object               $builder
+     * @param array<string, mixed> $filterPencarian
+     */
+    private function terapkanFilterKatalog(object $builder, array $filterPencarian): void
+    {
         if (! empty($filterPencarian['kata_kunci'])) {
             $kataKunci = trim((string) $filterPencarian['kata_kunci']);
             $builder->groupStart()
@@ -87,22 +130,6 @@ class DestinasiModel extends Model
         if (isset($filterPencarian['harga_maksimal']) && $filterPencarian['harga_maksimal'] !== '') {
             $builder->where('destinasi.harga_tiket <=', (int) $filterPencarian['harga_maksimal']);
         }
-
-        $urutan = $filterPencarian['urutan'] ?? 'terbaik';
-        if ($urutan === 'harga_terendah') {
-            $builder->orderBy('destinasi.harga_tiket', 'ASC')->orderBy('destinasi.id', 'ASC');
-        } elseif ($urutan === 'terbaru') {
-            $builder->orderBy('destinasi.id', 'DESC');
-        } else {
-            // Prioritaskan destinasi dengan deskripsi kaya, koordinat, dan rating tertinggi
-            $builder->orderBy('destinasi.rata_rating', 'DESC')
-                ->orderBy('destinasi.jumlah_ulasan', 'DESC')
-                ->orderBy('destinasi.id', 'ASC');
-        }
-
-        $hasil = $builder->findAll($batas, $offset);
-
-        return array_map(fn (array $baris): array => $this->lengkapiAtributTampilan($baris), $hasil);
     }
 
     /**

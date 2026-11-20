@@ -15,14 +15,15 @@ $routes->get('/', 'Home::index');
 $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($routes) {
 
     // --- Destinasi Wisata (Anggota 1) ---
-    // $routes->get('destinasi',          'DestinasiApiController::index');
-    // $routes->get('destinasi/(:segment)', 'DestinasiApiController::show/$1');
+    $routes->get('destinasi', 'DestinasiApiController::index');
+    $routes->get('destinasi/(:segment)', 'DestinasiApiController::show/$1');
     // $routes->post('destinasi',         'DestinasiApiController::create');
     // $routes->put('destinasi/(:num)',   'DestinasiApiController::update/$1');
     // $routes->delete('destinasi/(:num)','DestinasiApiController::delete/$1');
 
-    // --- Kategori (Anggota 1) ---
-    // $routes->get('kategori', 'KategoriApiController::index');
+    // --- Kategori & Wilayah Kabupaten/Kota (Anggota 1) ---
+    $routes->get('kategori', 'KategoriApiController::index');
+    $routes->get('kabupaten-kota', 'KategoriApiController::kabupatenKota');
 
     // --- Autentikasi & Akun (Anggota 3) ---
     // $routes->post('autentikasi/masuk',  'AutentikasiApiController::masuk');

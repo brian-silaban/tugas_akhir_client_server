@@ -17,4 +17,17 @@ class GaleriDestinasiModel extends Model
         'keterangan',
         'dibuat_pada',
     ];
+
+    /**
+     * Mengambil daftar foto galeri pendukung untuk satu destinasi wisata.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function ambilBerdasarkanDestinasi(int $idDestinasi): array
+    {
+        return $this->select('id, id_destinasi, url_foto, keterangan, dibuat_pada')
+            ->where('id_destinasi', $idDestinasi)
+            ->orderBy('id', 'ASC')
+            ->findAll();
+    }
 }
