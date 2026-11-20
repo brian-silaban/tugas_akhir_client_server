@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="shell-type" content="web_standard" />
     <title><?= esc($judulHalaman ?? 'JejakSumut — Jelajahi Pesona Sumatera Utara') ?></title>
+    <link rel="icon" type="image/png" href="<?= base_url('assets/logo-jejaksumut.png') ?>" />
 
     <!-- Google Fonts: Playfair Display (Heading Serif) & Plus Jakarta Sans (Body Sans) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />

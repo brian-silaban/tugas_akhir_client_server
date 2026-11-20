@@ -15,9 +15,9 @@ $daftarMenuNavigasi = [
         <!-- Identitas Brand & Logo JejakSumut -->
         <a href="<?= base_url('/') ?>" class="flex items-center gap-3 shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg">
             <img
-                src="<?= base_url('assets/IndWalk_ Explore Indonesia Together.png') ?>"
+                src="<?= base_url('assets/logo-jejaksumut.png') ?>"
                 alt="Logo JejakSumut"
-                class="h-9 w-auto object-contain"
+                class="h-10 w-10 object-contain shrink-0"
             />
             <div class="flex flex-col">
                 <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">

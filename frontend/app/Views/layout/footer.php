@@ -21,12 +21,11 @@ $daftarKategoriFooter = [
             <!-- Kolom 1: Tentang JejakSumut -->
             <div class="lg:col-span-4 flex flex-col gap-4">
                 <div class="flex items-center gap-3">
-                    <svg class="w-9 h-9 shrink-0" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-                        <rect width="36" height="36" rx="10" fill="#0B6E77" />
-                        <path d="M6 25L14 13L20 21L24 16L30 25H6Z" fill="#2D5A36" />
-                        <path d="M6 25C10 22.5 14 27 18 24.5C22 22 26 26.5 30 24.5V29C30 29.55 29.55 30 29 30H7C6.45 30 6 29.55 6 29V25Z" fill="#FAF8F5" fill-opacity="0.92" />
-                        <circle cx="24" cy="11" r="2.5" fill="#D97706" />
-                    </svg>
+                    <img
+                        src="<?= base_url('assets/logo-jejaksumut.png') ?>"
+                        alt="Logo JejakSumut"
+                        class="h-10 w-10 object-contain shrink-0"
+                    />
                     <span class="font-headline-sm text-headline-sm text-on-surface">JejakSumut</span>
                 </div>
                 <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">
