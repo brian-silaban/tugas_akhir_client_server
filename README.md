@@ -1,25 +1,21 @@
-# 🎒 IndWalk — Explore Indonesia Together
-**Repo Projek Akhir Kelompok Mata Kuliah Client-Server (CodeIgniter 4 + PostgreSQL)**
-
-<p align="center">
-  <img src="frontend/public/assets/IndWalk_ Explore Indonesia Together.png" alt="Logo IndWalk" width="320">
-</p>
+# 🎒 JejakSumut — Jelajahi Pesona Sumatera Utara
+**Repo Projek Akhir Kelompok Mata Kuliah Manajemen Database Client-Server (CodeIgniter 4 + PostgreSQL)**
 
 > [!IMPORTANT]
 > **KALIAN BACA DULU SEBENTAR INI WOK, SEDIKIT NYA INI BIAR PAHAM APA AJA ISINYA:**  
-> Semua yang ada di repo ini (mulai dari nama web, isi tabel database, desain halaman, sampai pembagian tugas) **BUKAN PATOKAN MATI**. Ini sengaja kubuat untuk **pondasi awal** aja biar kita gak mulai dari awal. Kalau ada yang kurang sreg atau mau diubah, langsung ingfokan ke grup (tapi kalo bisa kita bicarakan lewat discord aja biar enak).
+> Semua yang ada di repo ini (mulai dari nama web **JejakSumut**, isi tabel database wisata Sumatera Utara, desain halaman, sampai pembagian tugas) **BUKAN PATOKAN MATI**. Ini sengaja kubuat untuk **pondasi awal** aja biar kita gak mulai dari awal. Kalau ada yang kurang sreg atau mau diubah, langsung ingfokan ke grup (tapi kalo bisa kita bicarakan lewat discord aja biar enak).
 
 ---
 
 ## 🧩 Kenapa Ada 2 Folder (`backend/` & `frontend/`)?
-Sesuai arahan dosen kita supaya **integrasi REST API Client-Server-nya kelihatan jelas**, projek ini sengaja dibagi jadi **2 folder CodeIgniter 4 terpisah**:
+Sesuai arahan dosen kita dan rubrik di [`Form_Evaluasi_Proyek_MDCS.docx.pdf`](Form_Evaluasi_Proyek_MDCS.docx.pdf) supaya **integrasi REST API Client-Server-nya kelihatan jelas**, projek ini sengaja dibagi jadi **2 folder CodeIgniter 4 terpisah**:
 
 1. **Folder [`backend/`](backend/) (Server REST API + Database PostgreSQL — Jalan di Port `8080`)**:
    - Ini **mesin belakang (Server)** kita. Cuma dia yang boleh nyambung ke database **PostgreSQL**.
-   - Dia **nggak punya tampilan web HTML**, kerjanya murni ngeluarin data **JSON REST API** buat dipakai sama `frontend/` kita sendiri dan juga dipakai sama kelompok lain (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi).
-2. **Folder [`frontend/`](frontend/) (Client Web Tampilan IndWalk — Jalan di Port `8081`)**:
+   - Dia **nggak punya tampilan web HTML**, kerjanya murni ngeluarin data **JSON REST API** wisata Sumatera Utara buat dipakai sama `frontend/` kita sendiri dan juga dipakai sama kelompok lain (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi).
+2. **Folder [`frontend/`](frontend/) (Client Web Tampilan JejakSumut — Jalan di Port `8081`)**:
    - Ini **tampilan web (Client)** yang dilihat pengunjung.
-   - Dia **nggak punya database sama sekali**, jadi setiap kali mau nampilin tempat wisata, login, atau pesan tiket, dia wajib minta data lewat **REST API** ke `backend/`.
+   - Dia **nggak punya database sama sekali**, jadi setiap kali mau nampilin tempat wisata Sumut, login, atau pesan tiket, dia wajib minta data lewat **REST API** ke `backend/`.
 
 ---
 
@@ -67,8 +63,9 @@ Karena aku asumsikan di kelompok kita ada yang pakai **Claude Code**, **CODEX**,
 
 | Nama File / Folder | Gunanya Buat Apa Mek? |
 | :--- | :--- |
-| **[`GOAL.md`](GOAL.md)** | Visi web **IndWalk**, warna brand dari logo, dan arsitektur pisah **`backend/` & `frontend/`** lewat REST API. |
+| **[`GOAL.md`](GOAL.md)** | Visi web **JejakSumut** (fokus wisata Sumatera Utara), warna brand, dan arsitektur pisah **`backend/` & `frontend/`** lewat REST API. |
 | **[`PRD.md`](PRD.md)** | Rencana fitur lengkap, daftar route API & Web, format JSON REST API buat dibagi ke kelompok lain, dan **usulan pembagian tugas 5 orang**. |
+| **[`Form_Evaluasi_Proyek_MDCS.docx.pdf`](Form_Evaluasi_Proyek_MDCS.docx.pdf)** | Lembar penilaian & checklist demo resmi dari dosen penguji (`K1` sampai `K10`). |
 | **[`AGENTS.md`](AGENTS.md)** | Instruksi otomatis yang dibaca sama **Antigravity** & **CODEX** waktu kalian ngoding. |
 | **[`CLAUDE.md`](CLAUDE.md)** | Instruksi otomatis khusus buat yang pakai **Claude Code**. |
 | **[`.agents/`](.agents/)** | Folder berisi rules **`anti-ai-slop.md`** (biar desain UI bikinan AI nggak kelihatan pasaran/kaku) dan **`clean-code-indonesia.md`** (biar semua variabel, array key, & kode memakai Bahasa Indonesia yang gampang kita baca). |
@@ -87,7 +84,7 @@ Di dalam folder [`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-co
 Contoh **7 tabel utama (Full Bahasa Indonesia)** sudah ku siapkan di folder **[`backend/app/Database/`](backend/app/Database/)**. Konsepnya simpel:
 1. **`pengguna`**: Data akun yang login (`admin` pengelola & `member` wisatawan).
 2. **`kategori`**: Kategori wisata (Bahari, Cagar Budaya, Pegunungan, dll).
-3. **`destinasi`**: Data tempat wisata. Ada kolom **`kota`** (misal: *Magelang*, *Malang*) yang dipakai buat nyambungin **REST API kelompok lain** (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi) di kota yang sama!
+3. **`destinasi`**: Data tempat wisata di Sumatera Utara. Ada kolom **`kota`** (misal: *Samosir*, *Medan*, *Karo*, *Langkat*) yang dipakai buat nyambungin **REST API kelompok lain** (Penyedia Tur Guide, Kuliner, Penginapan, Transportasi) di kabupaten/kota yang sama!
 4. **`galeri_destinasi`**: Foto-foto tambahan tiap tempat wisata.
 5. **`pemesanan`**: Data pemesanan tiket kunjungan dari member.
 6. **`ulasan`**: Rating bintang (1–5) & komentar pengunjung.

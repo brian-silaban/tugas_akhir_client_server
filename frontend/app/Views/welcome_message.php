@@ -1,6 +1,6 @@
 <?php
 /**
- * Tampilan Beranda (Landing Page Statis) — IndWalk: Explore Indonesia Together
+ * Tampilan Beranda (Landing Page Statis) — JejakSumut: Jelajahi Pesona Sumatera Utara
  *
  * File ini disusun menggunakan standar Clean Code Berbahasa Indonesia
  * (.agents/rules/clean-code-indonesia.md) dan aturan desain Anti-AI-Slop
@@ -59,245 +59,245 @@ $daftarMenuNavigasi = [
 
 // Daftar kata kunci pencarian populer di bawah kolom pencarian Hero
 $tagPencarianPopuler = [
-    'Raja Ampat',
-    'Tana Toraja',
-    'Danau Paisupok',
-    'Banda Neira',
+    'Pulau Samosir',
+    'Bukit Lawang',
+    'Air Terjun Sipiso-piso',
+    'Pantai Sorake Nias',
 ];
 
 // Data ringkasan statistik platform pada bagian Hero
 $daftarStatistikUtama = [
     [
-        'angka'       => '1.200+',
-        'keterangan'  => 'Destinasi Terkurasi',
+        'angka'       => '140+',
+        'keterangan'  => 'Destinasi Sumut Terkurasi',
         'kelas_warna' => 'text-primary',
     ],
     [
-        'angka'       => '480+',
-        'keterangan'  => 'Pemandu Lokal Berlisensi',
+        'angka'       => '33',
+        'keterangan'  => 'Kabupaten & Kota Sumut',
         'kelas_warna' => 'text-secondary',
     ],
     [
         'angka'       => '98%',
-        'keterangan'  => 'Ulasan Petualang Positif',
+        'keterangan'  => 'Ulasan Wisatawan Positif',
         'kelas_warna' => 'text-tertiary-container',
     ],
 ];
 
 // Data destinasi utama pada kartu sorotan Hero (Kanan)
 $destinasiUtama = [
-    'nama'             => 'Pulau Padar & Perairan Komodo',
-    'kawasan'          => 'Taman Nasional Komodo',
+    'nama'             => 'Bukit Holbung & Kaldera Danau Toba',
+    'kawasan'          => ' UNESCO Global Geopark Kaldera Toba',
     'label_editor'     => 'Pilihan Editor Minggu Ini',
-    'kota'             => 'Manggarai Barat',
-    'provinsi'         => 'NTT',
-    'garis_lintang'    => -8.5833,
-    'garis_bujur'      => 119.4833,
+    'kota'             => 'Kab. Samosir',
+    'provinsi'         => 'Sumatera Utara',
+    'garis_lintang'    => 2.5338,
+    'garis_bujur'      => 98.7042,
     'rata_rating'      => 4.9,
-    'jumlah_ulasan'    => 1420,
-    'label_harga'      => 'Tiket Masuk Konservasi',
-    'harga_tiket'      => 150000,
-    'daftar_fasilitas' => ['Trekking Bukit', 'Diving Manta Ray', 'Fauna Endemik'],
-    'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuAJt-F3o83WMR2NF_kbbtek4zBMELOi1ek1Z0rQDUq4rHcKaT0DJDu3LXRsb5M_JeDE7xYgZMTAQzeufh2TqLUE4lNowebUjc6vyc99mQlkv-Qjx2CJBwxtTCBIbEwXhdYm0VqMGh4nYXSV8IwpZMQe_BFtjG3Slnp7K6KjtSHq7fC6pYsOzhjMxWXJSJ5I7xrQtNIkjnnMnUC9Yyj-6ZABIZ8pxrbNUBH2_j-RBNw',
-    'alt_foto'         => 'Pemandangan udara Pulau Padar dan Taman Nasional Komodo di Nusa Tenggara Timur',
+    'jumlah_ulasan'    => 1640,
+    'label_harga'      => 'Tiket Masuk Kawasan',
+    'harga_tiket'      => 15000,
+    'daftar_fasilitas' => ['Bukit Savana', 'Camping Ground', 'Panorama Kaldera'],
+    'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuf8-hbhks4cFzx3OLeREDy7YTvNaC8YvC0AnGKkQWPFgPKEU941tN0BVcl_lSnfQ4VZruY2F62uh4dxYxUuWnMyd5wtVOOL5xChFUcUdIwiBnt4VQK017GlSbyZ4mzzPxzItvZ4bXMsAug7_suS3Lntm2wa2Dk4SD-2qS50mDJuuiEbnmj6MnsmOtC6ubXRZKcAZMbKEVHUy2jxGigAq0DKVhyPMTdvwGM3yenKg',
+    'alt_foto'         => 'Panorama perbukitan hijau Bukit Holbung dan kaldera Danau Toba di Kabupaten Samosir Sumatera Utara',
 ];
 
 // Data destinasi unggulan utama (Kartu Besar Kiri pada Bento Grid)
 $destinasiUnggulanUtama = [
-    'nama'                => 'Candi Borobudur: Mahakarya Arsitektur Dinasti Syailendra',
-    'kategori'            => 'Warisan Dunia UNESCO',
-    'lokasi'              => 'Kecamatan Borobudur, Kab. Magelang, Jawa Tengah',
-    'deskripsi'           => 'Monumen Buddha terbesar di dunia yang dibangun abad ke-8. Rasakan keheningan spiritual saat kabut pagi perlahan beranjak menyingkap relief karmawibhangga dan stupa berlubang yang menghadap panorama pegunungan Menoreh.',
-    'jam_buka'            => '06.30 – 17.00 WIB',
-    'ringkasan_fasilitas' => 'Pemandu, Kursi Roda, Musholla',
+    'nama'                => 'Danau Toba & Desa Adat Huta Siallagan Samosir',
+    'kategori'            => 'UNESCO Global Geopark',
+    'lokasi'              => 'Ambarita, Kec. Simanindo, Kab. Samosir, Sumatera Utara',
+    'deskripsi'           => 'Danau vulkanik purba terbesar di dunia yang memeluk Pulau Samosir. Telusuri deretan Rumah Bolon berusia ratusan tahun, situs batu persidangan kuno Raja Siallagan, dan pertunjukan tari Sigale-gale di tepi perairan kaldera yang tenang.',
+    'jam_buka'            => '07.00 – 18.00 WIB',
+    'ringkasan_fasilitas' => 'Pemandu Adat, Dermaga Feri, Galeri Ulos',
     'rata_rating'         => 4.95,
-    'jumlah_ulasan'       => 3840,
-    'label_harga'         => 'Tiket Reguler Domestik',
-    'harga_tiket'         => 50000,
-    'url_foto'            => 'https://lh3.googleusercontent.com/aida-public/AB6AXuAkWbufXuExA8mAVo4-PHVbIJKOFN4YCwXEbYFUzxmQC3yVaSaS7hJZ5bRP3T3LSNxLa9zhxTix-gPpUg8SZydndKeReobdqYr3b040G0H1215GdqRaxaDKKQWt-KapZQL84bzjpnbQyMtMgGsvDwv-o1y26mk6Fb8asBVLU0CQDiBuRJe4debROen0s1cu88vrnvR3s0jUx_FROWDO6ptPjaWrlTzYKQasDnsX_7g',
-    'alt_foto'            => 'Matahari terbit di atas stupa Candi Borobudur Magelang Jawa Tengah',
+    'jumlah_ulasan'       => 2840,
+    'label_harga'         => 'Tiket Masuk Desa Adat',
+    'harga_tiket'         => 20000,
+    'url_foto'            => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuf8-hbhks4cFzx3OLeREDy7YTvNaC8YvC0AnGKkQWPFgPKEU941tN0BVcl_lSnfQ4VZruY2F62uh4dxYxUuWnMyd5wtVOOL5xChFUcUdIwiBnt4VQK017GlSbyZ4mzzPxzItvZ4bXMsAug7_suS3Lntm2wa2Dk4SD-2qS50mDJuuiEbnmj6MnsmOtC6ubXRZKcAZMbKEVHUy2jxGigAq0DKVhyPMTdvwGM3yenKg',
+    'alt_foto'            => 'Pemandangan kaldera Danau Toba dan Pulau Samosir di Sumatera Utara',
 ];
 
 // Daftar 2 destinasi unggulan pendamping (Kartu Bertumpuk Kanan pada Bento Grid)
 $daftarDestinasiUnggulanPendamping = [
     [
-        'nama'          => 'Kawah Ijen & Fenomena Api Biru',
-        'kategori'      => 'Geopark & Vulkanik',
-        'kelas_badge'   => 'bg-surface-container-lowest/90 backdrop-blur-sm text-tertiary-container font-bold',
-        'lokasi'        => 'Banyuwangi, Jawa Timur',
-        'deskripsi'     => 'Puncak vulkanik spektakuler dengan danau kawah asam tercantik di dunia dan fenomena api biru langka di kaldera belerang.',
-        'jam_buka'      => '02.00 WIB (Blue Fire)',
-        'ikon_jam'      => 'nightlight',
-        'info_tambahan' => '8°C – 14°C',
-        'ikon_info'     => 'thermostat',
-        'rata_rating'   => 4.88,
-        'jumlah_ulasan' => 2190,
-        'harga_tiket'   => 20000,
-        'url_foto'      => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBual-AfAM7eIHLJW-_6mVEwXlIE5NDSeSm0x-R4p0fwIHR15pmMS03phJcd47GXDxWUvaFp09cCjL2bqqWHaQ7s5U3YrsDT-aYItE7pXRjphzISLftLsowaqOjMw-EwdF13ykSZLqY4HAjncqhjaLLoRArSe8kdpkpYCaOPivB5ghiAjC7tS6RnZhVmYAJ4Lt0abYufaKbuB6fiRVId7v0Xnto2OJ5gYMKCOlcuIQ',
-        'alt_foto'      => 'Danau kawah vulkanik pirus Kawah Ijen di Banyuwangi Jawa Timur',
-    ],
-    [
-        'nama'          => 'Terasering Subak Tegallalang',
-        'kategori'      => 'Agrowisata & Lanskap',
+        'nama'          => 'Bukit Lawang & Suaka Orangutan Sumatera',
+        'kategori'      => 'Ekowisata Rimba Leuser',
         'kelas_badge'   => 'bg-secondary text-on-secondary shadow-sm',
-        'lokasi'        => 'Gianyar, Ubud, Bali',
-        'deskripsi'     => 'Harmoni tata kelola air komunal Subak Bali yang telah diakui peradaban dunia, dikelilingi ribuan pohon kelapa asri.',
-        'jam_buka'      => '08.00 – 18.00 WITA',
+        'lokasi'        => 'Bahorok, Kab. Langkat, Sumatera Utara',
+        'deskripsi'     => 'Gerbang hutan hujan tropis Taman Nasional Gunung Leuser, habitat asli Orangutan Sumatera dan petualangan river tubing Sungai Bahorok.',
+        'jam_buka'      => '07.30 – 16.30 WIB',
         'ikon_jam'      => 'wb_sunny',
-        'info_tambahan' => 'Jalur Trekking Subak',
+        'info_tambahan' => 'Trekking Hutan Leuser',
         'ikon_info'     => 'hiking',
-        'rata_rating'   => 4.82,
-        'jumlah_ulasan' => 1760,
+        'rata_rating'   => 4.91,
+        'jumlah_ulasan' => 1890,
         'harga_tiket'   => 25000,
         'url_foto'      => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDoCutxtBU9_Fh5bbP7fYzUEILVXsYb6zrTw2TozBZH-KfqgAT5t0FnK7NI1Ji1zl-ln0weO4HpR2KLJKvBuctL0k9tD4PlwoHRaNQ_mR3FfLsKiqOI3T9y4XzaJHvgbuhCV3u8F3puw1PK6RMOdXT3fSz9td7bQ5X5Z4sUsXb_KiXiQLptl7kJzsm_zEbwEZCwGwWLiCbOqr_htlCZ8Z3HEkST0IXiFkKzw_SL24g',
-        'alt_foto'      => 'Hamparan sawah terasering hijau Subak Tegallalang di Ubud Gianyar Bali',
+        'alt_foto'      => 'Ekowisata hutan hujan tropis Bukit Lawang di Kabupaten Langkat Sumatera Utara',
+    ],
+    [
+        'nama'          => 'Air Terjun Sipiso-piso & Gardu Pandang Tongging',
+        'kategori'      => 'Alam & Dataran Tinggi',
+        'kelas_badge'   => 'bg-surface-container-lowest/90 backdrop-blur-sm text-tertiary-container font-bold',
+        'lokasi'        => 'Merek, Kab. Karo, Sumatera Utara',
+        'deskripsi'     => 'Air terjun setinggi 120 meter yang mengalir deras dari sungai bawah tanah menuju bibir utara kaldera Danau Toba.',
+        'jam_buka'      => '06.00 – 18.00 WIB',
+        'ikon_jam'      => 'schedule',
+        'info_tambahan' => '17°C – 22°C',
+        'ikon_info'     => 'thermostat',
+        'rata_rating'   => 4.88,
+        'jumlah_ulasan' => 2120,
+        'harga_tiket'   => 10000,
+        'url_foto'      => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBual-AfAM7eIHLJW-_6mVEwXlIE5NDSeSm0x-R4p0fwIHR15pmMS03phJcd47GXDxWUvaFp09cCjL2bqqWHaQ7s5U3YrsDT-aYItE7pXRjphzISLftLsowaqOjMw-EwdF13ykSZLqY4HAjncqhjaLLoRArSe8kdpkpYCaOPivB5ghiAjC7tS6RnZhVmYAJ4Lt0abYufaKbuB6fiRVId7v0Xnto2OJ5gYMKCOlcuIQ',
+        'alt_foto'      => 'Air Terjun Sipiso-piso dan lanskap tebing kaldera di Kabupaten Karo Sumatera Utara',
     ],
 ];
 
-// Daftar tombol filter kategori pada bagian Katalog Nusantara
+// Daftar tombol filter kategori pada bagian Katalog Sumatera Utara
 $daftarFilterKategori = [
-    ['label' => 'Semua Destinasi (128)', 'aktif' => true],
-    ['label' => 'Wisata Bahari (42)', 'aktif' => false],
-    ['label' => 'Alam & Geopark (36)', 'aktif' => false],
-    ['label' => 'Budaya & Sejarah (28)', 'aktif' => false],
-    ['label' => 'Ekowisata & Rimba (22)', 'aktif' => false],
+    ['label' => 'Semua Destinasi (142)', 'aktif' => true],
+    ['label' => 'Kaldera & Geopark (44)', 'aktif' => false],
+    ['label' => 'Ekowisata & Rimba (32)', 'aktif' => false],
+    ['label' => 'Budaya & Sejarah (36)', 'aktif' => false],
+    ['label' => 'Bahari & Kepulauan (30)', 'aktif' => false],
 ];
 
-// Daftar 6 destinasi wisata pada grid Eksplorasi Katalog Nusantara
+// Daftar 6 destinasi wisata pada grid Eksplorasi Katalog Sumatera Utara
 $daftarKatalogDestinasi = [
     [
-        'nama'             => 'Kepulauan Raja Ampat',
+        'nama'             => 'Pantai Sorake & Teluk Lagundri',
         'kategori'         => 'Wisata Bahari',
         'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-primary font-bold',
-        'lokasi'           => 'Kab. Raja Ampat, Papua Barat Daya',
-        'jam_buka'         => 'Waktu Terbaik: Okt – Apr',
-        'deskripsi'        => 'Jantung segitiga terumbu karang bumi dengan keanekaragaman hayati laut terkaya di dunia.',
-        'daftar_fasilitas' => ['Perahu Sewa', 'Homestay Lokal', 'Alat Selam'],
-        'rata_rating'      => 4.98,
-        'jumlah_ulasan'    => 920,
-        'label_harga'      => 'Tarif Konservasi',
-        'harga_tiket'      => 300000,
+        'lokasi'           => 'Teluk Dalam, Kab. Nias Selatan',
+        'jam_buka'         => 'Buka 24 Jam',
+        'deskripsi'        => 'Salah satu spot selancar ombak kanan terbaik di dunia dengan gulungan ombak lima tingkat di pesisir Samudra Hindia.',
+        'daftar_fasilitas' => ['Surf Camp', 'Homestay Pantai', 'Sewa Papan Surf'],
+        'rata_rating'      => 4.96,
+        'jumlah_ulasan'    => 940,
+        'label_harga'      => 'Retribusi Pantai',
+        'harga_tiket'      => 10000,
         'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuA1QLu1JDTQzVSVcx2sYivwhnZ_NZHrtiMI_qJtXzMFLM3I0_i8u5-Ii_lb7Vyp2Xw7Ok5Zij9g7WhHYdOc5cedXYxS35u3mdtHe9auAnq-JuqUqXRh07BEY0iI9oD1zIsf8ZYq6_H48R52ov5zF9-a8r3WRp3L9gvbGJZPXrMV8_0VLcAqp3Ux7wDbEY7fdMR2-3RUWB5UoM11p4xtcu7VqzCHA7DSXQlpc1xv2iY',
-        'alt_foto'         => 'Gugusan pulau karst Wayag di Kepulauan Raja Ampat Papua Barat Daya',
+        'alt_foto'         => 'Perairan biru jernih Pantai Sorake dan Teluk Lagundri di Nias Selatan Sumatera Utara',
     ],
     [
-        'nama'             => 'Danau Toba & Pulau Samosir',
-        'kategori'         => 'Geopark Kaldera',
+        'nama'             => 'Ekowisata Gajah Tangkahan',
+        'kategori'         => 'Ekowisata Rimba',
         'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-secondary font-bold',
-        'lokasi'           => 'Toba Samosir, Sumatera Utara',
-        'jam_buka'         => 'Buka Setiap Hari',
-        'deskripsi'        => 'Telusuri warisan budaya luhur Batak Toba, Rumah Bolon megah, dan keajaiban kaldera purba raksasa.',
-        'daftar_fasilitas' => ['Feri Penyeberangan', 'Tepi Danau', 'Resto Halal'],
-        'rata_rating'      => 4.87,
-        'jumlah_ulasan'    => 1640,
+        'lokasi'           => 'Batang Serangan, Kab. Langkat',
+        'jam_buka'         => '08.00 – 17.00 WIB',
+        'deskripsi'        => 'Surga tersembunyi di tepi Sungai Buluh dan Sungai Batang Serangan, pusat konservasi Gajah Sumatera jinak di TNGL.',
+        'daftar_fasilitas' => ['Pemandu Ranger', 'Jembatan Gantung', 'River Tubing'],
+        'rata_rating'      => 4.92,
+        'jumlah_ulasan'    => 1380,
         'label_harga'      => 'Tiket Kawasan',
-        'harga_tiket'      => 15000,
+        'harga_tiket'      => 20000,
         'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDuf8-hbhks4cFzx3OLeREDy7YTvNaC8YvC0AnGKkQWPFgPKEU941tN0BVcl_lSnfQ4VZruY2F62uh4dxYxUuWnMyd5wtVOOL5xChFUcUdIwiBnt4VQK017GlSbyZ4mzzPxzItvZ4bXMsAug7_suS3Lntm2wa2Dk4SD-2qS50mDJuuiEbnmj6MnsmOtC6ubXRZKcAZMbKEVHUy2jxGigAq0DKVhyPMTdvwGM3yenKg',
-        'alt_foto'         => 'Panorama kaldera vulkanik Danau Toba dan Pulau Samosir di Sumatera Utara',
+        'alt_foto'         => 'Lanskap sungai dan hutan tropis Ekowisata Tangkahan di Kabupaten Langkat Sumatera Utara',
     ],
     [
-        'nama'             => 'Pantai Tangsi (Pink Beach)',
+        'nama'             => 'Pulau Mursala & Pantai Pandan',
         'kategori'         => 'Wisata Bahari',
         'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-primary font-bold',
-        'lokasi'           => 'Jerowaru, Lombok Timur, NTB',
-        'jam_buka'         => '07.00 – 18.00 WITA',
-        'deskripsi'        => 'Keajaiban pasir merah muda alami berkat serpihan mikroorganisme karang Foraminifera merah.',
-        'daftar_fasilitas' => ['Gazebo Bambu', 'Kelapa Muda', 'Spot Foto Tebing'],
-        'rata_rating'      => 4.84,
-        'jumlah_ulasan'    => 850,
-        'label_harga'      => 'Tiket Masuk',
+        'lokasi'           => 'Pandan, Kab. Tapanuli Tengah',
+        'jam_buka'         => '07.00 – 18.00 WIB',
+        'deskripsi'        => 'Keunikan air terjun Pulau Mursala yang terjun langsung dari tebing granit merah ke perairan laut lepas Teluk Tapian Nauli.',
+        'daftar_fasilitas' => ['Speedboat', 'Alat Snorkeling', 'Kuliner Seafood'],
+        'rata_rating'      => 4.86,
+        'jumlah_ulasan'    => 870,
+        'label_harga'      => 'Retribusi Dermaga',
         'harga_tiket'      => 25000,
         'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBAzYpDnCnVstjTZtMV1ZR2fpaqxPwJOsIH08AD4VbRH2nOR1Sh4kLOXpLm1F7oWLN0Sxm0YHbqN601Ku-LJYScc75H1xycT3VCfd8UcMybBkXEd67VUqSEI8kv43kyc795qNZ9pIApZv0rP8Dy_x91oMqyzrxDbcmYcX8N47rauE3G-OnNnLp-ZvlHWghQE3ncvRWHbBtajYHpMffDyQbzIPYczbReqgJ9U1mH-TI',
-        'alt_foto'         => 'Pantai Tangsi Pink Beach dengan pasir merah muda alami di Lombok Timur NTB',
+        'alt_foto'         => 'Pesisir pantai pasir putih dan laut biru Pulau Mursala Tapanuli Tengah Sumatera Utara',
     ],
     [
-        'nama'             => 'Gunung Bromo & Lautan Pasir',
+        'nama'             => 'Gunung Sibayak & Air Panas Lau Sidebuk-debuk',
         'kategori'         => 'Alam & Vulkanik',
         'kelas_badge'      => 'bg-surface-container-lowest/90 backdrop-blur-sm text-tertiary-container font-bold',
-        'lokasi'           => 'TNBTS, Jawa Timur',
+        'lokasi'           => 'Berastagi, Kab. Karo',
         'jam_buka'         => 'Buka 24 Jam',
-        'deskripsi'        => 'Saksikan matahari terbit magis di Penanjakan dan gemuruh kawah aktif di tengah lautan pasir kaldera Tengger.',
-        'daftar_fasilitas' => ['Jeep 4x4', 'Sewa Kuda', 'Kopi Tengger'],
-        'rata_rating'      => 4.91,
-        'jumlah_ulasan'    => 3210,
-        'label_harga'      => 'Tiket Hari Kerja',
-        'harga_tiket'      => 29000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDj6pu0GBTBtu_YeZj06pAk3NjaeXss2HtuubF6YlWMoFzYQN6S0_5ZWuHMoHrg2c5AvFX2hLaC8tKOGMAgDECWyQYHxKiDqkywi8-kfKJ5DQC82-HUq2r3DaQR1ggiuxOOK_SEkGmfI0xT3nija2Fx6cbS7nM7PCeiq5JtW9kpuJPTZvzh6XtmScyA7reWKxpRYXcLT293ea1DiaoQH2UBb_u4JLIhLbZimkzhlT0',
-        'alt_foto'         => 'Kaldera Gunung Bromo dan lautan pasir Tengger saat matahari terbit di Jawa Timur',
-    ],
-    [
-        'nama'             => 'Desa Adat Penglipuran',
-        'kategori'         => 'Budaya & Warisan',
-        'kelas_badge'      => 'bg-secondary text-on-secondary shadow-sm',
-        'lokasi'           => 'Kec. Bangli, Bali',
-        'jam_buka'         => '08.00 – 18.30 WITA',
-        'deskripsi'        => 'Diakui sebagai salah satu desa terbersih di dunia yang memegang teguh filosofi Tri Hita Karana.',
-        'daftar_fasilitas' => ['Hutan Bambu', 'Kerajinan Tangan', 'Parkir Luas'],
-        'rata_rating'      => 4.93,
-        'jumlah_ulasan'    => 2430,
+        'deskripsi'        => 'Pendakian ramah pemula menuju puncak kawah belerang Gunung Sibayak dilanjutkan relaksasi pemandian air panas alami di kaki gunung.',
+        'daftar_fasilitas' => ['Kolam Air Panas', 'Pos Pendakian', 'Warung Kopi Karo'],
+        'rata_rating'      => 4.89,
+        'jumlah_ulasan'    => 2450,
         'label_harga'      => 'Tiket Masuk',
-        'harga_tiket'      => 25000,
-        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFiZSZW6kpK1Du-tnf5U5Gb6JUrsanZCGvxHCXauVCk-DCmo28dqp0oIWhWJXKZrL95fl3LCKOnfiZ_B1fNWWRz0hTPxzmRcnFCQC03l31glAZNSJzxkb9bZyz5WqVJE7NwNv6WJU0dx0J8DG2ipnylof6kC7u3Cw9HUYA-tfLlkvayLY_zZ2PJ98ZCg_Nho6BZBjlg5E74WL_ZeLaXMk0ya2cWZQlEr5cYKr0osQ',
-        'alt_foto'         => 'Jalur desa adat Penglipuran dengan gerbang tradisional angkul-angkul di Bangli Bali',
+        'harga_tiket'      => 15000,
+        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuDj6pu0GBTBtu_YeZj06pAk3NjaeXss2HtuubF6YlWMoFzYQN6S0_5ZWuHMoHrg2c5AvFX2hLaC8tKOGMAgDECWyQYHxKiDqkywi8-kfKJ5DQC82-HUq2r3DaQR1ggiuxOOK_SEkGmfI0xT3nija2Fx6cbS7nM7PCeiq5JtW9kpuJPTZvzh6XtmScyA7reWKxpRYXcLT293ea1DiaoQH2UBb_u4JLIhLbZimkzhlT0',
+        'alt_foto'         => 'Puncak kawah vulkanik Gunung Sibayak saat matahari terbit di Berastagi Kabupaten Karo',
     ],
     [
-        'nama'             => 'Kepulauan Derawan & Danau Kakaban',
-        'kategori'         => 'Ekowisata Bahari',
+        'nama'             => 'Istana Maimun & Rumah Tjong A Fie',
+        'kategori'         => 'Budaya & Sejarah',
         'kelas_badge'      => 'bg-secondary text-on-secondary shadow-sm',
-        'lokasi'           => 'Kab. Berau, Kalimantan Timur',
-        'jam_buka'         => 'Konservasi Bahari',
-        'deskripsi'        => 'Berenang bersama ribuan ubur-ubur tanpa sengat di Danau Kakaban dan habitat peneluran penyu hijau.',
-        'daftar_fasilitas' => ['Diving Center', 'Pemandu Lokal', 'Speedboat'],
-        'rata_rating'      => 4.90,
-        'jumlah_ulasan'    => 780,
-        'label_harga'      => 'Retribusi Dermaga',
-        'harga_tiket'      => 20000,
+        'lokasi'           => 'Medan Maimun, Kota Medan',
+        'jam_buka'         => '08.00 – 17.00 WIB',
+        'deskripsi'        => 'Ikon warisan Kesultanan Deli tahun 1888 dengan arsitektur perpaduan Melayu, Islam, Spanyol, India, dan Italia di jantung Kota Medan.',
+        'daftar_fasilitas' => ['Pemandu Sejarah', 'Busana Adat Melayu', 'Parkir Bus'],
+        'rata_rating'      => 4.85,
+        'jumlah_ulasan'    => 3120,
+        'label_harga'      => 'Tiket Masuk',
+        'harga_tiket'      => 10000,
+        'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuBFiZSZW6kpK1Du-tnf5U5Gb6JUrsanZCGvxHCXauVCk-DCmo28dqp0oIWhWJXKZrL95fl3LCKOnfiZ_B1fNWWRz0hTPxzmRcnFCQC03l31glAZNSJzxkb9bZyz5WqVJE7NwNv6WJU0dx0J8DG2ipnylof6kC7u3Cw9HUYA-tfLlkvayLY_zZ2PJ98ZCg_Nho6BZBjlg5E74WL_ZeLaXMk0ya2cWZQlEr5cYKr0osQ',
+        'alt_foto'         => 'Kawasan wisata budaya dan sejarah Istana Maimun di Kota Medan Sumatera Utara',
+    ],
+    [
+        'nama'             => 'Kawah Putih Tinggi Raja (Dolok Tinggi Raja)',
+        'kategori'         => 'Geopark & Alam',
+        'kelas_badge'      => 'bg-secondary text-on-secondary shadow-sm',
+        'lokasi'           => 'Silau Kahean, Kab. Simalungun',
+        'jam_buka'         => '07.00 – 17.00 WIB',
+        'deskripsi'        => 'Bukit kapur travertin putih berkilau dengan telaga air panas biru kehijauan di tengah kawasan hutan cagar alam Simalungun.',
+        'daftar_fasilitas' => ['Spot Foto Travertin', 'Pemandu Lokal', 'Area Parkir'],
+        'rata_rating'      => 4.81,
+        'jumlah_ulasan'    => 690,
+        'label_harga'      => 'Tiket Masuk',
+        'harga_tiket'      => 15000,
         'url_foto'         => 'https://lh3.googleusercontent.com/aida-public/AB6AXuAy7AP2hYABilutqDOcoQPvZtqaBop9XbvSepsc-6s8q-AW_1tZAlUtzhyZnYcnInKQ784ZtWHYstr4w5vtYN1W8Z9ygvOrXulEbqBtisou4z1CQTpRCtWNt4Op3-viglWxiFictCq7-IYecIhJ1kotS2C7kvFVhT4cygOrHlC4lrxqQRBsl97sXlvGSwaykOltxBmETS0zy6XXJgUwNhyoMmzCH_GUVtsNnQqlVq0',
-        'alt_foto'         => 'Perairan laguna jernih Kepulauan Derawan dan Danau Kakaban di Berau Kalimantan Timur',
+        'alt_foto'         => 'Telaga biru kehijauan Kawah Putih Tinggi Raja di Kabupaten Simalungun Sumatera Utara',
     ],
 ];
 
-// Daftar 6 wilayah kepulauan Indonesia pada bagian Jelajah Berdasarkan Kepulauan
+// Daftar 6 kawasan wisata utama di Sumatera Utara
 $daftarWilayahKepulauan = [
     [
-        'nama_kepulauan'   => 'Sumatera',
-        'jumlah_destinasi' => 24,
-        'ikon'             => 'forest',
-        'kelas_ikon'       => 'bg-primary/10 text-primary',
-    ],
-    [
-        'nama_kepulauan'   => 'Jawa',
-        'jumlah_destinasi' => 38,
-        'ikon'             => 'temple_buddhist',
-        'kelas_ikon'       => 'bg-secondary/10 text-secondary',
-    ],
-    [
-        'nama_kepulauan'   => 'Bali & Nusa Tenggara',
-        'jumlah_destinasi' => 32,
-        'ikon'             => 'surfing',
-        'kelas_ikon'       => 'bg-tertiary-container/10 text-tertiary-container',
-    ],
-    [
-        'nama_kepulauan'   => 'Kalimantan',
-        'jumlah_destinasi' => 14,
-        'ikon'             => 'park',
-        'kelas_ikon'       => 'bg-secondary/10 text-secondary',
-    ],
-    [
-        'nama_kepulauan'   => 'Sulawesi',
-        'jumlah_destinasi' => 16,
+        'nama_kepulauan'   => 'Kawasan Danau Toba',
+        'jumlah_destinasi' => 42,
         'ikon'             => 'kayaking',
         'kelas_ikon'       => 'bg-primary/10 text-primary',
     ],
     [
-        'nama_kepulauan'   => 'Maluku & Papua',
+        'nama_kepulauan'   => 'Medan & Deli Serdang',
+        'jumlah_destinasi' => 28,
+        'ikon'             => 'temple_buddhist',
+        'kelas_ikon'       => 'bg-secondary/10 text-secondary',
+    ],
+    [
+        'nama_kepulauan'   => 'Dataran Tinggi Karo',
+        'jumlah_destinasi' => 24,
+        'ikon'             => 'park',
+        'kelas_ikon'       => 'bg-tertiary-container/10 text-tertiary-container',
+    ],
+    [
+        'nama_kepulauan'   => 'Langkat & Leuser',
         'jumlah_destinasi' => 18,
+        'ikon'             => 'forest',
+        'kelas_ikon'       => 'bg-secondary/10 text-secondary',
+    ],
+    [
+        'nama_kepulauan'   => 'Tapanuli & Sibolga',
+        'jumlah_destinasi' => 16,
         'ikon'             => 'anchor',
+        'kelas_ikon'       => 'bg-primary/10 text-primary',
+    ],
+    [
+        'nama_kepulauan'   => 'Kepulauan Nias',
+        'jumlah_destinasi' => 14,
+        'ikon'             => 'surfing',
         'kelas_ikon'       => 'bg-tertiary-container/10 text-tertiary-container',
     ],
 ];
 
-// URL logo utama IndWalk (menggunakan aset lokal di public/assets/)
+// URL logo utama JejakSumut (menggunakan aset lokal di public/assets/)
 $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
 ?>
 <!DOCTYPE html>
@@ -306,7 +306,7 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="shell-type" content="web_standard" />
-    <title>IndWalk — Explore Indonesia Together</title>
+    <title>JejakSumut — Jelajahi Pesona Sumatera Utara</title>
 
     <!-- Google Fonts: Playfair Display (Heading Serif) & Plus Jakarta Sans (Body Sans) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -460,19 +460,19 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
          ===================================================================== -->
     <header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-surface-variant/40">
         <div class="h-20 max-w-7xl mx-auto px-6 flex items-center justify-between gap-space-md">
-            <!-- Identitas Brand & Logo IndWalk -->
+            <!-- Identitas Brand & Logo JejakSumut -->
             <a href="<?= base_url('/') ?>" class="flex items-center gap-3 shrink-0">
                 <img
                     src="<?= esc($urlLogoIndWalk) ?>"
-                    alt="IndWalk Logo"
+                    alt="JejakSumut Logo"
                     class="h-8 w-auto object-contain"
                 />
                 <div class="flex flex-col">
                     <span class="font-headline-sm text-headline-sm text-on-surface tracking-tight leading-none">
-                        IndWalk
+                        JejakSumut
                     </span>
                     <span class="font-label-caps text-label-caps text-tertiary-container uppercase mt-0.5">
-                        Nusantara
+                        Sumatera Utara
                     </span>
                 </div>
             </a>
@@ -551,16 +551,16 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                             <div class="inline-flex items-center gap-2 self-start px-3.5 py-1.5 rounded-full bg-secondary-container/50 text-on-secondary-container">
                                 <span class="text-xs">✦</span>
                                 <span class="font-label-caps text-label-caps uppercase tracking-wider text-secondary">
-                                    KURASI WISATA NUSANTARA 2025
+                                    KURASI WISATA SUMATERA UTARA 2026
                                 </span>
                             </div>
 
                             <h1 class="font-display-hero text-display-hero text-on-surface tracking-tight mt-4 max-w-2xl">
-                                Temukan Lanskap Nusantara yang Belum Banyak Dijamah
+                                Jelajahi Pesona Alam &amp; Budaya Luhur Sumatera Utara
                             </h1>
 
                             <p class="font-body-lg text-body-lg text-on-surface-variant mt-5 max-w-xl leading-relaxed">
-                                Jelajahi keajaiban tersembunyi dari gugusan pulau Flores hingga kedalaman rimba Papua. Temukan panduan terverifikasi, peta rute GPS, dan kontribusi komunitas lokal untuk petualangan yang bertanggung jawab.
+                                Dari kemegahan kaldera purba Danau Toba, rimba tropis Gunung Leuser di Langkat, hingga gulungan ombak kelas dunia di Kepulauan Nias. Temukan panduan wisata, jadwal operasional, serta rekomendasi tur, kuliner, penginapan, dan transportasi terintegrasi.
                             </p>
 
                             <!-- Kartu Pencarian & Filter Interaktif (4 Kolom) -->
@@ -569,16 +569,16 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                                 <div class="sm:col-span-3 flex flex-col px-3 py-2 rounded-xl hover:bg-surface-container transition-colors">
                                     <span class="font-label-caps text-label-caps text-on-surface-variant uppercase flex items-center gap-1">
                                         <span class="material-symbols-outlined text-sm text-primary">location_on</span>
-                                        Destinasi
+                                        Kabupaten / Kota
                                     </span>
                                     <input
                                         type="text"
-                                        value="Labuan Bajo, NTT"
+                                        value="Pulau Samosir"
                                         placeholder="Tujuan Anda"
                                         class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none truncate mt-0.5"
                                     />
                                     <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
-                                        Manggarai Barat
+                                        Kawasan Danau Toba
                                     </span>
                                 </div>
 
@@ -589,13 +589,13 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                                         Kategori
                                     </span>
                                     <select class="font-label-md text-label-md text-on-surface bg-transparent focus:outline-none mt-0.5 cursor-pointer">
-                                        <option selected>Bahari &amp; Coral</option>
-                                        <option>Geopark &amp; Vulkanik</option>
-                                        <option>Warisan Budaya</option>
-                                        <option>Ekowisata Rimba</option>
+                                        <option selected>Kaldera &amp; Geopark</option>
+                                        <option>Ekowisata Rimba Leuser</option>
+                                        <option>Budaya &amp; Sejarah</option>
+                                        <option>Bahari &amp; Kepulauan</option>
                                     </select>
                                     <span class="font-body-sm text-body-sm text-outline truncate text-[11px] leading-tight">
-                                        42 Rute Tersedia
+                                        44 Destinasi Tersedia
                                     </span>
                                 </div>
 
@@ -746,15 +746,15 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                             <div class="flex items-center gap-2">
                                 <span class="w-2 h-2 rounded-full bg-tertiary-container"></span>
                                 <span class="font-label-caps text-label-caps uppercase text-tertiary-container tracking-wider">
-                                    TERPOPULER DI INDONESIA
+                                    TERPOPULER DI SUMATERA UTARA
                                 </span>
                             </div>
                             <h2 class="font-headline-lg text-headline-lg text-on-surface mt-2 max-w-xl">
-                                Mahakarya Alam &amp; Warisan Sejarah yang Wajib Dikunjungi
+                                Ikon Wisata Alam &amp; Budaya Sumatera Utara yang Wajib Dikunjungi
                             </h2>
                         </div>
                         <p class="font-body-md text-body-md text-on-surface-variant max-w-md">
-                            Tiga destinasi dengan indeks kelestarian dan kepuasan pengunjung tertinggi musim ini, dirancang untuk pengalaman napak tilas mendalam.
+                            Tiga destinasi unggulan di Sumatera Utara dengan indeks kelestarian dan kepuasan pengunjung tertinggi musim ini.
                         </p>
                     </div>
 
@@ -920,7 +920,7 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                             </span>
                         </div>
                         <h2 class="font-headline-lg text-headline-lg text-on-surface mt-1">
-                            Eksplorasi Katalog Nusantara
+                            Eksplorasi Katalog Wisata Sumatera Utara
                         </h2>
                     </div>
 
@@ -1037,18 +1037,18 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                 </div>
             </section>
 
-            <!-- 4. SEKSI JELAJAH BERDASARKAN KEPULAUAN NUSANTARA -->
+            <!-- 4. SEKSI JELAJAH BERDASARKAN WILAYAH SUMATERA UTARA -->
             <section id="jelajah-kepulauan" class="w-full bg-surface-container-low/60 py-16">
                 <div class="max-w-7xl mx-auto px-6">
                     <div class="flex flex-col items-center text-center">
                         <span class="font-label-caps text-label-caps uppercase text-secondary tracking-wider">
-                            GEOGRAFI NUSANTARA
+                            GEOGRAFI SUMATERA UTARA
                         </span>
                         <h2 class="font-headline-lg text-headline-lg text-on-surface mt-2">
-                            Jelajah Berdasarkan Kepulauan
+                            Jelajah Berdasarkan Kawasan Wisata
                         </h2>
                         <p class="font-body-md text-body-md text-on-surface-variant max-w-lg mt-2">
-                            Dari barat ke timur, setiap gugusan pulau menyimpan keunikan ekosistem, adat istiadat, dan keramahan masyarakatnya.
+                            Dari dataran tinggi Bukit Barisan hingga pesisir barat Samudra Hindia, setiap kawasan di Sumatera Utara menyimpan kekayaan alam dan budaya yang khas.
                         </p>
                     </div>
 
@@ -1087,10 +1087,10 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                             </span>
                         </div>
                         <h2 class="font-headline-lg text-headline-lg text-on-surface">
-                            Bagikan Catatan Perjalanan Anda &amp; Dapatkan Poin Konservasi IndWalk
+                            Bagikan Catatan Perjalanan Anda &amp; Dapatkan Poin Konservasi JejakSumut
                         </h2>
                         <p class="font-body-md text-body-md text-on-surface-variant mt-3">
-                            Setiap ulasan rute, titik koordinat baru, dan foto etis yang Anda unggah membantu mendanai bibit karang dan pemberdayaan komunitas pemandu lokal di pulau-pulau terpencil nusantara.
+                            Setiap ulasan rute, titik koordinat baru, dan foto etis yang Anda unggah membantu mendukung ekowisata berkelanjutan dan pemberdayaan komunitas pemandu lokal di Sumatera Utara.
                         </p>
                         <div class="flex items-center gap-6 mt-6">
                             <div class="flex items-center gap-2">
@@ -1136,22 +1136,22 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
         <div class="max-w-7xl mx-auto px-6 py-space-xl">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-space-xl">
 
-                <!-- Kolom 1: Tentang IndWalk -->
+                <!-- Kolom 1: Tentang JejakSumut -->
                 <div class="lg:col-span-4 flex flex-col gap-space-md">
                     <div class="flex items-center gap-3">
                         <img
                             src="<?= esc($urlLogoIndWalk) ?>"
-                            alt="IndWalk Logo"
+                            alt="JejakSumut Logo"
                             class="h-8 w-auto object-contain"
                         />
-                        <span class="font-headline-sm text-headline-sm text-on-surface">IndWalk</span>
+                        <span class="font-headline-sm text-headline-sm text-on-surface">JejakSumut</span>
                     </div>
                     <p class="font-body-md text-body-md text-on-surface-variant max-w-sm">
-                        IndWalk — Platform kurasi pariwisata nusantara untuk petualang autentik.
+                        JejakSumut — Platform kurasi pariwisata Sumatera Utara yang terintegrasi dengan ekosistem layanan perjalanan lokal.
                     </p>
                     <div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
                         <span class="material-symbols-outlined text-secondary text-base">verified</span>
-                        <span>Ekowisata Terverifikasi &amp; Komunitas Lokal</span>
+                        <span>Ekowisata Terverifikasi &amp; Komunitas Lokal Sumut</span>
                     </div>
                 </div>
 
@@ -1222,7 +1222,7 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
             <!-- Baris Hak Cipta Bawah -->
             <div class="mt-space-xl pt-space-lg border-t border-surface-variant/40 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p class="font-body-sm text-body-sm text-on-surface-variant text-center sm:text-left">
-                    © 2025 IndWalk Nusantara Mandiri. Dibuat dengan bangga untuk pariwisata Indonesia.
+                    © 2026 JejakSumut — Politeknik Negeri Medan. Dibuat dengan bangga untuk pariwisata Sumatera Utara.
                 </p>
                 <div class="flex items-center gap-4 font-body-sm text-body-sm text-on-surface-variant">
                     <span class="flex items-center gap-1">
@@ -1231,7 +1231,7 @@ $urlLogoIndWalk = '/assets/IndWalk_ Explore Indonesia Together.png';
                     </span>
                     <span class="flex items-center gap-1">
                         <span class="material-symbols-outlined text-sm text-primary">explore</span>
-                        Kepulauan Nusantara
+                        Sumatera Utara
                     </span>
                 </div>
             </div>
