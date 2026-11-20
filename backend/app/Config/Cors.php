@@ -37,6 +37,10 @@ class Cors extends BaseConfig
         'allowedOrigins' => [
             'http://localhost:8081',
             'http://127.0.0.1:8081',
+            'http://localhost:8082',
+            'http://127.0.0.1:8082',
+            'http://70.153.136.38:8081',
+            'http://70.153.136.38:8082',
         ],
 
         /**
@@ -50,7 +54,11 @@ class Cors extends BaseConfig
          * E.g.:
          *   - ['https://\w+\.example\.com']
          */
-        'allowedOriginsPatterns' => [],
+        'allowedOriginsPatterns' => [
+            'https?://localhost(:[0-9]+)?',
+            'https?://127\.0\.0\.1(:[0-9]+)?',
+            'https?://70\.153\.136\.38(:[0-9]+)?',
+        ],
 
         /**
          * Weather to send the `Access-Control-Allow-Credentials` header.

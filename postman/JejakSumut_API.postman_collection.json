@@ -1,0 +1,1103 @@
+{
+  "info": {
+    "_postman_id": "a7f9c1b2-4e8a-4a91-9b1c-701531363801",
+    "name": "JejakSumut REST API v1 — Wisata Sumatera Utara",
+    "description": "Koleksi resmi Postman untuk pengujian REST API JejakSumut (Backend Port 8080 & Frontend Port 8081/8082). Mencakup endpoint publik wisata Sumatera Utara untuk 4 kelompok mitra, modul pemesanan tiket (ACID), modul ulasan & rating, serta kerangka autentikasi & admin sesuai rubrik evaluasi MDCS (K3–K5).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://70.153.136.38:8080",
+      "type": "string"
+    },
+    {
+      "key": "kota_uji",
+      "value": "Samosir",
+      "type": "string"
+    },
+    {
+      "key": "slug_destinasi",
+      "value": "danau-toba",
+      "type": "string"
+    },
+    {
+      "key": "id_destinasi",
+      "value": "667",
+      "type": "string"
+    },
+    {
+      "key": "id_pengguna",
+      "value": "2",
+      "type": "string"
+    },
+    {
+      "key": "id_pemesanan",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "token_autentikasi",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Status Server & Kesehatan API",
+      "description": "Endpoint root untuk memverifikasi server REST API Backend aktif dan terhubung ke database PostgreSQL jejaksumut_db.",
+      "item": [
+        {
+          "name": "Cek Status Koneksi & Ringkasan Database",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respons JSON menampilkan status sukses dan total_destinasi > 0', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('sukses');",
+                  "    pm.expect(isi.ringkasan_data).to.be.an('object');",
+                  "    pm.expect(isi.ringkasan_data.total_destinasi).to.be.above(0);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                ""
+              ]
+            },
+            "description": "Memeriksa status layanan REST API JejakSumut beserta total destinasi, kabupaten/kota, dan kategori dari PostgreSQL."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "02 - API Publik Wisata Sumut (Untuk 4 Kelompok Mitra)",
+      "description": "Endpoint publik yang dapat langsung dikonsumsi oleh kelompok Penyedia Tur Guide, Kuliner/Rumah Makan, Penginapan, dan Transportasi.",
+      "item": [
+        {
+          "name": "Daftar Katalog Destinasi (Paginasi Default)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Data katalog destinasi berbentuk array dan memiliki paginasi', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.data).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(isi.paginasi).to.be.an('object');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/destinasi",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "destinasi"
+              ]
+            },
+            "description": "Mengambil daftar destinasi wisata Sumatera Utara dengan batas default 12 data per halaman."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Destinasi per Kota/Kabupaten (Endpoint Utama Mitra)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Destinasi terfilter sesuai kota uji', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.data).to.be.an('array').that.is.not.empty;",
+                  "    pm.expect(isi.data[0]).to.have.property('koordinat');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/destinasi?kota={{kota_uji}}&batas=5",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "destinasi"
+              ],
+              "query": [
+                {
+                  "key": "kota",
+                  "value": "{{kota_uji}}",
+                  "description": "Nama kabupaten/kota Sumatera Utara (misal: Samosir, Medan, Karo, Langkat)"
+                },
+                {
+                  "key": "batas",
+                  "value": "5",
+                  "description": "Jumlah maksimal item per halaman (1-50)"
+                }
+              ]
+            },
+            "description": "Endpoint utama yang dibagikan ke kelompok Tur Guide, Kuliner, Penginapan, dan Transportasi untuk mengambil wisata terdekat berdasarkan kota/kabupaten."
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Kombinasi (Kategori, Harga Maksimal & Kata Kunci)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Format respons filter kombinasi valid', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/destinasi?kategori=wisata-alam&harga_maksimal=50000&kata_kunci=toba",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "destinasi"
+              ],
+              "query": [
+                {
+                  "key": "kategori",
+                  "value": "wisata-alam"
+                },
+                {
+                  "key": "harga_maksimal",
+                  "value": "50000"
+                },
+                {
+                  "key": "kata_kunci",
+                  "value": "toba"
+                }
+              ]
+            },
+            "description": "Menguji kombinasi multi-filter kategori slug, batas harga tiket masuk, dan pencarian kata kunci."
+          },
+          "response": []
+        },
+        {
+          "name": "Detail Satu Destinasi Berdasarkan Slug",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Detail destinasi lengkap beserta fasilitas, galeri, dan ulasan', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.data).to.be.an('object');",
+                  "    pm.expect(isi.data).to.have.property('fasilitas_relasi');",
+                  "    pm.expect(isi.data).to.have.property('galeri');",
+                  "    pm.expect(isi.data).to.have.property('ulasan_terbaru');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/destinasi/{{slug_destinasi}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "destinasi",
+                "{{slug_destinasi}}"
+              ]
+            },
+            "description": "Mengambil detail lengkap satu destinasi wisata berdasarkan slug (default: danau-toba) atau ID numerik."
+          },
+          "response": []
+        },
+        {
+          "name": "Uji Negatif: Detail Destinasi Tidak Ditemukan (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "pm.test('Respons JSON menandakan gagal dan data null', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('gagal');",
+                  "    pm.expect(isi.data).to.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/destinasi/slug-tidak-ditemukan-404",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "destinasi",
+                "slug-tidak-ditemukan-404"
+              ]
+            },
+            "description": "Pengujian rubrik evaluasi K3/K5: memastikan endpoint mengembalikan HTTP 404 Not Found ketika destinasi tidak tersedia."
+          },
+          "response": []
+        },
+        {
+          "name": "Daftar 6 Kategori Wisata Sumatera Utara",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Mengembalikan daftar kategori wisata', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.data).to.be.an('array').that.is.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/kategori",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "kategori"
+              ]
+            },
+            "description": "Mengambil seluruh kategori wisata Sumatera Utara beserta jumlah destinasi per kategori."
+          },
+          "response": []
+        },
+        {
+          "name": "Daftar 33 Kabupaten/Kota Sumatera Utara",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Mengembalikan 33 kabupaten/kota Sumatera Utara', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.jumlah_data).to.eql(33);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/kabupaten-kota",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "kabupaten-kota"
+              ]
+            },
+            "description": "Mengambil daftar 33 kabupaten/kota di Provinsi Sumatera Utara beserta jumlah objek wisatanya."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "03 - Pemesanan Tiket & E-Ticket (Modul Anggota 4)",
+      "description": "Endpoint transaksi pemesanan tiket wisata, validasi input (422), kode tiket otomatis, dan pembatalan tiket.",
+      "item": [
+        {
+          "name": "Riwayat Pemesanan Tiket Pengguna",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Data riwayat pemesanan berbentuk array', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pemesanan?id_pengguna={{id_pengguna}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pemesanan"
+              ],
+              "query": [
+                {
+                  "key": "id_pengguna",
+                  "value": "{{id_pengguna}}"
+                }
+              ]
+            },
+            "description": "Mengambil seluruh riwayat tiket pemesanan milik pengguna tertentu (default ID 2 = Raka Pratama)."
+          },
+          "response": []
+        },
+        {
+          "name": "Uji Negatif: Riwayat Pemesanan Tanpa id_pengguna (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test('Respons menjelaskan parameter wajib id_pengguna', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('gagal');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pemesanan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pemesanan"
+              ]
+            },
+            "description": "Pengujian rubrik evaluasi K5: memastikan parameter wajib id_pengguna yang tidak dikirim ditolak dengan kode 422."
+          },
+          "response": []
+        },
+        {
+          "name": "Buat Pemesanan Tiket Baru (201 Created)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "pm.test('Tiket berhasil dibuat dan kode JSM terbentuk', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi.data).to.be.an('object');",
+                  "    pm.expect(isi.data.kode_pemesanan).to.match(/^JSM-/);",
+                  "    if (isi.data.id) {",
+                  "        pm.collectionVariables.set('id_pemesanan', String(isi.data.id));",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pengguna\": 2,\n  \"id_destinasi\": 667,\n  \"tanggal_kunjungan\": \"2026-12-25\",\n  \"jumlah_pengunjung\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pemesanan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pemesanan"
+              ]
+            },
+            "description": "Membuat pesanan tiket baru. Total harga dihitung otomatis di sisi server backend. Jika berhasil, id_pemesanan otomatis disimpan ke variabel koleksi."
+          },
+          "response": []
+        },
+        {
+          "name": "Uji Negatif: Buat Pemesanan Tanggal Lampau (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test('Respons menolak tanggal kunjungan lampau', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('gagal');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pengguna\": 2,\n  \"id_destinasi\": 667,\n  \"tanggal_kunjungan\": \"2020-01-01\",\n  \"jumlah_pengunjung\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pemesanan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pemesanan"
+              ]
+            },
+            "description": "Pengujian rubrik evaluasi K5: validasi menolak tanggal kunjungan di masa lampau dengan HTTP 422."
+          },
+          "response": []
+        },
+        {
+          "name": "Detail 1 E-Ticket Berdasarkan ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP 200 OK atau 404 jika ID contoh belum ada', function () {",
+                  "    pm.expect([200, 404]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pemesanan/{{id_pemesanan}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pemesanan",
+                "{{id_pemesanan}}"
+              ]
+            },
+            "description": "Mengambil detail lengkap satu pemesanan untuk dirender menjadi halaman E-Ticket."
+          },
+          "response": []
+        },
+        {
+          "name": "Batalkan Pemesanan Tiket (Status Menunggu)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP 200 (berhasil), 404 (tidak ada), atau 409 (sudah bukan menunggu)', function () {",
+                  "    pm.expect([200, 404, 409]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/pemesanan/{{id_pemesanan}}/batal",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pemesanan",
+                "{{id_pemesanan}}",
+                "batal"
+              ]
+            },
+            "description": "Membatalkan tiket yang masih berstatus 'menunggu'. Jika sudah lunas atau dibatalkan sebelumnya, server mengembalikan 409 Conflict."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Ulasan & Rating Bintang (Modul Anggota 4)",
+      "description": "Endpoint pengambilan daftar ulasan dan pengiriman ulasan baru (memicu Trigger sinkronisasi rata_rating dan jumlah_ulasan pada tabel destinasi).",
+      "item": [
+        {
+          "name": "Daftar Ulasan Satu Destinasi",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test('Respons memuat rata_rating, jumlah_ulasan, dan daftar data', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('berhasil');",
+                  "    pm.expect(isi).to.have.property('rata_rating');",
+                  "    pm.expect(isi).to.have.property('jumlah_ulasan');",
+                  "    pm.expect(isi.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/ulasan?id_destinasi={{id_destinasi}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ulasan"
+              ],
+              "query": [
+                {
+                  "key": "id_destinasi",
+                  "value": "{{id_destinasi}}"
+                }
+              ]
+            },
+            "description": "Mengambil daftar ulasan wisatawan beserta nilai rata-rata rating untuk destinasi tertentu (default: Danau Toba, ID 667)."
+          },
+          "response": []
+        },
+        {
+          "name": "Kirim Ulasan & Rating Bintang Baru",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP 201 (baru dibuat) atau 409 (pengguna sudah pernah mengulas destinasi ini)', function () {",
+                  "    pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pengguna\": 2,\n  \"id_destinasi\": 667,\n  \"rating\": 5,\n  \"komentar\": \"Pemandangan kaldera Danau Toba sangat rapi dan fasilitas penunjangnya terjaga.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ulasan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ulasan"
+              ]
+            },
+            "description": "Menambahkan ulasan baru. Satu pengguna hanya dapat mengulas satu destinasi sekali (mengembalikan 409 Conflict jika duplikat)."
+          },
+          "response": []
+        },
+        {
+          "name": "Uji Negatif: Kirim Ulasan Rating di Luar 1–5 (422)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status HTTP harus 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "pm.test('Server menolak rating tidak valid', function () {",
+                  "    const isi = pm.response.json();",
+                  "    pm.expect(isi.status).to.eql('gagal');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_pengguna\": 2,\n  \"id_destinasi\": 667,\n  \"rating\": 9,\n  \"komentar\": \"Ok.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/ulasan",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ulasan"
+              ]
+            },
+            "description": "Pengujian rubrik evaluasi K5: validasi input menolak rating di luar rentang 1–5 dengan kode HTTP 422."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Kerangka Autentikasi, Favorit & Admin (Integrasi Anggota 3 & 5)",
+      "description": "CATATAN: Folder ini disiapkan sesuai kontrak PRD.md untuk diaktifkan segera setelah Anggota 3 (Autentikasi & Favorit) dan Anggota 5 (Admin & Proteksi 401/403) membuka rute di backend/app/Config/Routes.php.",
+      "item": [
+        {
+          "name": "Daftar Akun Member Baru",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nama\": \"Wisatawan Sumut Baru\",\n  \"email\": \"wisatawan.baru@jejaksumut.id\",\n  \"kata_sandi\": \"rahasia123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/autentikasi/daftar",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "autentikasi",
+                "daftar"
+              ]
+            },
+            "description": "Registrasi akun member baru melalui modul Autentikasi (Anggota 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "Masuk (Login) & Simpan Token Otomatis",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const isi = pm.response.json();",
+                  "    const token = (isi.data && isi.data.token) ? isi.data.token : isi.token;",
+                  "    if (token) {",
+                  "        pm.collectionVariables.set('token_autentikasi', token);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@jejaksumut.id\",\n  \"kata_sandi\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/autentikasi/masuk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "autentikasi",
+                "masuk"
+              ]
+            },
+            "description": "Autentikasi pengguna (Member: raka@jejaksumut.id / member123, Admin: admin@jejaksumut.id / admin123). Skrip test otomatis menyimpan token ke token_autentikasi."
+          },
+          "response": []
+        },
+        {
+          "name": "Daftar Favorit Member (Bearer Token)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autentikasi}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/favorit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "favorit"
+              ]
+            },
+            "description": "Mengambil daftar destinasi favorit pengguna yang login (Anggota 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "Ubah Status Favorit (Tambah / Hapus)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autentikasi}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_destinasi\": 667\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/favorit/ubah",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "favorit",
+                "ubah"
+              ]
+            },
+            "description": "Menambah atau menghapus satu destinasi ke daftar favorit member (Anggota 3)."
+          },
+          "response": []
+        },
+        {
+          "name": "Tambah Destinasi Baru (Admin Only — Uji 401/403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autentikasi}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id_kategori\": 1,\n  \"kode_kabupaten\": \"1217\",\n  \"nama\": \"Pemandangan Bukit Holbung Uji API\",\n  \"kota\": \"Kabupaten Samosir\",\n  \"harga_tiket\": 15000,\n  \"deskripsi\": \"Destinasi uji coba dari koleksi Postman untuk rubrik K4 dan K5.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/destinasi",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "destinasi"
+              ]
+            },
+            "description": "Endpoint CRUD Admin (Anggota 5). Kosongkan header Authorization untuk menguji respons 401 Unauthorized, atau gunakan token member untuk menguji 403 Forbidden (Rubrik K4)."
+          },
+          "response": []
+        },
+        {
+          "name": "Verifikasi Status Pemesanan oleh Admin",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_autentikasi}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"lunas\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/pemesanan/{{id_pemesanan}}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "pemesanan",
+                "{{id_pemesanan}}",
+                "status"
+              ]
+            },
+            "description": "Mengubah status pesanan dari 'menunggu' menjadi 'lunas' atau 'dibatalkan' oleh Admin menggunakan Stored Procedure sp_verifikasi_pemesanan (Anggota 5)."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

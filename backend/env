@@ -21,13 +21,15 @@
 #--------------------------------------------------------------------
 
 # app.baseURL = ''
+# URL Frontend Client untuk membentuk field url_detail pada respons JSON API
+# JEJAKSUMUT_FRONTEND_URL = 'http://70.153.136.38:8082'
 # If you have trouble with `.`, you could also use `_`.
 # app_baseURL = ''
 # app.forceGlobalSecureRequests = false
 # app.CSPEnabled = false
 
 #--------------------------------------------------------------------
-# DATABASE (PostgreSQL — Cloud VM Azur)
+# DATABASE (PostgreSQL — Cloud VM Azure)
 #--------------------------------------------------------------------
 
 # database.default.hostname = 70.153.136.38
