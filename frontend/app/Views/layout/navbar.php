@@ -1,7 +1,7 @@
 <?php
 $menuAktif         = $menuAktif ?? 'beranda';
 $idPenggunaAktif   = session('id_pengguna');
-$namaPenggunaAktif = session('nama_pengguna') ?? 'Wisatawan';
+$namaPenggunaAktif = session('nama_pengguna') ?? session('nama') ?? 'Wisatawan';
 
 $daftarMenuNavigasi = [
     ['kode' => 'beranda', 'label' => 'Beranda', 'tautan' => base_url('/')],
@@ -53,6 +53,15 @@ $daftarMenuNavigasi = [
             </div>
 
             <?php if (! empty($idPenggunaAktif)) : ?>
+                <!-- Menu Khusus Member yang Login -->
+                <a
+                    href="<?= base_url('favorit-saya') ?>"
+                    class="hidden md:inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-outline-variant/60 text-on-surface-variant hover:border-primary hover:text-primary font-label-md text-label-md transition-all"
+                    title="Destinasi Favorit Saya"
+                >
+                    <span class="material-symbols-outlined text-base text-tertiary-container">favorite</span>
+                    <span>Favorit</span>
+                </a>
                 <a
                     href="<?= base_url('pemesanan') ?>"
                     class="hidden md:inline-flex items-center justify-center px-4 py-2 rounded-lg border border-primary text-primary hover:bg-primary-container hover:text-on-primary font-label-md text-label-md transition-all"
@@ -65,15 +74,34 @@ $daftarMenuNavigasi = [
                 >
                     Eksplorasi
                 </a>
-                <span class="hidden xl:inline-block text-xs font-semibold text-on-surface-variant px-2">
-                    <?= esc($namaPenggunaAktif) ?>
-                </span>
+                
+                <!-- Info Profil & Tombol Keluar -->
+                <div class="flex items-center gap-2 pl-1 border-l border-surface-variant/60">
+                    <span class="hidden xl:inline-block text-xs font-semibold text-on-surface-variant max-w-[120px] truncate" title="<?= esc($namaPenggunaAktif) ?>">
+                        <?= esc($namaPenggunaAktif) ?>
+                    </span>
+                    <a
+                        href="<?= base_url('keluar') ?>"
+                        class="p-2 rounded-lg text-on-surface-variant hover:text-error hover:bg-error-container/20 transition-colors"
+                        title="Keluar dari akun"
+                        aria-label="Keluar dari akun"
+                    >
+                        <span class="material-symbols-outlined text-lg">logout</span>
+                    </a>
+                </div>
             <?php else : ?>
+                <!-- Menu Pengunjung Publik (Guest) -->
                 <a
                     href="<?= base_url('masuk') ?>"
-                    class="hidden md:inline-flex items-center justify-center px-4 py-2 rounded-lg border border-primary text-primary hover:bg-primary-container hover:text-on-primary font-label-md text-label-md transition-all"
+                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-primary text-primary hover:bg-primary-container hover:text-on-primary font-label-md text-label-md transition-all"
                 >
                     Masuk
+                </a>
+                <a
+                    href="<?= base_url('daftar') ?>"
+                    class="hidden sm:inline-flex items-center justify-center px-3.5 py-2 rounded-lg border border-outline-variant/60 text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-label-md text-label-md transition-all"
+                >
+                    Daftar
                 </a>
                 <a
                     href="<?= base_url('destinasi') ?>"
