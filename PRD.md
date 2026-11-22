@@ -1,15 +1,19 @@
-# 📋 PRD.md — Product Requirements Document (IndWalk)
+# 📋 PRD.md — Product Requirements Document (JejakSumut)
 
-Dokumen ini adalah acuan teknis tunggal (*Single Source of Truth*) untuk **5 anggota kelompok** dan seluruh **AI Coding Agent (Claude Code, CODEX, Antigravity)** dalam membangun aplikasi **IndWalk: Explore Indonesia Together**.
+Dokumen ini adalah acuan teknis tunggal (*Single Source of Truth*) untuk **5 anggota kelompok** dan seluruh **AI Coding Agent (Claude Code, CODEX, Antigravity)** dalam membangun aplikasi **JejakSumut: Jelajahi Pesona Sumatera Utara**.
 
 ---
 
-## 1. Spesifikasi Lingkungan & Standar Kode
-- **Framework Backend**: CodeIgniter 4 (PHP 8.2+)
-- **Database Utama**: **PostgreSQL** (`DBDriver = Postgre`, Port `5432`)
-- **Frontend**: View PHP CI4 + Tailwind CSS + Vanilla JS / Alpine.js + Lucide SVG Icons
-- **Format Pertukaran Data Antar-Kelompok**: RESTful API (JSON over HTTP/HTTPS)
-- **Standar Penulisan Kode**: **Wajib Clean Code Berbahasa Indonesia** (lihat [`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md)) — seluruh nama variabel (`$destinasiUtama`), *array key* (`'harga_tiket'`, `'garis_lintang'`), nama tabel/kolom database, dan komentar wajib menggunakan Bahasa Indonesia.
+## 1. Arsitektur 2 Projek Terpisah (`backend/` & `frontend/`)
+Sesuai arahan dosen pengampu mata kuliah **Manajemen Database Client Server (`PLMKB502`)** dan rubrik evaluasi di [`Form_Evaluasi_Proyek_MDCS.docx.pdf`](Form_Evaluasi_Proyek_MDCS.docx.pdf), aplikasi dipisahkan menjadi **2 projek CodeIgniter 4** di dalam satu repositori agar komunikasi **REST API** terlihat jelas dari hulu ke hilir:
+
+1. **Folder [`backend/`](backend/) — Server REST API & Database PostgreSQL (Default Port `8080`)**:
+   - Bertugas sebagai **Web API Server** yang mengelola koneksi ke **PostgreSQL** di Cloud VM Azure, validasi data, autentikasi token, transaksi ACID, serta menyediakan endpoint **RESTful JSON API** baik untuk aplikasi client kita maupun untuk kelompok lain.
+2. **Folder [`frontend/`](frontend/) — Client Web UI JejakSumut (Default Port `8081`)**:
+   - Bertugas sebagai **Aplikasi Client** yang menampilkan antarmuka pengguna wisata Sumatera Utara (Tailwind CSS + View CI4).
+   - **Dilarang mengakses database PostgreSQL secara langsung**. Seluruh data diambil dan dikirim melalui HTTP Request (`CURLRequest` / `fetch`) ke REST API `backend/` dan REST API 4 kelompok mitra.
+3. **Standar Penulisan Kode**:
+   - **Wajib Clean Code Berbahasa Indonesia** (lihat [`.agents/rules/clean-code-indonesia.md`](.agents/rules/clean-code-indonesia.md)) — seluruh nama variabel (`$destinasiUtama`), *array key* (`'harga_tiket'`, `'garis_lintang'`), nama tabel/kolom database, dan komentar wajib menggunakan Bahasa Indonesia.
 
 ---
 
@@ -17,173 +21,161 @@ Dokumen ini adalah acuan teknis tunggal (*Single Source of Truth*) untuk **5 ang
 
 | Peran (`peran`) | Deskripsi | Hak Akses Fitur |
 | :--- | :--- | :--- |
-| **Guest** (Tanpa Login) | Pengunjung publik | Melihat Beranda, mencari & memfilter katalog wisata, melihat detail destinasi, melihat ulasan, dan melihat rekomendasi mitra dari REST API kelompok lain. |
+| **Guest** (Tanpa Login) | Pengunjung publik | Melihat Beranda, mencari & memfilter katalog wisata Sumatera Utara, melihat detail destinasi, melihat ulasan, dan melihat rekomendasi mitra dari REST API kelompok lain. |
 | **Member** (`peran = 'member'`) | Wisatawan terdaftar | Seluruh akses Guest + menyimpan destinasi ke **Favorit**, membuat **Pemesanan Tiket**, melihat **E-Ticket Saya**, membatalkan pesanan berstatus `menunggu`, dan menulis **Ulasan & Rating**. |
-| **Admin** (`peran = 'admin'`) | Pengelola platform IndWalk | Mengakses Dashboard Admin, CRUD Kategori & Destinasi (+ Galeri Foto), memverifikasi status Pemesanan (`menunggu` $\rightarrow$ `lunas` / `dibatalkan`), menghapus ulasan spam, dan memantau koneksi REST API kelompok lain. |
+| **Admin** (`peran = 'admin'`) | Pengelola platform JejakSumut | Mengakses Dasbor Admin, CRUD Kategori & Destinasi (+ Galeri Foto), memverifikasi status Pemesanan (`menunggu` $\rightarrow$ `lunas` / `dibatalkan`), menghapus ulasan spam, dan memantau koneksi REST API kelompok lain. |
 
 ---
 
-## 3. Referensi Skema Database PostgreSQL (7 Tabel Inti Berbahasa Indonesia)
-Seluruh file migrasi sudah tersedia di [`app/Database/Migrations/`](app/Database/Migrations/) dan file SQL murni di [`app/Database/schema_postgresql.sql`](app/Database/schema_postgresql.sql):
+## 3. Referensi Skema Database PostgreSQL (`backend/app/Database/`)
+> **Status Evaluasi K1 & K2 (`Form_Evaluasi_Proyek_MDCS.docx.pdf`):** Skema sudah memenuhi **3NF**, lengkap dengan constraint (`PK`, `FK`, `UNIQUE`, `CHECK`), `INDEX`, **objek database K2** (`View`, `Trigger`, `Stored Function`, `Stored Procedure`), transaksi ACID di Model, serta skrip role *Least Privilege* di [`backend/app/Database/setup_hak_akses_k2.sql`](backend/app/Database/setup_hak_akses_k2.sql).
 
-1. **`pengguna`**: `id` (PK), `nama`, `email` (Unique), `kata_sandi`, `peran` (`'admin'` | `'member'`), `foto_profil`, `dibuat_pada`, `diperbarui_pada`
-2. **`kategori`**: `id` (PK), `nama`, `slug` (Unique), `deskripsi`, `dibuat_pada`, `diperbarui_pada`
-3. **`destinasi`**: `id` (PK), `id_kategori` (FK ke `kategori.id`), `nama`, `slug` (Unique), `kota` (Indeks pencarian & kunci parameter REST API), `provinsi`, `alamat`, `garis_lintang`, `garis_bujur`, `harga_tiket`, `jam_buka`, `jam_tutup`, `deskripsi`, `fasilitas` (JSON string), `foto_utama`, `rata_rating`, `jumlah_ulasan`, `dibuat_pada`, `diperbarui_pada`
-4. **`galeri_destinasi`**: `id` (PK), `id_destinasi` (FK ke `destinasi.id`), `url_foto`, `keterangan`, `dibuat_pada`
-5. **`pemesanan`**: `id` (PK), `kode_pemesanan` (Unique, format `IND-YYYYMMDD-XXX`), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `tanggal_kunjungan`, `jumlah_pengunjung`, `total_harga`, `status` (`'menunggu'` | `'lunas'` | `'dibatalkan'`), `dibuat_pada`, `diperbarui_pada`
-6. **`ulasan`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `rating` (1–5), `komentar`, `dibuat_pada`, `diperbarui_pada`
-7. **`favorit`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `dibuat_pada` (Unique: `id_pengguna + id_destinasi`)
+Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (9 tabel + 2 SQL View + Trigger & Stored Function/Procedure untuk 971 objek wisata di 33 kabupaten/kota Sumatera Utara):
+1. **`kabupaten_kota`**: `kode_kabupaten` (PK), `nama_kabupaten_kota` (Unique), `jenis_daerah`, `ibu_kota`
+2. **`pengguna`**: `id` (PK), `nama`, `email` (Unique), `kata_sandi`, `peran` (`'admin'` | `'member'`), `foto_profil`, `dibuat_pada`, `diperbarui_pada`
+3. **`kategori`**: `id` (PK), `nama`, `slug` (Unique), `deskripsi`, `dibuat_pada`, `diperbarui_pada`
+4. **`destinasi`**: `id` (PK), `id_kategori` (FK ke `kategori.id`), `kode_kabupaten` (FK ke `kabupaten_kota.kode_kabupaten`), `nama`, `slug` (Unique), `sub_kategori`, `klasifikasi_status`, `kota`, `provinsi` (`'Sumatera Utara'`), `alamat`, `garis_lintang`, `garis_bujur`, `harga_tiket`, `label_harga_tiket`, `keterangan_tiket`, `jam_buka`, `jam_tutup`, `deskripsi`, `fasilitas` (JSON string), `pengelola`, `no_telp`, `email`, `website_sosial`, `foto_utama`, `sumber_data`, `sumber_url`, `rata_rating`, `jumlah_ulasan`, `dibuat_pada`, `diperbarui_pada`
+5. **`fasilitas`** & **`destinasi_fasilitas`**: Master fasilitas (`id`, `nama`, `slug`) dan relasi many-to-many `(id_destinasi, id_fasilitas)`
+6. **`galeri_destinasi`**: `id` (PK), `id_destinasi` (FK ke `destinasi.id`), `url_foto`, `keterangan`, `dibuat_pada`
+7. **`pemesanan`**: `id` (PK), `kode_pemesanan` (Unique, format `JSM-YYYYMMDD-XXX`), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `tanggal_kunjungan`, `jumlah_pengunjung`, `total_harga`, `status` (`'menunggu'` | `'lunas'` | `'dibatalkan'`), `dibuat_pada`, `diperbarui_pada`
+8. **`ulasan`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `rating` (1–5), `komentar`, `dibuat_pada`, `diperbarui_pada`
+9. **`favorit`**: `id` (PK), `id_pengguna` (FK ke `pengguna.id`), `id_destinasi` (FK ke `destinasi.id`), `dibuat_pada` (Unique: `id_pengguna + id_destinasi`)
+
+### Objek Database K2 (Terpasang di Migrasi `000010`–`000011` & `schema_postgresql.sql`)
+- **2 SQL Views**:
+  - `v_wisata_lengkap` — Gabungan `destinasi`, `kabupaten_kota`, dan `kategori`.
+  - `v_ringkasan_pemesanan` — Gabungan `pemesanan`, `pengguna` (tanpa kata sandi), `destinasi`, dan `kabupaten_kota`.
+- **1 Stored Function**: `fn_buat_kode_pemesanan(DATE)` — Generator kode `JSM-YYYYMMDD-XXX` aman konkurensi (*advisory transaction lock*).
+- **1 Stored Procedure**: `sp_verifikasi_pemesanan(INT, VARCHAR)` — Validasi transisi status & *row locking* (`FOR UPDATE`).
+- **2 Trigger Functions (+ Triggers)**:
+  - `trg_sinkronkan_rating_destinasi` (`fn_sinkronkan_rating_destinasi()`, `SECURITY DEFINER`) — Otomatis menghitung ulang `rata_rating` & `jumlah_ulasan` di `destinasi` saat tabel `ulasan` berubah.
+  - `trg_*_diperbarui_pada` (`fn_perbarui_waktu_ubah()`) — Otomatis memperbarui timestamp `diperbarui_pada` saat `UPDATE`.
+- **3 Role User *Least Privilege* ([`setup_hak_akses_k2.sql`](backend/app/Database/setup_hak_akses_k2.sql))**:
+  - `jejaksumut_app_publik` (Aplikasi Client 1 / Publik & Member), `jejaksumut_app_admin` (Aplikasi Client 2 / Panel Admin), dan `jejaksumut_mitra_readonly` (Akses Read-Only katalog).
 
 ---
 
-## 4. Kontrak & Spesifikasi REST API (Inti Client-Server)
+## 4. Kontrak & Spesifikasi REST API (`backend/`)
 
-### A. IndWalk Sebagai API Provider (Server untuk Kelompok Lain)
-Kelompok lain (Kuliner, Penginapan, Transportasi, dll.) dapat memanggil endpoint berikut:
+### A. Endpoint REST API di `backend/` (Dipakai oleh `frontend/` & 4 Kelompok Mitra)
 
 #### 1. `GET /api/v1/destinasi`
+*(Endpoint publik wisata Sumatera Utara untuk dikonsumsi oleh kelompok **Penyedia Tur Guide**, **Kuliner/Rumah Makan**, **Penginapan**, dan **Transportasi**)*
 - **Query Params Opsional**:
-  - `?kota=Magelang` (Filter berdasarkan kota — *case-insensitive*)
-  - `?kategori=cagar-budaya` (Filter berdasarkan slug kategori)
+  - `?kota=Samosir` (Filter berdasarkan Kabupaten/Kota di Sumatera Utara — *case-insensitive*, misal: `Medan`, `Samosir`, `Toba`, `Karo`, `Langkat`, `Nias Selatan`, `Tapanuli Tengah`)
+  - `?kategori=alam-kaldera` (Filter berdasarkan slug kategori)
   - `?harga_maksimal=50000` (Filter batas harga tiket)
-  - `?batas=10`
+  - `?kata_kunci=toba` (Pencarian nama/deskripsi)
 - **Contoh Response `200 OK`**:
   ```json
   {
     "status": "berhasil",
-    "penyedia": "IndWalk Tourism API",
+    "penyedia": "JejakSumut Tourism API",
     "jumlah_data": 1,
     "data": [
       {
         "id": 1,
-        "nama": "Candi Borobudur",
-        "slug": "candi-borobudur",
-        "kategori": "Cagar Budaya",
-        "kota": "Magelang",
-        "provinsi": "Jawa Tengah",
-        "alamat": "Jl. Badrawati, Kw. Candi Borobudur, Borobudur, Kab. Magelang",
+        "nama": "Bukit Holbung & Kaldera Danau Toba",
+        "slug": "bukit-holbung-danau-toba",
+        "kategori": "Alam & Geopark",
+        "kota": "Samosir",
+        "provinsi": "Sumatera Utara",
+        "alamat": "Desa Hariara Pohan, Kec. Harian, Kabupaten Samosir, Sumatera Utara",
         "koordinat": {
-          "garis_lintang": -7.6078738,
-          "garis_bujur": 110.2037513
+          "garis_lintang": 2.5338,
+          "garis_bujur": 98.7042
         },
-        "harga_tiket": 50000,
-        "jam_operasional": "06:30 - 16:30",
+        "harga_tiket": 15000,
+        "jam_operasional": "06:00 - 18:00",
         "rata_rating": 4.9,
-        "jumlah_ulasan": 1420,
+        "jumlah_ulasan": 1640,
         "foto_utama": "https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80",
-        "url_detail": "http://localhost:8080/destinasi/candi-borobudur"
+        "url_detail": "http://localhost:8081/destinasi/bukit-holbung-danau-toba"
       }
     ]
   }
   ```
 
-#### 2. `GET /api/v1/destinasi/{slug_atau_id}`
-- Mengembalikan detail lengkap 1 destinasi beserta array `fasilitas`, `galeri`, dan `ulasan_terbaru`.
-
-#### 3. `GET /api/v1/kategori`
-- Mengembalikan daftar seluruh kategori wisata beserta jumlah destinasi di tiap kategori.
+#### 2. Endpoint Lainnya pada `backend/` (`/api/v1/...`)
+- **Kategori & Detail Destinasi**:
+  - `GET /api/v1/kategori` — Daftar seluruh kategori wisata Sumatera Utara.
+  - `GET /api/v1/destinasi/{slug_atau_id}` — Detail lengkap 1 destinasi beserta `fasilitas`, `galeri`, dan `ulasan`.
+  - `POST /api/v1/destinasi`, `PUT /api/v1/destinasi/{id}`, `DELETE /api/v1/destinasi/{id}` — Endpoint CRUD Destinasi (Wajib Token Admin; menolak dengan `401` tanpa token, `403` jika bukan admin, `422` jika input tidak valid).
+- **Autentikasi**:
+  - `POST /api/v1/autentikasi/masuk` — Validasi email & kata sandi pengguna, mengembalikan token autentikasi.
+  - `POST /api/v1/autentikasi/daftar` — Registrasi member baru.
+- **Transaksi Member & Admin**:
+  - `GET /api/v1/pemesanan` & `POST /api/v1/pemesanan` — Daftar & pembuatan pesanan tiket (menggunakan Database Transaction ACID).
+  - `PATCH /api/v1/pemesanan/{id}/status` — Perubahan status pesanan (`menunggu` / `lunas` / `dibatalkan`).
+  - `POST /api/v1/ulasan` — Kirim rating & komentar ulasan baru.
+  - `GET /api/v1/favorit/{id_pengguna}` & `POST /api/v1/favorit/ubah` — Daftar & tambah/hapus favorit.
 
 ---
 
-### B. IndWalk Sebagai API Consumer (Client yang Mengambil Data Kelompok Lain)
-Di halaman Detail Destinasi (`/destinasi/{slug}`), IndWalk memanggil library `App\Libraries\LayananApiMitra` dengan parameter `kota` (misal: `Magelang`, `Malang`, `Banyuwangi`):
+### B. Integrasi 4 REST API Kelompok Mitra di `frontend/`
+Di halaman Detail Destinasi (`/destinasi/{slug}`), aplikasi `frontend/` memanggil library `frontend/app/Libraries/LayananApiMitra.php` dengan parameter `kota` di Sumatera Utara (misal: `Medan`, `Samosir`, `Karo`, `Langkat`) untuk mengambil data dari **4 kelompok mitra di kelas**:
+1. **Kelompok Penyedia Tur Guide** (`PARTNER_TUR_GUIDE_API_URL`)
+2. **Kelompok Kuliner / Rumah Makan** (`PARTNER_KULINER_API_URL`)
+3. **Kelompok Penginapan** (`PARTNER_HOTEL_API_URL`)
+4. **Kelompok Transportasi** (`PARTNER_TRANSPORT_API_URL`)
 
-1. **Desain Fleksibel Menghadapi Perubahan Tema Kelompok Lain**:
-   - Konfigurasi endpoint kelompok mitra disimpan di `.env`:
-     ```ini
-     # Endpoint API Kelompok Mitra (Aktifkan MODE_CADANGAN_MOCK=true selama API kelompok lain belum siap)
-     MODE_CADANGAN_MOCK     = true
-     URL_MITRA_KULINER      = "http://localhost:8081/api/kuliner"
-     URL_MITRA_PENGINAPAN   = "http://localhost:8082/api/penginapan"
-     URL_MITRA_TRANSPORTASI = "http://localhost:8083/api/transportasi"
-     ```
+Konfigurasi endpoint dan mekanisme fallback disimpan di `frontend/.env`:
+1. **Konfigurasi di `frontend/.env`** (sesuai contoh di [`frontend/env`](frontend/env)):
+   ```ini
+   JEJAKSUMUT_BACKEND_API_URL = 'http://localhost:8080/api/v1'
+   PARTNER_KULINER_API_URL    = 'http://localhost:8082/api/kuliner'
+   PARTNER_HOTEL_API_URL     = 'http://localhost:8083/api/penginapan'
+   PARTNER_TRANSPORT_API_URL = 'http://localhost:8084/api/transportasi'
+   PARTNER_TUR_GUIDE_API_URL = 'http://localhost:8085/api/tur_guide'
+   PARTNER_API_TIMEOUT       = 3
+   MODE_CADANGAN_MOCK        = true
+   ```
 2. **Mekanisme Timeout & Fallback Otomatis**:
-   - Setiap request HTTP (`CURLRequest`) dibatasi `timeout => 3` detik.
-   - Jika server kelompok lain belum siap, mati, atau mengembalikan error, `LayananApiMitra` otomatis mengembalikan data **Mock Fallback** berlabel `"sumber_data": "simulasi_fallback"` sehingga UI halaman Detail Wisata tetap menampilkan kartu rekomendasi dengan rapi.
+   - Setiap request HTTP dibatasi `PARTNER_API_TIMEOUT = 3` detik.
+   - Jika server salah satu dari 4 kelompok mitra belum siap atau mati saat demo, `LayananApiMitra` otomatis mengembalikan data **Mock Fallback Sumatera Utara** berlabel `"sumber_data": "simulasi_fallback"` sehingga halaman tidak pernah *error*.
 
 ---
 
-## 5. Peta Routing & Halaman (`app/Config/Routes.php`)
+## 5. Pembagian Tugas 5 Anggota Kelompok (Bebas Konflik Git)
 
-### Rute Publik (Guest & Member)
-- `GET /` $\rightarrow$ `HomeController::index` (Beranda: Hero Search, Bento Destinasi Unggulan, Kategori)
-- `GET /destinasi` $\rightarrow$ `DestinasiController::index` (Katalog Eksplorasi + Filter Kota, Kategori, Harga)
-- `GET /destinasi/(:segment)` $\rightarrow$ `DestinasiController::tampil/$1` (Detail Wisata + Galeri + Ulasan + **Widget REST API Kelompok Lain**)
+Dengan pemisahan folder `backend/` dan `frontend/`, 5 anggota kelompok dapat membagi tugas per fitur tanpa bentrok file:
 
-### Rute Autentikasi
-- `GET /masuk` & `POST /masuk` $\rightarrow$ `AutentikasiController::masuk` & `AutentikasiController::prosesMasuk`
-- `GET /daftar` & `POST /daftar` $\rightarrow$ `AutentikasiController::daftar` & `AutentikasiController::prosesDaftar`
-- `GET /keluar` $\rightarrow$ `AutentikasiController::keluar`
+### 👤 Anggota 1 (joxtian) — Beranda, Katalog Eksplorasi & Detail Destinasi Sumut
+- **Backend (`backend/`)**:
+  - `backend/app/Models/DestinasiModel.php`, `KategoriModel.php`, `GaleriDestinasiModel.php`
+  - `backend/app/Controllers/Api/DestinasiApiController.php` (`GET /api/v1/destinasi`, `GET /api/v1/kategori`, `GET /api/v1/destinasi/{slug}`)
+- **Frontend (`frontend/`)**:
+  - `frontend/app/Controllers/Home.php`, `frontend/app/Controllers/DestinasiController.php`
+  - `frontend/app/Views/welcome_message.php`, `frontend/app/Views/pages/destinasi/*`
 
-### Rute Member (Wajib Login)
-- `POST /pemesanan` $\rightarrow$ `PemesananController::simpan` (Buat pemesanan tiket baru)
-- `GET /pemesanan-saya` $\rightarrow$ `PemesananController::index` (Daftar E-Ticket & riwayat pemesanan)
-- `POST /pemesanan-saya/(:num)/batal` $\rightarrow$ `PemesananController::batalkan/$1` (Batalkan pesanan berstatus `menunggu`)
-- `POST /ulasan` $\rightarrow$ `UlasanController::simpan` (Kirim rating 1–5 & komentar, lalu hitung ulang `rata_rating` destinasi)
-- `POST /favorit/ubah` $\rightarrow$ `FavoritController::ubah` (Tambah/hapus destinasi dari daftar favorit)
-- `GET /favorit-saya` $\rightarrow$ `FavoritController::index` (Daftar destinasi favorit saya)
+### 👤 Anggota 2 (Brian) — Integrasi Client-Server (HTTP Client Backend & 4 API Kelompok Mitra)
+- **Frontend (`frontend/`)**:
+  - `frontend/app/Libraries/LayananApiBackend.php` (Helper pemanggil REST API `backend/`)
+  - `frontend/app/Libraries/LayananApiMitra.php` (Pemanggil REST API 4 kelompok mitra: **Penyedia Tur Guide**, **Kuliner/Rumah Makan**, **Penginapan**, dan **Transportasi** + Mock Fallback)
+  - `frontend/app/Views/components/rekomendasi_mitra.php` (Tampilan kartu rekomendasi 4 layanan mitra di halaman Detail Wisata)
+- **Backend (`backend/`)**:
+  - Dokumentasi & pengujian koleksi Postman `/api/v1/destinasi` untuk dibagikan ke kelompok lain + deployment ke VM Azure.
 
-### Rute Admin (`peran = 'admin'`)
-- `GET /admin` $\rightarrow$ `Admin\DasborController::index` (Ringkasan metrik & status koneksi REST API Mitra)
-- `GET /admin/destinasi` $\rightarrow$ `Admin\DestinasiAdminController::index` (CRUD Destinasi & Kategori)
-- `GET /admin/pemesanan` $\rightarrow$ `Admin\PemesananAdminController::index` (Verifikasi pembayaran tiket `menunggu` $\rightarrow$ `lunas`)
+### 👤 Anggota 3 (hafiz) — Autentikasi Token (`401`/`403`), Sesi Pengguna & Fitur Favorit
+- **Backend (`backend/`)**:
+  - `backend/app/Models/PenggunaModel.php`, `backend/app/Models/FavoritModel.php`
+  - `backend/app/Controllers/Api/AutentikasiApiController.php`, `backend/app/Controllers/Api/FavoritApiController.php`
+- **Frontend (`frontend/`)**:
+  - `frontend/app/Controllers/AutentikasiController.php`, `frontend/app/Controllers/FavoritController.php`
+  - `frontend/app/Filters/AutentikasiFilter.php`, `frontend/app/Filters/AdminFilter.php`
+  - `frontend/app/Views/pages/autentikasi/*`, `frontend/app/Views/pages/member/favorit.php`
 
-### Rute REST API (`Api` Namespace)
-- `GET /api/v1/destinasi` $\rightarrow$ `Api\DestinasiApiController::index`
-- `GET /api/v1/destinasi/(:segment)` $\rightarrow$ `Api\DestinasiApiController::tampil/$1`
-- `GET /api/v1/kategori` $\rightarrow$ `Api\DestinasiApiController::kategori`
+### 👤 Anggota 4 (samuel) — Transaksi Pemesanan Tiket (ACID Transaction), E-Ticket & Sistem Ulasan
+- **Backend (`backend/`)**:
+  - `backend/app/Models/PemesananModel.php`, `backend/app/Models/UlasanModel.php`
+  - `backend/app/Controllers/Api/PemesananApiController.php`, `backend/app/Controllers/Api/UlasanApiController.php`
+- **Frontend (`frontend/`)**:
+  - `frontend/app/Controllers/PemesananController.php`, `frontend/app/Controllers/UlasanController.php`
+  - `frontend/app/Views/pages/member/pemesanan.php`, `frontend/app/Views/components/bagian_ulasan.php`
 
----
-
-## 6. Pembagian Tugas 5 Anggota Kelompok (Bebas Konflik Git)
-
-Agar 5 orang dapat bekerja paralel di GitHub tanpa saling menimpa file (*merge conflict*), pembagian kerja diatur per modul:
-
-### 👤 Anggota 1 — Core Layout, Beranda & Katalog Destinasi
-- **Tanggung Jawab**:
-  - Menyusun master layout `app/Views/layout/main.php`, `navbar.php` (dengan logo IndWalk), dan `footer.php`.
-  - Membangun halaman Beranda (`/`) dan Katalog Pencarian/Filter (`/destinasi`) serta kerangka Halaman Detail (`/destinasi/{slug}`).
-- **File Miliknya**:
-  - `app/Controllers/HomeController.php`, `app/Controllers/DestinasiController.php`
-  - `app/Models/DestinasiModel.php`, `app/Models/KategoriModel.php`, `app/Models/GaleriDestinasiModel.php`
-  - `app/Views/layout/*`, `app/Views/pages/home.php`, `app/Views/pages/destinasi/*`
-
-### 👤 Anggota 2 — Spesialis Client-Server & Integrasi REST API
-- **Tanggung Jawab**:
-  - Membangun **REST API Server IndWalk** (`/api/v1/destinasi`) agar bisa diakses kelompok lain.
-  - Membangun **`LayananApiMitra`** untuk mengambil data dari API kelompok Kuliner, Penginapan, dan Transportasi (lengkap dengan *timeout handling* & *Mock Fallback*).
-  - Membuat komponen View bagian bawah halaman Detail Destinasi untuk menampilkan kartu data dari API kelompok lain.
-- **File Miliknya**:
-  - `app/Controllers/Api/DestinasiApiController.php`
-  - `app/Libraries/LayananApiMitra.php`
-  - `app/Views/components/rekomendasi_mitra.php`
-
-### 👤 Anggota 3 — Autentikasi, Sesi Pengguna, Filter Peran & Favorit
-- **Tanggung Jawab**:
-  - Membangun fitur Masuk (Login), Daftar (Register), Keluar (Logout), dan Filter proteksi halaman (`AutentikasiFilter` & `AdminFilter`).
-  - Membangun fitur tambah/hapus **Favorit** destinasi dan halaman `/favorit-saya`.
-- **File Miliknya**:
-  - `app/Controllers/AutentikasiController.php`, `app/Controllers/FavoritController.php`
-  - `app/Filters/AutentikasiFilter.php`, `app/Filters/AdminFilter.php`
-  - `app/Models/PenggunaModel.php`, `app/Models/FavoritModel.php`
-  - `app/Views/pages/autentikasi/*`, `app/Views/pages/member/favorit.php`
-
-### 👤 Anggota 4 — Transaksi Pemesanan Tiket, E-Ticket & Sistem Ulasan
-- **Tanggung Jawab**:
-  - Membangun fitur form Pemesanan Tiket di halaman detail, generator `kode_pemesanan` (`IND-YYYYMMDD-XXX`), dan halaman **E-Ticket Saya** (`/pemesanan-saya`).
-  - Membangun fitur input Rating (1–5) & Ulasan serta meng-update kolom `rata_rating` dan `jumlah_ulasan` otomatis di tabel `destinasi`.
-- **File Miliknya**:
-  - `app/Controllers/PemesananController.php`, `app/Controllers/UlasanController.php`
-  - `app/Models/PemesananModel.php`, `app/Models/UlasanModel.php`
-  - `app/Views/pages/member/pemesanan.php`, `app/Views/components/bagian_ulasan.php`
-
-### 👤 Anggota 5 — Dasbor Admin & Manajemen Operasional
-- **Tanggung Jawab**:
-  - Membangun halaman Dasbor Admin (`/admin`) dengan kartu statistik nyata.
-  - Membangun halaman CRUD Destinasi & Kategori (`/admin/destinasi`) serta halaman Verifikasi Pemesanan (`/admin/pemesanan`).
-  - Membangun panel cek kesehatan endpoint REST API kelompok lain di Dasbor Admin.
-- **File Miliknya**:
-  - `app/Controllers/Admin/DasborController.php`
-  - `app/Controllers/Admin/DestinasiAdminController.php`
-  - `app/Controllers/Admin/PemesananAdminController.php`
-  - `app/Views/pages/admin/*`
+### 👤 Anggota 5 (andreas) — Database Scraping Sumut, Objek DB (`View`/`Trigger`/`Function`) & Dasbor Admin
+- **Database & Backend (`backend/`)**:
+  - Scraping dataset destinasi wisata Sumatera Utara, penyusunan skema tabel, `VIEW`, `TRIGGER`, `STORED FUNCTION`, serta endpoint Admin pada `backend/app/Controllers/Api/AdminApiController.php`.
+- **Frontend (`frontend/`)**:
+  - `frontend/app/Controllers/Admin/DasborController.php`, `DestinasiAdminController.php`, `PemesananAdminController.php`
+  - `frontend/app/Views/pages/admin/*`

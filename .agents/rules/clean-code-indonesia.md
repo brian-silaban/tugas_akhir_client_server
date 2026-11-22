@@ -4,7 +4,7 @@ description: Standar wajib penulisan Clean Code berbahasa Indonesia (nama variab
 trigger: always_on
 ---
 
-# 🇮🇩 Aturan Wajib: Clean Code Berbahasa Indonesia (Standar Kelompok IndWalk)
+# 🇮🇩 Aturan Wajib: Clean Code Berbahasa Indonesia (Standar Kelompok JejakSumut)
 
 Seluruh kode yang ditulis di repositori ini **WAJIB** menggunakan **Bahasa Indonesia** dan mengutamakan **keterbacaan (*readability*)** agar seluruh 5 anggota kelompok dapat memahami, memodifikasi, dan menjelaskan alur kode dengan lancar saat presentasi/sidang dosen.
 
