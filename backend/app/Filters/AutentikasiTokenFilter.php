@@ -31,10 +31,10 @@ class AutentikasiTokenFilter implements FilterInterface
 
         // --- Rate Limiting: 60 request per menit per IP ---
         $throttler  = Services::throttler();
-        $alamatIp   = $request->getIPAddress();
+        $kunciIp    = md5($request->getIPAddress());
         $batasMenit = 60;
 
-        if (! $throttler->check($alamatIp, $batasMenit, MINUTE)) {
+        if (! $throttler->check($kunciIp, $batasMenit, MINUTE)) {
             return $response
                 ->setStatusCode(ResponseInterface::HTTP_TOO_MANY_REQUESTS)
                 ->setContentType('application/json')

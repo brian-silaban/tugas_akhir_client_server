@@ -106,7 +106,12 @@ class FavoritController extends BaseController
             return $this->response->setStatusCode($hasil['status_kode'])->setJSON($hasil['isi']);
         }
 
-        $pesan = $hasil['pesan'] ?? ($hasil['berhasil'] ? 'Status favorit berhasil diperbarui.' : 'Gagal memperbarui status favorit.');
-        return redirect()->back()->with($hasil['berhasil'] ? 'success' : 'error', $pesan);
+        $statusBerhasil = $hasil['berhasil'] ?? false;
+        if (isset($hasil['isi']['status'])) {
+            $statusBerhasil = $hasil['isi']['status'] === 'berhasil';
+        }
+
+        $pesan = $hasil['pesan'] ?? ($statusBerhasil ? 'Status favorit berhasil diperbarui.' : 'Gagal memperbarui status favorit.');
+        return redirect()->back()->with($statusBerhasil ? 'success' : 'error', $pesan);
     }
 }
