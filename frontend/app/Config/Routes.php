@@ -24,30 +24,30 @@ $routes->get('daftar',  'AutentikasiController::daftar');
 $routes->post('daftar', 'AutentikasiController::prosesDaftar');
 $routes->get('keluar',  'AutentikasiController::keluar');
 
-// --- Favorit (Anggota 3) ---
-$routes->get('favorit-saya',     'FavoritController::index');
-$routes->post('favorit/ubah',    'FavoritController::ubah');
+// --- Favorit (Anggota 3) – dilindungi filter autentikasi ---
+$routes->get('favorit-saya',     'FavoritController::index',  ['filter' => 'autentikasi']);
+$routes->post('favorit/ubah',    'FavoritController::ubah',   ['filter' => 'autentikasi']);
 
 // ================================================================
-// MODUL ANGGOTA 4 — Pemesanan Tiket & Ulasan (Frontend Client)
+// MODUL ANGGOTA 4 – Pemesanan Tiket & Ulasan (Frontend Client)
 // ================================================================
 
-// --- Halaman Tiket Saya ---
+// --- Halaman Tiket Saya – dilindungi filter autentikasi ---
 // GET  /pemesanan                → Daftar riwayat tiket pengguna
-$routes->get('pemesanan', 'PemesananController::index');
+$routes->get('pemesanan', 'PemesananController::index', ['filter' => 'autentikasi']);
 
 // GET  /pemesanan/etiket/{id}   → Halaman E-Ticket digital
-$routes->get('pemesanan/etiket/(:num)', 'PemesananController::tampilEtiket/$1');
+$routes->get('pemesanan/etiket/(:num)', 'PemesananController::tampilEtiket/$1', ['filter' => 'autentikasi']);
 
 // POST /pemesanan/buat          → Proses form pemesanan tiket baru
-$routes->post('pemesanan/buat', 'PemesananController::buat');
+$routes->post('pemesanan/buat', 'PemesananController::buat', ['filter' => 'autentikasi']);
 
 // POST /pemesanan/batal/{id}    → Batalkan tiket
-$routes->post('pemesanan/batal/(:num)', 'PemesananController::batal/$1');
+$routes->post('pemesanan/batal/(:num)', 'PemesananController::batal/$1', ['filter' => 'autentikasi']);
 
 // --- Ulasan & Rating ---
-// POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail
-$routes->post('ulasan/kirim', 'UlasanController::kirim');
+// POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail (Member)
+$routes->post('ulasan/kirim', 'UlasanController::kirim', ['filter' => 'autentikasi']);
 
 // --- Admin Dashboard (Anggota 5) ---
 // $routes->get('admin',                        'Admin\DasborController::index');

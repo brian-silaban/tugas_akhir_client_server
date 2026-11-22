@@ -56,8 +56,8 @@
         <!-- ============================================================ -->
         <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-surface-container">
             <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Air_terjun_Ponot.jpg/1280px-Air_terjun_Ponot.jpg"
-                alt="Air Terjun Ponot di Asahan, Sumatera Utara"
+                src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1280&q=80"
+                alt="Pemandangan Danau Toba dari perbukitan, Sumatera Utara"
                 class="absolute inset-0 h-full w-full object-cover"
             />
             <!-- Gradient overlay gelap agar teks terbaca jelas -->

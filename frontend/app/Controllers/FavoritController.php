@@ -34,7 +34,7 @@ class FavoritController extends BaseController
             return redirect()->to('/masuk')->with('error', 'Silakan masuk terlebih dahulu untuk melihat favorit.');
         }
 
-        $hasil = $this->layananApiBackend->kirimGet('/favorit/' . $idPengguna);
+        $hasil = $this->layananApiBackend->kirimGet('/favorit/' . $idPengguna, [], (string) session()->get('token_api'));
 
         $daftarFavorit = [];
         if ($hasil['terhubung'] && $hasil['berhasil'] && is_array($hasil['data'])) {
@@ -85,11 +85,12 @@ class FavoritController extends BaseController
             return redirect()->back()->with('error', 'ID destinasi tidak valid.');
         }
 
-        // Kirim request toggle favorit ke Backend REST API
+        // Kirim request toggle favorit ke Backend REST API dengan token autentikasi
+        $tokenApi = (string) session()->get('token_api');
         $hasil = $this->layananApiBackend->kirimPost('/favorit/ubah', [
             'id_pengguna'  => $idPengguna,
             'id_destinasi' => $idDestinasi,
-        ]);
+        ], $tokenApi);
 
         if (! $hasil['terhubung']) {
             if ($this->request->isAJAX()) {

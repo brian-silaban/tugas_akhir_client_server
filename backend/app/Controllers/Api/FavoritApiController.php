@@ -4,13 +4,15 @@ namespace App\Controllers\Api;
 
 use App\Models\FavoritModel;
 use App\Models\DestinasiModel;
+use App\Models\PenggunaModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
 /**
- * FavoritApiController — Endpoint REST API Favorit Destinasi JejakSumut (Backend).
+ * FavoritApiController – Endpoint REST API Favorit Destinasi JejakSumut (Backend).
+ * Semua endpoint dilindungi oleh AutentikasiTokenFilter (Bearer HMAC).
  *
- * Anggota 3 — Autentikasi, Sesi Pengguna & Fitur Favorit
+ * Anggota 3 – Autentikasi, Sesi Pengguna & Fitur Favorit
  */
 class FavoritApiController extends ResourceController
 {
@@ -28,6 +30,18 @@ class FavoritApiController extends ResourceController
                 'pesan'  => 'Parameter id_pengguna wajib disertakan dan berupa angka.',
                 'data'   => [],
             ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        // Validasi keberadaan pengguna di database
+        $modelPengguna = new PenggunaModel();
+        $penggunaAda   = $modelPengguna->find((int) $idPengguna);
+
+        if ($penggunaAda === null) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Pengguna dengan id tersebut tidak ditemukan.',
+                'data'   => [],
+            ], ResponseInterface::HTTP_NOT_FOUND);
         }
 
         $favoritModel  = new FavoritModel();
@@ -56,7 +70,19 @@ class FavoritApiController extends ResourceController
             ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $favoritModel = new FavoritModel();
+        // Validasi keberadaan pengguna
+        $modelPengguna = new PenggunaModel();
+        $penggunaAda   = $modelPengguna->find((int) $idPengguna);
+
+        if ($penggunaAda === null) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Pengguna dengan id tersebut tidak ditemukan.',
+                'data'   => [],
+            ], ResponseInterface::HTTP_NOT_FOUND);
+        }
+
+        $favoritModel  = new FavoritModel();
         $daftarFavorit = $favoritModel->ambilFavoritPengguna((int) $idPengguna);
 
         return $this->respond([
@@ -69,6 +95,7 @@ class FavoritApiController extends ResourceController
     /**
      * POST /api/v1/favorit/ubah
      * Menambah atau menghapus destinasi dari favorit (toggle).
+     * Memeriksa keberadaan id_destinasi dan id_pengguna sebelum insert.
      */
     public function ubah(): ResponseInterface
     {
@@ -86,8 +113,28 @@ class FavoritApiController extends ResourceController
             ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        // Validasi keberadaan pengguna di database
+        $modelPengguna = new PenggunaModel();
+        if ($modelPengguna->find($idPengguna) === null) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Pengguna tidak ditemukan.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_NOT_FOUND);
+        }
+
+        // Validasi keberadaan destinasi di database
+        $modelDestinasi = new DestinasiModel();
+        if ($modelDestinasi->find($idDestinasi) === null) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Destinasi tidak ditemukan.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_NOT_FOUND);
+        }
+
         $favoritModel = new FavoritModel();
-        $hasil = $favoritModel->ubahFavorit($idPengguna, $idDestinasi);
+        $hasil        = $favoritModel->ubahFavorit($idPengguna, $idDestinasi);
 
         return $this->respond($hasil, ResponseInterface::HTTP_OK);
     }

@@ -7,18 +7,110 @@ use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
 
 /**
- * AutentikasiApiController — Endpoint REST API Autentikasi JejakSumut (Backend).
+ * AutentikasiApiController – Endpoint REST API Autentikasi JejakSumut (Backend).
  * Melayani login dan registrasi akun untuk Frontend Client.
+ * Token menggunakan HMAC-SHA256 yang bertanda tangan dengan masa berlaku.
  *
- * Anggota 3 — Autentikasi, Sesi Pengguna & Filter Hak Akses
+ * Anggota 3 – Autentikasi, Sesi Pengguna & Filter Hak Akses
  */
 class AutentikasiApiController extends ResourceController
 {
     protected $format = 'json';
 
+    // -------------------------------------------------------------------------
+    // Helper: Pembuatan & Verifikasi Token HMAC-SHA256
+    // -------------------------------------------------------------------------
+
     /**
-     * POST /api/v1/autentikasi/masuk
-     * Memverifikasi email dan kata sandi pengguna.
+     * Membuat token HMAC-SHA256 yang bertanda tangan.
+     * Payload memuat id, email, peran, dan exp (waktu kedaluwarsa).
+     *
+     * @param int    $idPengguna
+     * @param string $email
+     * @param string $peran
+     * @return string
+     */
+    public static function buatToken(int $idPengguna, string $email, string $peran): string
+    {
+        // Masa berlaku token: 24 jam ke depan
+        $waktuKedaluwarsa = time() + (60 * 60 * 24);
+
+        // Susun payload sebagai string terformat
+        $payload = $idPengguna . '|' . $email . '|' . $peran . '|' . $waktuKedaluwarsa;
+
+        // Dapatkan secret key dari .env (wajib diisi untuk produksi)
+        $secretKey = (string) env('API_TOKEN_SECRET', 'jejaksumut-rahasia-anggota3-2026');
+
+        // Buat tanda tangan HMAC-SHA256
+        $tandaTangan = hash_hmac('sha256', $payload, $secretKey);
+
+        // Gabungkan payload dan tanda tangan, lalu encode Base64Url
+        $tokenMentah = $payload . '.' . $tandaTangan;
+
+        return rtrim(strtr(base64_encode($tokenMentah), '+/', '-_'), '=');
+    }
+
+    /**
+     * Memverifikasi token HMAC-SHA256 yang dikirim klien.
+     * Mengembalikan array data payload jika valid, atau null jika tidak valid/kedaluwarsa.
+     *
+     * @param string $token
+     * @return array<string, mixed>|null
+     */
+    public static function verifikasiToken(string $token): ?array
+    {
+        // Decode Base64Url kembali ke string mentah
+        $tokenMentah = base64_decode(strtr($token, '-_', '+/') . str_repeat('=', 3 - (3 + strlen($token)) % 4));
+        if ($tokenMentah === false) {
+            return null;
+        }
+
+        // Pisahkan bagian payload dan tanda tangan
+        $posisiTitik = strrpos($tokenMentah, '.');
+        if ($posisiTitik === false) {
+            return null;
+        }
+
+        $payload     = substr($tokenMentah, 0, $posisiTitik);
+        $tandaTangan = substr($tokenMentah, $posisiTitik + 1);
+
+        // Hitung ulang tanda tangan yang diharapkan
+        $secretKey             = (string) env('API_TOKEN_SECRET', 'jejaksumut-rahasia-anggota3-2026');
+        $tandaTanganDiharapkan = hash_hmac('sha256', $payload, $secretKey);
+
+        // Bandingkan tanda tangan dengan aman (mencegah timing attack)
+        if (! hash_equals($tandaTanganDiharapkan, $tandaTangan)) {
+            return null;
+        }
+
+        // Pecah payload menjadi komponen
+        $bagian = explode('|', $payload);
+        if (count($bagian) !== 4) {
+            return null;
+        }
+
+        [$idPengguna, $email, $peran, $exp] = $bagian;
+
+        // Cek masa berlaku
+        if ((int) $exp < time()) {
+            return null; // Token sudah kedaluwarsa
+        }
+
+        return [
+            'id_pengguna' => (int) $idPengguna,
+            'email'       => $email,
+            'peran'       => $peran,
+            'exp'         => (int) $exp,
+        ];
+    }
+
+    // -------------------------------------------------------------------------
+    // Endpoint REST API
+    // -------------------------------------------------------------------------
+
+    /**
+     * POST /api/v1/auth/masuk
+     * Memverifikasi email dan kata sandi pengguna, mengembalikan token HMAC.
      */
     public function masuk(): ResponseInterface
     {
@@ -39,7 +131,7 @@ class AutentikasiApiController extends ResourceController
         $modelPengguna = new PenggunaModel();
         $pengguna      = $modelPengguna->where('email', $email)->first();
 
-        if ($pengguna === null) {
+        if ($pengguna === null || ! password_verify($kataSandi, $pengguna['kata_sandi'])) {
             return $this->respond([
                 'status' => 'gagal',
                 'pesan'  => 'Email atau kata sandi salah.',
@@ -47,15 +139,10 @@ class AutentikasiApiController extends ResourceController
             ], ResponseInterface::HTTP_UNAUTHORIZED);
         }
 
-        if (! password_verify($kataSandi, $pengguna['kata_sandi'])) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Email atau kata sandi salah.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNAUTHORIZED);
-        }
+        // Buat token HMAC bertanda tangan
+        $tokenBaru = self::buatToken((int) $pengguna['id'], $pengguna['email'], $pengguna['peran']);
 
-        // Hapus hash kata sandi sebelum dikirim ke client
+        // Hapus hash kata sandi sebelum dikirim ke klien
         unset($pengguna['kata_sandi']);
 
         return $this->respond([
@@ -63,13 +150,13 @@ class AutentikasiApiController extends ResourceController
             'pesan'  => 'Login berhasil.',
             'data'   => [
                 'pengguna' => $pengguna,
-                'token'    => base64_encode($pengguna['id'] . ':' . $pengguna['email'] . ':' . time()),
+                'token'    => $tokenBaru,
             ],
         ], ResponseInterface::HTTP_OK);
     }
 
     /**
-     * POST /api/v1/autentikasi/daftar
+     * POST /api/v1/auth/daftar
      * Mendaftarkan member baru ke database.
      */
     public function daftar(): ResponseInterface
@@ -135,7 +222,7 @@ class AutentikasiApiController extends ResourceController
         }
 
         $waktuSekarang = date('Y-m-d H:i:s');
-        $idBaru = $modelPengguna->insert([
+        $idBaru        = $modelPengguna->insert([
             'nama'            => $nama,
             'email'           => $email,
             'kata_sandi'      => password_hash($kataSandi, PASSWORD_DEFAULT),

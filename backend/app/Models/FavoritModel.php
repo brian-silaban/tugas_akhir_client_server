@@ -63,10 +63,11 @@ class FavoritModel extends Model
             $this->delete($favoritAda['id']);
 
             return [
-                'status'    => 'sukses',
+                'status'    => 'berhasil',
                 'aksi'      => 'hapus',
                 'difavorit' => false,
                 'pesan'     => 'Destinasi berhasil dihapus dari daftar favorit.',
+                'data'      => null,
             ];
         }
 
@@ -80,10 +81,11 @@ class FavoritModel extends Model
         $this->insert($dataBaru);
 
         return [
-            'status'    => 'sukses',
+            'status'    => 'berhasil',
             'aksi'      => 'tambah',
             'difavorit' => true,
             'pesan'     => 'Destinasi berhasil ditambahkan ke daftar favorit.',
+            'data'      => null,
         ];
     }
 

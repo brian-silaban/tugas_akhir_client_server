@@ -31,34 +31,37 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($rout
     $routes->post('autentikasi/masuk',  'AutentikasiApiController::masuk');
     $routes->post('autentikasi/daftar', 'AutentikasiApiController::daftar');
 
-    // --- Favorit (Anggota 3) ---
-    $routes->get('favorit/(:num)',  'FavoritApiController::show/$1');
-    $routes->get('favorit',         'FavoritApiController::index');
-    $routes->post('favorit/ubah',   'FavoritApiController::ubah');
+    // --- Favorit (Anggota 3) – dilindungi filter autentikasiToken ---
+    $routes->get('favorit/(:num)',  'FavoritApiController::show/$1',  ['filter' => 'autentikasiToken']);
+    $routes->get('favorit',         'FavoritApiController::index',    ['filter' => 'autentikasiToken']);
+    $routes->post('favorit/ubah',   'FavoritApiController::ubah',     ['filter' => 'autentikasiToken']);
 
     // ================================================================
     // MODUL ANGGOTA 4 — Pemesanan Tiket & Ulasan
     // ================================================================
 
-    // --- Pemesanan Tiket ---
+    // --- Pemesanan Tiket – dilindungi filter autentikasiToken ---
     // GET  /api/v1/pemesanan?id_pengguna=X  → Daftar riwayat tiket pengguna
-    $routes->get('pemesanan', 'PemesananApiController::index');
+    $routes->get('pemesanan', 'PemesananApiController::index', ['filter' => 'autentikasiToken']);
 
     // GET  /api/v1/pemesanan/{id}            → Detail 1 tiket untuk E-Ticket
-    $routes->get('pemesanan/(:num)', 'PemesananApiController::show/$1');
+    $routes->get('pemesanan/(:num)', 'PemesananApiController::show/$1', ['filter' => 'autentikasiToken']);
 
     // POST /api/v1/pemesanan                 → Buat pesanan tiket baru
-    $routes->post('pemesanan', 'PemesananApiController::create');
+    $routes->post('pemesanan', 'PemesananApiController::create', ['filter' => 'autentikasiToken']);
 
     // PATCH /api/v1/pemesanan/{id}/batal    → Batalkan tiket (status menunggu)
-    $routes->patch('pemesanan/(:num)/batal', 'PemesananApiController::batalkan/$1');
+    $routes->patch('pemesanan/(:num)/batal', 'PemesananApiController::batalkan/$1', ['filter' => 'autentikasiToken']);
+
+    // PATCH /api/v1/pemesanan/{id}/status   → Ubah status pesanan (Admin only)
+    // $routes->patch('pemesanan/(:num)/status', 'AdminApiController::ubahStatusPemesanan/$1', ['filter' => 'peranAdmin']);
 
     // --- Ulasan & Rating Bintang ---
     // GET  /api/v1/ulasan?id_destinasi=X     → Daftar ulasan destinasi
     $routes->get('ulasan', 'UlasanApiController::index');
 
-    // POST /api/v1/ulasan                    → Kirim ulasan & rating bintang baru
-    $routes->post('ulasan', 'UlasanApiController::create');
+    // POST /api/v1/ulasan                    → Kirim ulasan & rating bintang baru (Member)
+    $routes->post('ulasan', 'UlasanApiController::create', ['filter' => 'autentikasiToken']);
 
     // --- Admin (Anggota 5) ---
     // $routes->get('admin/statistik',               'AdminApiController::statistik');
