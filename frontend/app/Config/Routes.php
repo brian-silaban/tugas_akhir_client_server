@@ -18,15 +18,15 @@ $routes->get('destinasi', 'DestinasiController::index');
 $routes->get('destinasi/(:segment)', 'DestinasiController::detail/$1');
 
 // --- Autentikasi & Akun (Anggota 3) ---
-// $routes->get('masuk',   'AutentikasiController::tampilFormMasuk');
-// $routes->post('masuk',  'AutentikasiController::prosesMasuk');
-// $routes->get('daftar',  'AutentikasiController::tampilFormDaftar');
-// $routes->post('daftar', 'AutentikasiController::prosesDaftar');
-// $routes->get('keluar',  'AutentikasiController::keluar');
+$routes->get('masuk',   'AutentikasiController::masuk');
+$routes->post('masuk',  'AutentikasiController::prosesMasuk');
+$routes->get('daftar',  'AutentikasiController::daftar');
+$routes->post('daftar', 'AutentikasiController::prosesDaftar');
+$routes->get('keluar',  'AutentikasiController::keluar');
 
 // --- Favorit (Anggota 3) ---
-// $routes->get('favorit',          'FavoritController::index');
-// $routes->post('favorit/ubah',    'FavoritController::ubah');
+$routes->get('favorit-saya',     'FavoritController::index');
+$routes->post('favorit/ubah',    'FavoritController::ubah');
 
 // ================================================================
 // MODUL ANGGOTA 4 — Pemesanan Tiket & Ulasan (Frontend Client)

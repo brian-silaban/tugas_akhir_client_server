@@ -26,12 +26,12 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($rout
     $routes->get('kabupaten-kota', 'KategoriApiController::kabupatenKota');
 
     // --- Autentikasi & Akun (Anggota 3) ---
-    // $routes->post('autentikasi/masuk',  'AutentikasiApiController::masuk');
-    // $routes->post('autentikasi/daftar', 'AutentikasiApiController::daftar');
+    $routes->post('autentikasi/masuk',  'AutentikasiApiController::masuk');
+    $routes->post('autentikasi/daftar', 'AutentikasiApiController::daftar');
 
     // --- Favorit (Anggota 3) ---
-    // $routes->get('favorit',         'FavoritApiController::index');
-    // $routes->post('favorit/ubah',   'FavoritApiController::ubah');
+    $routes->get('favorit',         'FavoritApiController::index');
+    $routes->post('favorit/ubah',   'FavoritApiController::ubah');
 
     // ================================================================
     // MODUL ANGGOTA 4 — Pemesanan Tiket & Ulasan

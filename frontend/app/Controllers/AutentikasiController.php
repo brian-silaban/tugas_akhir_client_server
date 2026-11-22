@@ -2,41 +2,52 @@
 
 namespace App\Controllers;
 
-use App\Models\PenggunaModel;
+use App\Libraries\LayananApiBackend;
+use CodeIgniter\HTTP\RedirectResponse;
 
 /**
- * AutentikasiController — Menangani alur Masuk (Login), Daftar (Register),
- * dan Keluar (Logout) pengguna IndWalk.
+ * AutentikasiController — Menangani antarmuka Masuk (Login), Daftar (Register),
+ * dan Keluar (Logout) pengguna JejakSumut pada Frontend Client.
+ *
+ * Sesuai arsitektur Client-Server, controller ini TIDAK mengakses PostgreSQL secara langsung,
+ * melainkan berkomunikasi via REST API Backend (/api/v1/autentikasi/*).
+ *
+ * Anggota 3 — Autentikasi, Sesi Pengguna & Filter Hak Akses
  */
 class AutentikasiController extends BaseController
 {
+    private LayananApiBackend $layananApiBackend;
+
+    public function __construct()
+    {
+        $this->layananApiBackend = new LayananApiBackend();
+    }
+
     // ---------------------------------------------------------------
     // Halaman & Proses MASUK (Login)
     // ---------------------------------------------------------------
 
     /**
-     * Tampilkan halaman formulir masuk.
+     * Tampilkan formulir masuk.
      */
-    public function masuk()
+    public function masuk(): string|RedirectResponse
     {
-        // Jika pengguna sudah masuk, arahkan langsung sesuai peran
+        // Jika pengguna sudah login, arahkan langsung sesuai peran
         if (session()->get('sudah_masuk')) {
-            return $this->arahkanSesuaiPeran(session()->get('peran'));
+            return $this->arahkanSesuaiPeran((string) session()->get('peran'));
         }
 
         return view('pages/autentikasi/masuk');
     }
 
     /**
-     * Proses validasi login: cocokkan email & kata sandi, lalu simpan sesi.
+     * Memproses formulir masuk dengan memanggil REST API Backend.
      */
-    public function prosesMasuk()
+    public function prosesMasuk(): RedirectResponse
     {
-        // Ambil input dari formulir
-        $email     = $this->request->getPost('email');
-        $kataSandi = $this->request->getPost('kata_sandi');
+        $email     = trim((string) $this->request->getPost('email'));
+        $kataSandi = (string) $this->request->getPost('kata_sandi');
 
-        // Validasi input dasar
         $aturanValidasi = [
             'email'      => 'required|valid_email',
             'kata_sandi' => 'required',
@@ -48,38 +59,41 @@ class AutentikasiController extends BaseController
                 ->with('errors', $this->validator->getErrors());
         }
 
-        // Cari pengguna berdasarkan email di database
-        $modelPengguna = new PenggunaModel();
-        $pengguna      = $modelPengguna->cariDenganEmail($email);
+        // Kirim request login ke Backend REST API
+        $hasil = $this->layananApiBackend->kirimPost('/autentikasi/masuk', [
+            'email'      => $email,
+            'kata_sandi' => $kataSandi,
+        ]);
 
-        // Periksa apakah pengguna ditemukan
-        if ($pengguna === null) {
+        if (! $hasil['terhubung']) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Email atau kata sandi salah.');
+                ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
         }
 
-        // Verifikasi kata sandi dengan hash yang tersimpan
-        $kataSandiCocok = password_verify($kataSandi, $pengguna['kata_sandi']);
-
-        if (! $kataSandiCocok) {
+        if (! $hasil['berhasil'] || empty($hasil['data']['pengguna'])) {
+            $pesanError = $hasil['pesan_error'] ?? 'Email atau kata sandi salah.';
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Email atau kata sandi salah.');
+                ->with('error', $pesanError);
         }
 
-        // Simpan data sesi pengguna yang berhasil masuk
+        $pengguna = $hasil['data']['pengguna'];
+        $token    = $hasil['data']['token'] ?? null;
+
+        // Simpan sesi pengguna
         $dataSesi = [
-            'id_pengguna' => $pengguna['id'],
-            'nama'        => $pengguna['nama'],
-            'email'       => $pengguna['email'],
-            'peran'       => $pengguna['peran'],
-            'sudah_masuk' => true,
+            'id_pengguna'   => (int) $pengguna['id'],
+            'nama'          => $pengguna['nama'],
+            'nama_pengguna' => $pengguna['nama'], // Kompatibel dengan layout navbar
+            'email'         => $pengguna['email'],
+            'peran'         => $pengguna['peran'],
+            'token_api'     => $token,
+            'sudah_masuk'   => true,
         ];
         session()->set($dataSesi);
 
-        // Arahkan ke halaman sesuai peran pengguna
-        return $this->arahkanSesuaiPeran($pengguna['peran']);
+        return $this->arahkanSesuaiPeran((string) $pengguna['peran']);
     }
 
     // ---------------------------------------------------------------
@@ -87,29 +101,27 @@ class AutentikasiController extends BaseController
     // ---------------------------------------------------------------
 
     /**
-     * Tampilkan halaman formulir pendaftaran akun baru.
+     * Tampilkan formulir pendaftaran akun baru.
      */
-    public function daftar()
+    public function daftar(): string|RedirectResponse
     {
-        // Jika pengguna sudah masuk, arahkan langsung sesuai peran
         if (session()->get('sudah_masuk')) {
-            return $this->arahkanSesuaiPeran(session()->get('peran'));
+            return $this->arahkanSesuaiPeran((string) session()->get('peran'));
         }
 
         return view('pages/autentikasi/daftar');
     }
 
     /**
-     * Proses validasi & penyimpanan akun baru ke database.
+     * Memproses formulir pendaftaran member baru dengan memanggil REST API Backend.
      */
-    public function prosesDaftar()
+    public function prosesDaftar(): RedirectResponse
     {
-        // Aturan validasi untuk pendaftaran
         $aturanValidasi = [
-            'nama'                    => 'required|min_length[3]|max_length[120]',
-            'email'                   => 'required|valid_email|max_length[150]|is_unique[pengguna.email]',
-            'kata_sandi'              => 'required|min_length[6]',
-            'konfirmasi_kata_sandi'   => 'required|matches[kata_sandi]',
+            'nama'                  => 'required|min_length[3]|max_length[120]',
+            'email'                 => 'required|valid_email|max_length[150]',
+            'kata_sandi'            => 'required|min_length[6]',
+            'konfirmasi_kata_sandi' => 'required|matches[kata_sandi]',
         ];
 
         $pesanValidasi = [
@@ -120,7 +132,6 @@ class AutentikasiController extends BaseController
             'email' => [
                 'required'    => 'Alamat email wajib diisi.',
                 'valid_email' => 'Format email tidak valid.',
-                'is_unique'   => 'Email ini sudah terdaftar. Silakan gunakan email lain.',
             ],
             'kata_sandi' => [
                 'required'   => 'Kata sandi wajib diisi.',
@@ -138,27 +149,27 @@ class AutentikasiController extends BaseController
                 ->with('errors', $this->validator->getErrors());
         }
 
-        // Hash kata sandi sebelum disimpan ke database
-        $kataSandiTerenkripsi = password_hash(
-            $this->request->getPost('kata_sandi'),
-            PASSWORD_DEFAULT
-        );
+        // Kirim request pendaftaran ke Backend REST API
+        $hasil = $this->layananApiBackend->kirimPost('/autentikasi/daftar', [
+            'nama'                  => trim((string) $this->request->getPost('nama')),
+            'email'                 => trim((string) $this->request->getPost('email')),
+            'kata_sandi'            => (string) $this->request->getPost('kata_sandi'),
+            'konfirmasi_kata_sandi' => (string) $this->request->getPost('konfirmasi_kata_sandi'),
+        ]);
 
-        // Siapkan data pengguna baru
-        $dataPenggunaBaru = [
-            'nama'            => $this->request->getPost('nama'),
-            'email'           => $this->request->getPost('email'),
-            'kata_sandi'      => $kataSandiTerenkripsi,
-            'peran'           => 'member',
-            'dibuat_pada'     => date('Y-m-d H:i:s'),
-            'diperbarui_pada' => date('Y-m-d H:i:s'),
-        ];
+        if (! $hasil['terhubung']) {
+            return redirect()->back()
+                ->withInput()
+                ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
+        }
 
-        // Simpan ke tabel pengguna
-        $modelPengguna = new PenggunaModel();
-        $modelPengguna->insert($dataPenggunaBaru);
+        if (! $hasil['berhasil']) {
+            $pesanError = $hasil['pesan_error'] ?? 'Pendaftaran akun gagal. Silakan coba lagi.';
+            return redirect()->back()
+                ->withInput()
+                ->with('error', $pesanError);
+        }
 
-        // Arahkan ke halaman masuk dengan pesan sukses
         return redirect()->to('/masuk')
             ->with('success', 'Pendaftaran berhasil! Silakan masuk dengan akun baru Anda.');
     }
@@ -170,7 +181,7 @@ class AutentikasiController extends BaseController
     /**
      * Hapus seluruh data sesi dan arahkan kembali ke beranda.
      */
-    public function keluar()
+    public function keluar(): RedirectResponse
     {
         session()->destroy();
 
@@ -179,16 +190,10 @@ class AutentikasiController extends BaseController
     }
 
     // ---------------------------------------------------------------
-    // Fungsi Pembantu Internal
+    // Helper Internal
     // ---------------------------------------------------------------
 
-    /**
-     * Arahkan pengguna ke halaman yang sesuai berdasarkan peran.
-     *
-     * @param string $peran  Peran pengguna ('admin' atau 'member')
-     * @return \CodeIgniter\HTTP\RedirectResponse
-     */
-    private function arahkanSesuaiPeran(string $peran)
+    private function arahkanSesuaiPeran(string $peran): RedirectResponse
     {
         if ($peran === 'admin') {
             return redirect()->to('/admin');
