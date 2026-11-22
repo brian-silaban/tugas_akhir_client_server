@@ -60,7 +60,7 @@ class AutentikasiController extends BaseController
         }
 
         // Kirim request login ke Backend REST API
-        $hasil = $this->layananApiBackend->kirimPost('/autentikasi/masuk', [
+        $hasil = $this->layananApiBackend->kirimPost('/auth/masuk', [
             'email'      => $email,
             'kata_sandi' => $kataSandi,
         ]);
@@ -150,7 +150,7 @@ class AutentikasiController extends BaseController
         }
 
         // Kirim request pendaftaran ke Backend REST API
-        $hasil = $this->layananApiBackend->kirimPost('/autentikasi/daftar', [
+        $hasil = $this->layananApiBackend->kirimPost('/auth/daftar', [
             'nama'                  => trim((string) $this->request->getPost('nama')),
             'email'                 => trim((string) $this->request->getPost('email')),
             'kata_sandi'            => (string) $this->request->getPost('kata_sandi'),

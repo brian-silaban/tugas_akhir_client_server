@@ -34,9 +34,7 @@ class FavoritController extends BaseController
             return redirect()->to('/masuk')->with('error', 'Silakan masuk terlebih dahulu untuk melihat favorit.');
         }
 
-        $hasil = $this->layananApiBackend->kirimGet('/favorit', [
-            'id_pengguna' => $idPengguna,
-        ]);
+        $hasil = $this->layananApiBackend->kirimGet('/favorit/' . $idPengguna);
 
         $daftarFavorit = [];
         if ($hasil['terhubung'] && $hasil['berhasil'] && is_array($hasil['data'])) {
