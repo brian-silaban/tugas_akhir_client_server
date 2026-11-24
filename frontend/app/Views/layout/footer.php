@@ -77,7 +77,13 @@ $daftarKategoriFooter = [
                 <ul class="flex flex-col gap-2 font-body-md text-body-md text-on-surface-variant">
                     <li><a href="<?= base_url('/destinasi') ?>" class="hover:text-on-surface transition-colors">Katalog Lengkap Destinasi</a></li>
                     <li><a href="<?= base_url('/pemesanan') ?>" class="hover:text-on-surface transition-colors">Tiket Saya</a></li>
-                    <li><a href="<?= base_url('/masuk') ?>" class="hover:text-on-surface transition-colors">Masuk Akun</a></li>
+                    <?php if (session()->get('sudah_masuk')) : ?>
+                        <li><a href="<?= base_url('/favorit-saya') ?>" class="hover:text-on-surface transition-colors">Destinasi Favorit Saya</a></li>
+                        <li><a href="<?= base_url('/keluar') ?>" class="text-error hover:underline transition-colors">Keluar Akun</a></li>
+                    <?php else : ?>
+                        <li><a href="<?= base_url('/masuk') ?>" class="hover:text-on-surface transition-colors">Masuk Akun</a></li>
+                        <li><a href="<?= base_url('/daftar') ?>" class="hover:text-on-surface transition-colors">Daftar Akun Baru</a></li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
