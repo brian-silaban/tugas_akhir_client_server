@@ -6,8 +6,6 @@ $namaPenggunaAktif = session('nama_pengguna') ?? session('nama') ?? 'Wisatawan';
 $daftarMenuNavigasi = [
     ['kode' => 'beranda', 'label' => 'Beranda', 'tautan' => base_url('/')],
     ['kode' => 'katalog', 'label' => 'Katalog Wisata', 'tautan' => base_url('/destinasi')],
-    ['kode' => 'unggulan', 'label' => 'Destinasi Unggulan', 'tautan' => base_url('/#destinasi-kurator')],
-    ['kode' => 'wilayah', 'label' => 'Kabupaten & Kota', 'tautan' => base_url('/#jelajah-kepulauan')],
 ];
 ?>
 <header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-surface-variant/40">
@@ -47,11 +45,6 @@ $daftarMenuNavigasi = [
 
         <!-- Tombol Aksi Kanan (1 Secondary/Ghost + 1 Primary Solid sesuai Sloplint) -->
         <div class="flex items-center gap-2 sm:gap-3 shrink-0">
-            <div class="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant font-label-md text-label-md">
-                <span class="text-tertiary-container font-bold">Rp</span>
-                <span>IDR</span>
-            </div>
-
             <?php if (! empty($idPenggunaAktif)) : ?>
                 <!-- Menu Khusus Member yang Login -->
                 <a
