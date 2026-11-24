@@ -2,134 +2,127 @@
 
 namespace App\Controllers\Api;
 
-use App\Models\PemesananModel;
 use App\Models\DestinasiModel;
+use App\Models\PemesananModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 /**
- * API Controller untuk modul Pemesanan Tiket Wisata JejakSumut.
- * Menyediakan endpoint CRUD pemesanan tiket yang dapat diakses
- * oleh aplikasi Client Frontend (port 8081).
+ * API Controller modul Pemesanan Tiket Wisata JejakSumut.
+ * Seluruh operasi baca memakai SQL View v_ringkasan_pemesanan, operasi tulis memakai
+ * transaksi ACID + Stored Function fn_buat_kode_pemesanan, dan pembatalan memakai
+ * Stored Procedure sp_verifikasi_pemesanan (row lock FOR UPDATE).
  *
  * Anggota 4 — Transaksi Pemesanan Tiket & E-Ticket
  */
 class PemesananApiController extends ResourceController
 {
-    protected $modelName = 'App\Models\PemesananModel';
-    protected $format    = 'json';
+    protected $format = 'json';
 
     // =========================================================================
     // GET /api/v1/pemesanan?id_pengguna=X
-    // Mengambil semua riwayat tiket milik pengguna tertentu.
+    // Daftar riwayat tiket milik satu pengguna (dibaca dari SQL View).
     // =========================================================================
     public function index(): ResponseInterface
     {
         $idPengguna = $this->request->getGet('id_pengguna');
 
-        // Validasi: id_pengguna wajib disertakan
         if (empty($idPengguna) || ! is_numeric($idPengguna)) {
-            return $this->respond([
-                'status'  => 'gagal',
-                'pesan'   => 'Parameter id_pengguna wajib disertakan dan berupa angka.',
-                'data'    => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimGagal(
+                'Parameter id_pengguna wajib disertakan dan berupa angka.',
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
         $pemesananModel = new PemesananModel();
-        $destinasiModel = new DestinasiModel();
 
-        // Ambil semua pemesanan milik pengguna ini, diurutkan paling baru
-        $daftarPemesanan = $pemesananModel
-            ->where('id_pengguna', (int) $idPengguna)
-            ->orderBy('dibuat_pada', 'DESC')
-            ->findAll();
+        // Satu query ke SQL View v_ringkasan_pemesanan (tanpa loop query N+1)
+        $daftarPemesanan = $pemesananModel->ambilRingkasanPemesanan((int) $idPengguna);
 
-        // Lengkapi setiap tiket dengan nama dan foto destinasi
-        foreach ($daftarPemesanan as &$tiket) {
-            $dataDestinasi = $destinasiModel->find((int) $tiket['id_destinasi']);
-            $tiket['nama_destinasi'] = $dataDestinasi['nama']       ?? 'Destinasi tidak ditemukan';
-            $tiket['foto_destinasi'] = $dataDestinasi['foto_utama'] ?? '';
-            $tiket['kota_destinasi'] = $dataDestinasi['kota']       ?? '';
+        // Ambil foto semua destinasi terkait dalam satu query WHERE IN
+        $daftarIdDestinasi = array_unique(array_column($daftarPemesanan, 'id_destinasi'));
+        $petaFoto          = $this->ambilPetaFotoDestinasi($daftarIdDestinasi);
 
-            // Format total harga ke rupiah agar siap tampil di frontend
-            $tiket['total_harga_terformat'] = 'Rp ' . number_format((int) $tiket['total_harga'], 0, ',', '.');
+        foreach ($daftarPemesanan as $indeks => $tiket) {
+            $idDestinasi = (int) $tiket['id_destinasi'];
+
+            $daftarPemesanan[$indeks]['foto_destinasi']        = $petaFoto[$idDestinasi] ?? '';
+            $daftarPemesanan[$indeks]['total_harga_terformat'] = $this->formatRupiah((int) $tiket['total_harga']);
         }
-        unset($tiket);
 
         return $this->respond([
-            'status'       => 'berhasil',
-            'jumlah_data'  => count($daftarPemesanan),
-            'data'         => $daftarPemesanan,
+            'status'      => 'berhasil',
+            'pesan'       => 'Riwayat pemesanan berhasil diambil.',
+            'jumlah_data' => count($daftarPemesanan),
+            'data'        => $daftarPemesanan,
         ], ResponseInterface::HTTP_OK);
     }
 
     // =========================================================================
     // GET /api/v1/pemesanan/{id}
-    // Mengambil detail satu tiket spesifik untuk halaman E-Ticket.
+    // Detail satu tiket untuk halaman E-Ticket (dibaca dari SQL View).
     // =========================================================================
     public function show($id = null): ResponseInterface
     {
         if (empty($id) || ! is_numeric($id)) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'ID pemesanan tidak valid.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_BAD_REQUEST);
+            return $this->kirimGagal('ID pemesanan tidak valid.', ResponseInterface::HTTP_BAD_REQUEST);
         }
 
         $pemesananModel = new PemesananModel();
-        $destinasiModel = new DestinasiModel();
+        $tiket          = $pemesananModel->ambilSatuRingkasan((int) $id);
 
-        $tiket = $pemesananModel->find((int) $id);
-
-        // Jika tiket tidak ditemukan di database
         if ($tiket === null) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Tiket dengan ID ' . $id . ' tidak ditemukan.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_NOT_FOUND);
+            return $this->kirimGagal(
+                'Tiket dengan ID ' . $id . ' tidak ditemukan.',
+                ResponseInterface::HTTP_NOT_FOUND
+            );
         }
 
-        // Ambil data destinasi untuk ditampilkan di E-Ticket
-        $dataDestinasi = $destinasiModel->find((int) $tiket['id_destinasi']);
-        $tiket['nama_destinasi']      = $dataDestinasi['nama']          ?? 'Destinasi tidak ditemukan';
-        $tiket['foto_destinasi']      = $dataDestinasi['foto_utama']    ?? '';
-        $tiket['kota_destinasi']      = $dataDestinasi['kota']          ?? '';
-        $tiket['alamat_destinasi']    = $dataDestinasi['alamat']        ?? '';
-        $tiket['jam_buka_destinasi']  = $dataDestinasi['jam_buka']      ?? null;
-        $tiket['jam_tutup_destinasi'] = $dataDestinasi['jam_tutup']     ?? null;
+        // Lengkapi data E-Ticket dengan alamat, foto, dan jam operasional destinasi
+        $destinasiModel = new DestinasiModel();
+        $dataDestinasi  = $destinasiModel
+            ->select('foto_utama, alamat, jam_buka, jam_tutup')
+            ->find((int) $tiket['id_destinasi']);
 
-        // Format tampilan harga
-        $tiket['total_harga_terformat'] = 'Rp ' . number_format((int) $tiket['total_harga'], 0, ',', '.');
+        $tiket['foto_destinasi']        = $dataDestinasi['foto_utama'] ?? '';
+        $tiket['alamat_destinasi']      = $dataDestinasi['alamat'] ?? '';
+        $tiket['jam_buka_destinasi']    = $dataDestinasi['jam_buka'] ?? null;
+        $tiket['jam_tutup_destinasi']   = $dataDestinasi['jam_tutup'] ?? null;
+        $tiket['total_harga_terformat'] = $this->formatRupiah((int) $tiket['total_harga']);
 
         return $this->respond([
             'status' => 'berhasil',
+            'pesan'  => 'Detail tiket berhasil diambil.',
             'data'   => $tiket,
         ], ResponseInterface::HTTP_OK);
     }
 
     // =========================================================================
     // POST /api/v1/pemesanan
-    // Membuat pesanan tiket baru dari form frontend.
+    // Membuat pesanan baru lewat transaksi ACID di PemesananModel.
     // =========================================================================
     public function create(): ResponseInterface
     {
         $inputJson = $this->request->getJSON(true);
 
-        // Dukung input dari JSON (fetch API) maupun form POST biasa
-        $inputData = ! empty($inputJson) ? $inputJson : $this->request->getPost();
+        // Dukung input JSON (dari LayananApiBackend) maupun form POST biasa
+        if (! empty($inputJson)) {
+            $inputData = $inputJson;
+        } else {
+            $inputData = $this->request->getPost();
+        }
 
-        // --- Validasi field wajib ---
+        // Validasi field wajib
         $fieldWajib = ['id_pengguna', 'id_destinasi', 'tanggal_kunjungan', 'jumlah_pengunjung'];
         foreach ($fieldWajib as $namaField) {
             if (empty($inputData[$namaField])) {
-                return $this->respond([
-                    'status' => 'gagal',
-                    'pesan'  => 'Field ' . $namaField . ' wajib diisi.',
-                    'data'   => null,
-                ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->kirimGagal(
+                    'Field ' . $namaField . ' wajib diisi.',
+                    ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+                );
             }
         }
 
@@ -138,133 +131,166 @@ class PemesananApiController extends ResourceController
         $tanggalKunjungan = (string) $inputData['tanggal_kunjungan'];
         $jumlahPengunjung = (int) $inputData['jumlah_pengunjung'];
 
-        // Validasi jumlah pengunjung harus minimal 1
-        if ($jumlahPengunjung < 1) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Jumlah pengunjung minimal 1 orang.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        // Tanggal harus berformat YYYY-MM-DD dan tidak boleh di masa lampau
+        $tanggalValid = \DateTime::createFromFormat('Y-m-d', $tanggalKunjungan);
+        if ($tanggalValid === false || $tanggalValid->format('Y-m-d') !== $tanggalKunjungan) {
+            return $this->kirimGagal(
+                'Format tanggal kunjungan harus YYYY-MM-DD.',
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
-        // Validasi tanggal kunjungan tidak boleh di masa lampau
         if (strtotime($tanggalKunjungan) < strtotime('today')) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Tanggal kunjungan tidak boleh di masa lampau.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimGagal(
+                'Tanggal kunjungan tidak boleh di masa lampau.',
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
-        // Ambil data destinasi untuk mendapatkan harga tiket resmi dari server
-        $destinasiModel = new DestinasiModel();
-        $dataDestinasi  = $destinasiModel->find($idDestinasi);
-
-        if ($dataDestinasi === null) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Destinasi wisata tidak ditemukan.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_NOT_FOUND);
-        }
-
-        // Hitung total harga di sisi SERVER (bukan di frontend) untuk keamanan data
-        $hargaTiketPerOrang = (int) $dataDestinasi['harga_tiket'];
-        $totalHarga         = $hargaTiketPerOrang * $jumlahPengunjung;
-
-        // Generate kode tiket unik format JSM-YYYYMMDD-XXX
-        $kodePemesanan = $this->buatKodePemesananUnik();
-
-        // Simpan data pemesanan baru ke tabel pemesanan
         $pemesananModel = new PemesananModel();
-        $idBaru = $pemesananModel->insert([
-            'kode_pemesanan'   => $kodePemesanan,
-            'id_pengguna'      => $idPengguna,
-            'id_destinasi'     => $idDestinasi,
-            'tanggal_kunjungan' => $tanggalKunjungan,
-            'jumlah_pengunjung' => $jumlahPengunjung,
-            'total_harga'      => $totalHarga,
-            'status'           => 'menunggu',
-        ]);
 
-        if (! $idBaru) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Gagal menyimpan pemesanan. Silakan coba lagi.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        try {
+            // Transaksi ACID: FOR SHARE lock harga + fn_buat_kode_pemesanan + insert + commit/rollback
+            $tiketBaru = $pemesananModel->buatPemesananDenganTransaksi(
+                $idPengguna,
+                $idDestinasi,
+                $tanggalKunjungan,
+                $jumlahPengunjung
+            );
+        } catch (InvalidArgumentException $kesalahan) {
+            return $this->kirimGagal($kesalahan->getMessage(), ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (RuntimeException $kesalahan) {
+            // Destinasi tidak ada → 404, kegagalan lain di dalam transaksi → 500
+            if (str_contains($kesalahan->getMessage(), 'tidak ditemukan')) {
+                return $this->kirimGagal($kesalahan->getMessage(), ResponseInterface::HTTP_NOT_FOUND);
+            }
+
+            return $this->kirimGagal($kesalahan->getMessage(), ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (Throwable $kesalahan) {
+            log_message('error', 'Gagal membuat pemesanan: ' . $kesalahan->getMessage());
+
+            return $this->kirimGagal(
+                'Pemesanan gagal diproses oleh database. Silakan coba lagi.',
+                ResponseInterface::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
 
-        // Ambil data tiket yang baru saja tersimpan untuk dikirim balik ke frontend
-        $tiketBaru = $pemesananModel->find($idBaru);
-        $tiketBaru['nama_destinasi']      = $dataDestinasi['nama'];
-        $tiketBaru['kota_destinasi']      = $dataDestinasi['kota'];
-        $tiketBaru['total_harga_terformat'] = 'Rp ' . number_format($totalHarga, 0, ',', '.');
+        $tiketBaru['total_harga_terformat'] = $this->formatRupiah((int) $tiketBaru['total_harga']);
 
         return $this->respond([
-            'status'  => 'berhasil',
-            'pesan'   => 'Tiket berhasil dipesan! Kode tiket kamu: ' . $kodePemesanan,
-            'data'    => $tiketBaru,
+            'status' => 'berhasil',
+            'pesan'  => 'Tiket berhasil dipesan dengan kode ' . $tiketBaru['kode_pemesanan'] . '.',
+            'data'   => $tiketBaru,
         ], ResponseInterface::HTTP_CREATED);
     }
 
     // =========================================================================
     // PATCH /api/v1/pemesanan/{id}/batal
-    // Membatalkan tiket (hanya jika statusnya masih 'menunggu').
+    // Membatalkan tiket lewat Stored Procedure sp_verifikasi_pemesanan.
     // =========================================================================
     public function batalkan($id = null): ResponseInterface
     {
         if (empty($id) || ! is_numeric($id)) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'ID pemesanan tidak valid.',
-            ], ResponseInterface::HTTP_BAD_REQUEST);
+            return $this->kirimGagal('ID pemesanan tidak valid.', ResponseInterface::HTTP_BAD_REQUEST);
         }
 
         $pemesananModel = new PemesananModel();
-        $tiket          = $pemesananModel->find((int) $id);
+        $tiket          = $pemesananModel->ambilSatuRingkasan((int) $id);
 
         if ($tiket === null) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Tiket tidak ditemukan.',
-            ], ResponseInterface::HTTP_NOT_FOUND);
+            return $this->kirimGagal('Tiket tidak ditemukan.', ResponseInterface::HTTP_NOT_FOUND);
         }
 
-        // Tiket hanya bisa dibatalkan kalau masih berstatus 'menunggu'
+        // Jika klien mengirim id_pengguna, pastikan tiket memang milik pengguna tersebut
+        $inputJson = $this->request->getJSON(true);
+        if (! empty($inputJson)) {
+            $inputData = $inputJson;
+        } else {
+            $inputData = $this->request->getRawInput();
+        }
+
+        $idPengirim = (int) ($inputData['id_pengguna'] ?? 0);
+        if ($idPengirim > 0 && $idPengirim !== (int) $tiket['id_pengguna']) {
+            return $this->kirimGagal(
+                'Kamu tidak berhak membatalkan tiket milik pengguna lain.',
+                ResponseInterface::HTTP_FORBIDDEN
+            );
+        }
+
+        // Tiket hanya bisa dibatalkan selama statusnya masih 'menunggu'
         if ($tiket['status'] !== 'menunggu') {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Tiket hanya bisa dibatalkan saat statusnya masih "menunggu".',
-            ], ResponseInterface::HTTP_CONFLICT);
+            return $this->kirimGagal(
+                'Tiket hanya bisa dibatalkan saat statusnya masih "menunggu".',
+                ResponseInterface::HTTP_CONFLICT
+            );
         }
 
-        // Update status menjadi 'dibatalkan'
-        $pemesananModel->update((int) $id, ['status' => 'dibatalkan']);
+        try {
+            // Stored Procedure mengunci baris (FOR UPDATE) sebelum mengubah status
+            $tiketTerbaru = $pemesananModel->ubahStatusDenganProsedur((int) $id, 'dibatalkan');
+        } catch (Throwable $kesalahan) {
+            log_message('error', 'Gagal membatalkan pemesanan: ' . $kesalahan->getMessage());
+
+            return $this->kirimGagal(
+                'Status tiket berubah di saat yang sama. Muat ulang halaman lalu coba lagi.',
+                ResponseInterface::HTTP_CONFLICT
+            );
+        }
 
         return $this->respond([
             'status' => 'berhasil',
             'pesan'  => 'Tiket dengan kode ' . $tiket['kode_pemesanan'] . ' berhasil dibatalkan.',
+            'data'   => $tiketTerbaru,
         ], ResponseInterface::HTTP_OK);
     }
 
     // =========================================================================
-    // Helper: Membuat kode pemesanan unik format JSM-YYYYMMDD-XXX
+    // HELPER INTERNAL
     // =========================================================================
-    private function buatKodePemesananUnik(): string
+
+    /**
+     * Mengambil foto utama beberapa destinasi sekaligus dalam satu query.
+     *
+     * @param list<int|string> $daftarIdDestinasi
+     * @return array<int, string>
+     */
+    private function ambilPetaFotoDestinasi(array $daftarIdDestinasi): array
     {
-        $pemesananModel = new PemesananModel();
-        $tanggalHariIni = date('Ymd');
-        $prefiks        = 'JSM-' . $tanggalHariIni . '-';
+        if ($daftarIdDestinasi === []) {
+            return [];
+        }
 
-        // Hitung berapa tiket yang sudah dibuat hari ini
-        $jumlahHariIni = $pemesananModel
-            ->like('kode_pemesanan', $prefiks, 'after')
-            ->countAllResults();
+        $destinasiModel = new DestinasiModel();
+        $barisFoto      = $destinasiModel
+            ->select('id, foto_utama')
+            ->whereIn('id', $daftarIdDestinasi)
+            ->findAll();
 
-        // Format nomor urut 3 digit: 001, 002, 003, dst.
-        $nomorUrut = str_pad((string) ($jumlahHariIni + 1), 3, '0', STR_PAD_LEFT);
+        $petaFoto = [];
+        foreach ($barisFoto as $baris) {
+            $petaFoto[(int) $baris['id']] = (string) ($baris['foto_utama'] ?? '');
+        }
 
-        return $prefiks . $nomorUrut;
+        return $petaFoto;
+    }
+
+    /**
+     * Memformat angka menjadi teks rupiah, contoh: Rp 25.000.
+     */
+    private function formatRupiah(int $nominal): string
+    {
+        return 'Rp ' . number_format($nominal, 0, ',', '.');
+    }
+
+    /**
+     * Menyusun respons JSON gagal dengan format seragam.
+     */
+    private function kirimGagal(string $pesan, int $kodeStatus): ResponseInterface
+    {
+        return $this->respond([
+            'status' => 'gagal',
+            'pesan'  => $pesan,
+            'data'   => null,
+        ], $kodeStatus);
     }
 }

@@ -1,185 +1,190 @@
-<!-- ============================================================
-     Komponen: Bagian Ulasan & Rating Bintang
-     Dipakai di: Halaman Detail Destinasi (Anggota 1)
-     Cara pakai: view('components/bagian_ulasan', ['id_destinasi' => ..., 'slug_destinasi' => ...])
-     Anggota 4 — Sistem Ulasan & Rating (1–5 Bintang)
-     ============================================================ -->
-
 <?php
-    // Ambil data ulasan dari Backend REST API
-    $urlApiBackend = env('INDWALK_BACKEND_API_URL', 'http://localhost:8080/api/v1');
-    $daftarUlasan  = [];
-    $rataRating    = 0;
-    $jumlahUlasan  = 0;
+/**
+ * Komponen: Bagian Ulasan & Rating Bintang
+ * Dipakai di halaman detail destinasi (Anggota 1):
+ *   view('components/bagian_ulasan', ['id_destinasi' => ..., 'slug_destinasi' => ...])
+ *
+ * Anggota 4 — Sistem Ulasan & Rating (1–5 Bintang)
+ */
 
-    try {
-        $klienHttp   = \Config\Services::curlrequest();
-        $responApi   = $klienHttp->get($urlApiBackend . '/ulasan?id_destinasi=' . (int) ($id_destinasi ?? 0), ['timeout' => 3]);
-        $hasilJson   = json_decode($responApi->getBody(), true);
-        $daftarUlasan = $hasilJson['data']          ?? [];
-        $rataRating   = $hasilJson['rata_rating']   ?? 0;
-        $jumlahUlasan = $hasilJson['jumlah_ulasan'] ?? 0;
-    } catch (\Throwable $e) {
-        // Diam-diam tangani error agar halaman detail tidak crash
-    }
+use App\Libraries\LayananApiBackend;
 
-    // Cek apakah pengguna sudah login (dari sesi Anggota 3)
-    $idPengguna = session('id_pengguna');
+// Ambil daftar ulasan lewat REST API backend
+$layananApi = new LayananApiBackend();
+$hasilApi   = $layananApi->ambilDaftarUlasan((int) ($id_destinasi ?? 0));
+
+$daftarUlasan = [];
+$rataRating   = 0;
+$jumlahUlasan = 0;
+if ($hasilApi['berhasil']) {
+    $daftarUlasan = is_array($hasilApi['data']) ? $hasilApi['data'] : [];
+    $rataRating   = (float) ($hasilApi['isi']['rata_rating'] ?? 0);
+    $jumlahUlasan = (int) ($hasilApi['isi']['jumlah_ulasan'] ?? 0);
+}
+
+// Form ulasan hanya muncul untuk pengguna yang sudah masuk
+$sudahMasuk = (int) session('id_pengguna') > 0;
 ?>
 
-<section class="mt-12 pt-8 border-t border-stone-200" aria-label="Ulasan Wisatawan">
+<section id="ulasan" class="mt-12 pt-8 border-t border-surface-variant/50" aria-labelledby="judul-ulasan">
 
-    <!-- Header Bagian Ulasan -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <!-- Judul + ringkasan rating -->
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>
-            <h2 class="font-serif text-2xl font-bold text-stone-900">Ulasan Wisatawan</h2>
-            <p class="text-stone-500 text-sm mt-1">Kata mereka yang sudah berkunjung langsung</p>
+            <h2 id="judul-ulasan" class="font-serif text-2xl font-semibold text-stone-900">Ulasan Wisatawan</h2>
+            <p class="text-sm text-stone-600 mt-1">Ditulis oleh pengunjung yang sudah datang langsung.</p>
         </div>
-        <!-- Ringkasan Rating Agregat -->
-        <?php if ($jumlahUlasan > 0): ?>
-            <div class="flex items-center gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-5 py-3">
-                <span class="text-3xl font-bold text-stone-900 tabular-nums"><?= number_format((float) $rataRating, 1) ?></span>
+
+        <?php if ($jumlahUlasan > 0) : ?>
+            <div class="flex items-center gap-3">
+                <span class="text-3xl font-semibold text-stone-900 tabular-nums"><?= esc(number_format($rataRating, 1)) ?></span>
                 <div>
-                    <div class="flex gap-0.5 text-amber-500 text-sm">
-                        <?php for ($bintang = 1; $bintang <= 5; $bintang++): ?>
-                            <span><?= $bintang <= round((float) $rataRating) ? '★' : '☆' ?></span>
+                    <div class="flex text-amber-600" aria-label="Rata-rata <?= esc(number_format($rataRating, 1)) ?> dari 5 bintang">
+                        <?php for ($bintang = 1; $bintang <= 5; $bintang++) : ?>
+                            <?php
+                                // Bintang terisi sampai pembulatan rata-rata, sisanya garis luar
+                                if ($bintang <= round($rataRating)) {
+                                    $gayaIsi = "font-variation-settings: 'FILL' 1;";
+                                } else {
+                                    $gayaIsi = "font-variation-settings: 'FILL' 0;";
+                                }
+                            ?>
+                            <span class="material-symbols-outlined text-lg" style="<?= $gayaIsi ?>" aria-hidden="true">star</span>
                         <?php endfor; ?>
                     </div>
-                    <p class="text-xs text-stone-500 mt-0.5 tabular-nums"><?= number_format($jumlahUlasan) ?> ulasan</p>
+                    <p class="text-xs text-stone-500 tabular-nums"><?= esc(number_format($jumlahUlasan, 0, ',', '.')) ?> ulasan</p>
                 </div>
             </div>
         <?php endif; ?>
     </div>
 
-    <!-- Pesan Flash dari pengiriman ulasan -->
-    <?php if (session('pesan_sukses')): ?>
-        <div class="mb-6 bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm">
-            ✅ <?= esc(session('pesan_sukses')) ?>
+    <!-- Notifikasi hasil kirim ulasan -->
+    <?php if (session('pesan_sukses')) : ?>
+        <div class="mb-6 flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">check_circle</span>
+            <span><?= esc(session('pesan_sukses')) ?></span>
         </div>
     <?php endif; ?>
-    <?php if (session('pesan_error')): ?>
-        <div class="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-xl px-4 py-3 text-sm">
-            ⚠️ <?= esc(session('pesan_error')) ?>
+    <?php if (session('pesan_error')) : ?>
+        <div class="mb-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+            <span class="material-symbols-outlined text-lg" aria-hidden="true">error</span>
+            <span><?= esc(session('pesan_error')) ?></span>
         </div>
     <?php endif; ?>
 
-    <!-- Form Tulis Ulasan (hanya tampil jika sudah login) -->
-    <?php if (! empty($idPengguna)): ?>
-        <div class="bg-stone-50 border border-stone-200 rounded-2xl p-5 mb-8">
-            <h3 class="font-semibold text-stone-900 mb-4 text-sm">Bagikan Pengalaman Wisatamu</h3>
-            <form action="<?= base_url('ulasan/kirim') ?>" method="post" novalidate>
-                <?= csrf_field() ?>
-                <input type="hidden" name="id_destinasi"   value="<?= esc($id_destinasi ?? '') ?>">
-                <input type="hidden" name="slug_destinasi" value="<?= esc($slug_destinasi ?? '') ?>">
+    <?php if (! $hasilApi['terhubung']) : ?>
+        <p class="mb-6 text-sm text-stone-600">Ulasan belum bisa dimuat karena server sedang tidak terjangkau. Coba muat ulang beberapa saat lagi.</p>
+    <?php endif; ?>
 
-                <!-- Pilihan Bintang Rating -->
-                <div class="mb-4">
-                    <label class="block text-xs font-semibold text-stone-600 mb-2 uppercase tracking-wide">Rating Bintang</label>
-                    <div class="flex gap-1" role="radiogroup" aria-label="Pilih rating bintang">
-                        <?php for ($bintang = 5; $bintang >= 1; $bintang--): ?>
-                            <label class="cursor-pointer text-2xl text-stone-300 hover:text-amber-400 peer-checked:text-amber-400 transition-colors"
-                                   title="<?= $bintang ?> Bintang">
-                                <input type="radio" name="rating" value="<?= $bintang ?>" class="sr-only peer" required>
-                                ★
-                            </label>
-                        <?php endfor; ?>
-                    </div>
-                </div>
+    <!-- Form tulis ulasan -->
+    <?php if ($sudahMasuk) : ?>
+        <form action="<?= base_url('ulasan/kirim') ?>" method="post" class="mb-10 rounded-2xl border border-stone-200 bg-white p-5">
+            <?= csrf_field() ?>
+            <input type="hidden" name="id_destinasi" value="<?= esc((string) ($id_destinasi ?? '')) ?>">
+            <input type="hidden" name="slug_destinasi" value="<?= esc((string) ($slug_destinasi ?? '')) ?>">
 
-                <!-- Kotak Komentar -->
-                <div class="mb-4">
-                    <label for="komentar-ulasan" class="block text-xs font-semibold text-stone-600 mb-2 uppercase tracking-wide">
-                        Komentar (minimal 10 karakter)
-                    </label>
-                    <textarea id="komentar-ulasan"
-                              name="komentar"
-                              rows="4"
-                              required
-                              minlength="10"
-                              placeholder="Ceritakan pengalamanmu: keindahan, jalur akses, harga, fasilitas, atau tips buat pengunjung berikutnya..."
-                              class="w-full border border-stone-300 rounded-xl px-4 py-3 text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0B6E77] focus:border-transparent resize-none transition"></textarea>
+            <fieldset class="mb-4">
+                <legend class="mb-2 text-sm font-semibold text-stone-800">Rating kamu</legend>
+                <div class="flex gap-1" data-pilihan-bintang>
+                    <?php for ($bintang = 1; $bintang <= 5; $bintang++) : ?>
+                        <label class="cursor-pointer rounded-lg p-1 text-stone-300 transition-colors hover:text-amber-500 focus-within:ring-2 focus-within:ring-primary-container">
+                            <input type="radio" name="rating" value="<?= $bintang ?>" class="sr-only" required <?= old('rating') == $bintang ? 'checked' : '' ?>>
+                            <span class="material-symbols-outlined text-3xl" aria-hidden="true">star</span>
+                            <span class="sr-only"><?= $bintang ?> bintang</span>
+                        </label>
+                    <?php endfor; ?>
                 </div>
+            </fieldset>
 
-                <!-- Tombol Kirim -->
-                <div class="flex justify-end">
-                    <button type="submit"
-                            class="bg-[#0B6E77] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#00545B] active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-[#0B6E77] focus:ring-offset-2">
-                        Kirim Ulasan
-                    </button>
-                </div>
-            </form>
-        </div>
-    <?php else: ?>
-        <!-- Ajakan Login untuk Menulis Ulasan -->
-        <div class="bg-stone-50 border border-stone-200 rounded-2xl p-5 mb-8 text-center">
-            <p class="text-stone-600 text-sm mb-3">
-                Punya pengalaman di sini? <span class="font-semibold">Login</span> untuk berbagi ulasan dan rating bintangmu!
-            </p>
+            <label for="komentar-ulasan" class="mb-2 block text-sm font-semibold text-stone-800">Komentar</label>
+            <textarea id="komentar-ulasan" name="komentar" rows="4" required minlength="10"
+                      placeholder="Contoh: jalur tangga ke air terjun cukup curam, datang sebelum jam 9 supaya belum ramai."
+                      class="w-full resize-none rounded-xl border border-stone-300 px-4 py-3 text-sm text-stone-800 placeholder:text-stone-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary-container"><?= esc((string) old('komentar')) ?></textarea>
+            <p class="mt-1 text-xs text-stone-500">Minimal 10 karakter.</p>
+
+            <div class="mt-4 flex justify-end">
+                <button type="submit"
+                        class="rounded-lg bg-primary-container px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#00545B] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-container focus-visible:ring-offset-2 active:scale-[0.98]">
+                    Kirim ulasan
+                </button>
+            </div>
+        </form>
+    <?php else : ?>
+        <div class="mb-10 flex flex-col items-start gap-3 border-l-4 border-primary-container bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p class="text-sm text-stone-700">Pernah ke sini? Masuk ke akunmu untuk memberi rating dan ulasan.</p>
             <a href="<?= base_url('masuk') ?>"
-               class="inline-block bg-[#C2410C] text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-[#B53801] transition-colors">
-                Login untuk Menulis Ulasan
+               class="rounded-lg border border-primary-container px-4 py-2 text-sm font-semibold text-primary-container transition hover:bg-primary-container hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-container focus-visible:ring-offset-2">
+                Masuk
             </a>
         </div>
     <?php endif; ?>
 
-    <!-- Daftar Ulasan dari Wisatawan -->
-    <?php if (empty($daftarUlasan)): ?>
-        <div class="text-center py-10 text-stone-400">
-            <p class="text-4xl mb-3">📝</p>
-            <p class="text-sm">Belum ada ulasan untuk destinasi ini. Jadilah yang pertama!</p>
-        </div>
-    <?php else: ?>
-        <div class="space-y-5">
-            <?php foreach ($daftarUlasan as $ulasan): ?>
-                <article class="bg-white rounded-xl border border-stone-200 p-5">
-                    <div class="flex items-start justify-between gap-3 mb-3">
-                        <!-- Profil Pengulas -->
+    <!-- Daftar ulasan -->
+    <?php if ($daftarUlasan === []) : ?>
+        <p class="text-sm text-stone-600">Belum ada ulasan untuk destinasi ini.</p>
+    <?php else : ?>
+        <ul class="divide-y divide-stone-200">
+            <?php foreach ($daftarUlasan as $ulasan) : ?>
+                <?php
+                    $namaPengulas = (string) ($ulasan['nama_pengulas'] ?? 'Wisatawan');
+                    $inisial      = mb_strtoupper(mb_substr($namaPengulas, 0, 1));
+                    $nilaiBintang = (int) ($ulasan['rating'] ?? 0);
+                ?>
+                <li class="py-5">
+                    <div class="mb-2 flex items-start justify-between gap-3">
                         <div class="flex items-center gap-3">
-                            <div class="w-9 h-9 rounded-full bg-[#0B6E77]/10 flex items-center justify-center text-[#0B6E77] font-bold text-sm flex-shrink-0">
-                                <?= mb_strtoupper(mb_substr((string) ($ulasan['nama_pengulas'] ?? 'A'), 0, 1)) ?>
-                            </div>
+                            <span class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-container text-sm font-semibold text-primary-container" aria-hidden="true">
+                                <?= esc($inisial) ?>
+                            </span>
                             <div>
-                                <p class="font-semibold text-sm text-stone-900"><?= esc($ulasan['nama_pengulas'] ?? 'Wisatawan') ?></p>
-                                <p class="text-xs text-stone-400 tabular-nums"><?= date('d M Y', strtotime($ulasan['dibuat_pada'] ?? '')) ?></p>
+                                <p class="text-sm font-semibold text-stone-900"><?= esc($namaPengulas) ?></p>
+                                <p class="text-xs text-stone-500 tabular-nums"><?= esc(date('d M Y', strtotime((string) ($ulasan['dibuat_pada'] ?? 'now')))) ?></p>
                             </div>
                         </div>
-                        <!-- Bintang Rating -->
-                        <div class="flex gap-0.5 text-amber-500 text-sm flex-shrink-0" aria-label="Rating <?= (int) ($ulasan['rating'] ?? 0) ?> dari 5">
-                            <?php for ($bintang = 1; $bintang <= 5; $bintang++): ?>
-                                <span><?= $bintang <= (int) ($ulasan['rating'] ?? 0) ? '★' : '☆' ?></span>
+                        <div class="flex text-amber-600" aria-label="Rating <?= esc((string) $nilaiBintang) ?> dari 5">
+                            <?php for ($bintang = 1; $bintang <= 5; $bintang++) : ?>
+                                <?php
+                                    if ($bintang <= $nilaiBintang) {
+                                        $gayaIsi = "font-variation-settings: 'FILL' 1;";
+                                    } else {
+                                        $gayaIsi = "font-variation-settings: 'FILL' 0;";
+                                    }
+                                ?>
+                                <span class="material-symbols-outlined text-base" style="<?= $gayaIsi ?>" aria-hidden="true">star</span>
                             <?php endfor; ?>
                         </div>
                     </div>
-                    <!-- Isi Komentar -->
-                    <p class="text-sm text-stone-700 leading-relaxed"><?= esc($ulasan['komentar'] ?? '') ?></p>
-                </article>
+                    <p class="text-sm leading-relaxed text-stone-700"><?= esc((string) ($ulasan['komentar'] ?? '')) ?></p>
+                </li>
             <?php endforeach; ?>
-        </div>
+        </ul>
     <?php endif; ?>
-
 </section>
 
-<!-- Script interaktif: highlight bintang yang dipilih -->
 <script>
+    // Warnai bintang 1 sampai bintang yang dipilih
     (function () {
-        const grupBintang = document.querySelector('[role="radiogroup"]');
+        const grupBintang = document.querySelector('[data-pilihan-bintang]');
         if (!grupBintang) return;
 
-        const labelBintang = grupBintang.querySelectorAll('label');
+        const daftarLabel = grupBintang.querySelectorAll('label');
 
-        grupBintang.addEventListener('change', function (e) {
-            const nilaiDipilih = parseInt(e.target.value, 10);
-            // Bintang dirender terbalik (5 ke 1), sesuaikan highlight
-            labelBintang.forEach((label, index) => {
-                const nilaiLabel = 5 - index;
-                if (nilaiLabel <= nilaiDipilih) {
-                    label.classList.remove('text-stone-300');
-                    label.classList.add('text-amber-400');
-                } else {
-                    label.classList.remove('text-amber-400');
-                    label.classList.add('text-stone-300');
-                }
+        function warnaiBintang(nilaiDipilih) {
+            daftarLabel.forEach(function (label, indeks) {
+                const ikon = label.querySelector('.material-symbols-outlined');
+                const terpilih = indeks + 1 <= nilaiDipilih;
+                label.classList.toggle('text-amber-600', terpilih);
+                label.classList.toggle('text-stone-300', !terpilih);
+                ikon.style.fontVariationSettings = terpilih ? "'FILL' 1" : "'FILL' 0";
             });
+        }
+
+        grupBintang.addEventListener('change', function (event) {
+            warnaiBintang(parseInt(event.target.value, 10));
         });
+
+        // Pertahankan pilihan lama setelah validasi gagal
+        const pilihanLama = grupBintang.querySelector('input:checked');
+        if (pilihanLama) warnaiBintang(parseInt(pilihanLama.value, 10));
     })();
 </script>

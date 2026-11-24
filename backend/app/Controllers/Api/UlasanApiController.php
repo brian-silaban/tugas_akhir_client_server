@@ -3,52 +3,44 @@
 namespace App\Controllers\Api;
 
 use App\Models\UlasanModel;
-use App\Models\DestinasiModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
+use InvalidArgumentException;
+use RuntimeException;
+use Throwable;
 
 /**
- * API Controller untuk modul Ulasan & Rating Bintang JejakSumut.
- * Menyediakan endpoint pengiriman dan pengambilan ulasan wisatawan.
+ * API Controller modul Ulasan & Rating Bintang JejakSumut.
+ * Penyimpanan ulasan berjalan di dalam transaksi ACID; kolom rata_rating dan
+ * jumlah_ulasan di tabel destinasi diperbarui oleh Trigger trg_sinkronkan_rating_destinasi.
  *
  * Anggota 4 — Sistem Ulasan & Rating (1–5 Bintang)
  */
 class UlasanApiController extends ResourceController
 {
-    protected $modelName = 'App\Models\UlasanModel';
-    protected $format    = 'json';
+    protected $format = 'json';
 
     // =========================================================================
     // GET /api/v1/ulasan?id_destinasi=X
-    // Mengambil daftar semua ulasan untuk satu destinasi wisata.
+    // Daftar ulasan untuk satu destinasi beserta nama pengulas.
     // =========================================================================
     public function index(): ResponseInterface
     {
         $idDestinasi = $this->request->getGet('id_destinasi');
 
         if (empty($idDestinasi) || ! is_numeric($idDestinasi)) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Parameter id_destinasi wajib disertakan dan berupa angka.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimGagal(
+                'Parameter id_destinasi wajib disertakan dan berupa angka.',
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
-        $ulasanModel = new UlasanModel();
-        $db          = \Config\Database::connect();
+        $ulasanModel  = new UlasanModel();
+        $daftarUlasan = $ulasanModel->ambilDaftarUlasanDestinasi((int) $idDestinasi);
 
-        // Join tabel ulasan dengan tabel pengguna untuk mengambil nama pengulas
-        $daftarUlasan = $db->table('ulasan')
-            ->select('ulasan.id, ulasan.rating, ulasan.komentar, ulasan.dibuat_pada, pengguna.nama AS nama_pengulas')
-            ->join('pengguna', 'pengguna.id = ulasan.id_pengguna', 'left')
-            ->where('ulasan.id_destinasi', (int) $idDestinasi)
-            ->orderBy('ulasan.dibuat_pada', 'DESC')
-            ->get()
-            ->getResultArray();
-
-        // Hitung rata-rata rating untuk destinasi ini
-        $rataRating    = 0;
-        $jumlahUlasan  = count($daftarUlasan);
+        // Hitung rata-rata rating dari ulasan yang tampil
+        $jumlahUlasan = count($daftarUlasan);
+        $rataRating   = 0;
         if ($jumlahUlasan > 0) {
             $totalBintang = array_sum(array_column($daftarUlasan, 'rating'));
             $rataRating   = round($totalBintang / $jumlahUlasan, 1);
@@ -56,6 +48,7 @@ class UlasanApiController extends ResourceController
 
         return $this->respond([
             'status'        => 'berhasil',
+            'pesan'         => 'Daftar ulasan berhasil diambil.',
             'jumlah_ulasan' => $jumlahUlasan,
             'rata_rating'   => $rataRating,
             'data'          => $daftarUlasan,
@@ -64,24 +57,27 @@ class UlasanApiController extends ResourceController
 
     // =========================================================================
     // POST /api/v1/ulasan
-    // Menyimpan ulasan dan rating bintang baru dari pengguna yang sudah login.
+    // Menyimpan ulasan baru lewat transaksi ACID di UlasanModel.
     // =========================================================================
     public function create(): ResponseInterface
     {
         $inputJson = $this->request->getJSON(true);
 
-        // Dukung input JSON (fetch API) maupun form POST biasa
-        $inputData = ! empty($inputJson) ? $inputJson : $this->request->getPost();
+        // Dukung input JSON (dari LayananApiBackend) maupun form POST biasa
+        if (! empty($inputJson)) {
+            $inputData = $inputJson;
+        } else {
+            $inputData = $this->request->getPost();
+        }
 
-        // --- Validasi field wajib ---
+        // Validasi field wajib
         $fieldWajib = ['id_pengguna', 'id_destinasi', 'rating', 'komentar'];
         foreach ($fieldWajib as $namaField) {
             if (! isset($inputData[$namaField]) || (string) $inputData[$namaField] === '') {
-                return $this->respond([
-                    'status' => 'gagal',
-                    'pesan'  => 'Field ' . $namaField . ' wajib diisi.',
-                    'data'   => null,
-                ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->kirimGagal(
+                    'Field ' . $namaField . ' wajib diisi.',
+                    ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+                );
             }
         }
 
@@ -90,87 +86,77 @@ class UlasanApiController extends ResourceController
         $nilaiRating = (int) $inputData['rating'];
         $isiKomentar = trim((string) $inputData['komentar']);
 
-        // Validasi nilai bintang harus antara 1 dan 5
         if ($nilaiRating < 1 || $nilaiRating > 5) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Rating harus berupa angka antara 1 sampai 5.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimGagal(
+                'Rating harus berupa angka antara 1 sampai 5.',
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
-        // Validasi komentar minimal 10 karakter agar tidak spam
+        // Komentar minimal 10 karakter agar tidak berisi spam satu kata
         if (mb_strlen($isiKomentar) < 10) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Komentar ulasan minimal 10 karakter.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimGagal(
+                'Komentar ulasan minimal 10 karakter.',
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
-        // Cek: satu pengguna hanya boleh mengulas satu destinasi sekali
-        $ulasanModel      = new UlasanModel();
-        $ulasanYangAdaSudah = $ulasanModel
+        $ulasanModel = new UlasanModel();
+
+        // Satu pengguna hanya boleh mengulas satu destinasi sekali
+        $ulasanLama = $ulasanModel
             ->where('id_pengguna', $idPengguna)
             ->where('id_destinasi', $idDestinasi)
             ->first();
 
-        if ($ulasanYangAdaSudah !== null) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Kamu sudah pernah mengulas destinasi wisata ini sebelumnya.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_CONFLICT);
+        if ($ulasanLama !== null) {
+            return $this->kirimGagal(
+                'Kamu sudah pernah mengulas destinasi wisata ini.',
+                ResponseInterface::HTTP_CONFLICT
+            );
         }
 
-        // Simpan ulasan baru ke database
-        $idUlasanBaru = $ulasanModel->insert([
-            'id_pengguna'  => $idPengguna,
-            'id_destinasi' => $idDestinasi,
-            'rating'       => $nilaiRating,
-            'komentar'     => $isiKomentar,
-        ]);
+        try {
+            // Transaksi ACID: insert ulasan → Trigger memperbarui rating destinasi → commit/rollback
+            $hasilSimpan = $ulasanModel->simpanUlasanDenganTransaksi(
+                $idPengguna,
+                $idDestinasi,
+                $nilaiRating,
+                $isiKomentar
+            );
+        } catch (InvalidArgumentException $kesalahan) {
+            return $this->kirimGagal($kesalahan->getMessage(), ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (RuntimeException $kesalahan) {
+            if (str_contains($kesalahan->getMessage(), 'tidak ditemukan')) {
+                return $this->kirimGagal($kesalahan->getMessage(), ResponseInterface::HTTP_NOT_FOUND);
+            }
 
-        if (! $idUlasanBaru) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Gagal menyimpan ulasan. Silakan coba lagi.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->kirimGagal($kesalahan->getMessage(), ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (Throwable $kesalahan) {
+            log_message('error', 'Gagal menyimpan ulasan: ' . $kesalahan->getMessage());
+
+            return $this->kirimGagal(
+                'Ulasan gagal disimpan oleh database. Silakan coba lagi.',
+                ResponseInterface::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
-
-        // Perbarui rata-rata rating dan jumlah ulasan di tabel destinasi (nilai plus rubrik!)
-        $this->perbaruiRataRatingDestinasi($idDestinasi, $ulasanModel);
 
         return $this->respond([
             'status' => 'berhasil',
-            'pesan'  => 'Ulasan berhasil dikirimkan. Terima kasih sudah berbagi pengalaman!',
-            'data'   => ['id_ulasan_baru' => $idUlasanBaru],
+            'pesan'  => 'Ulasan tersimpan. Terima kasih sudah berbagi pengalaman.',
+            'data'   => $hasilSimpan,
         ], ResponseInterface::HTTP_CREATED);
     }
 
-    // =========================================================================
-    // Helper: Memperbarui kolom rata_rating dan jumlah_ulasan di tabel destinasi
-    // setiap kali ada ulasan baru masuk (dipanggil setelah insert berhasil).
-    // =========================================================================
-    private function perbaruiRataRatingDestinasi(int $idDestinasi, UlasanModel $ulasanModel): void
+    /**
+     * Menyusun respons JSON gagal dengan format seragam.
+     */
+    private function kirimGagal(string $pesan, int $kodeStatus): ResponseInterface
     {
-        // Hitung ulang rata-rata dari seluruh ulasan destinasi ini
-        $semuaUlasan   = $ulasanModel->where('id_destinasi', $idDestinasi)->findAll();
-        $jumlahUlasan  = count($semuaUlasan);
-
-        if ($jumlahUlasan === 0) {
-            return;
-        }
-
-        $totalBintang = array_sum(array_column($semuaUlasan, 'rating'));
-        $rataRatingBaru = round($totalBintang / $jumlahUlasan, 2);
-
-        // Update tabel destinasi dengan nilai terbaru
-        $destinasiModel = new DestinasiModel();
-        $destinasiModel->update($idDestinasi, [
-            'rata_rating'   => $rataRatingBaru,
-            'jumlah_ulasan' => $jumlahUlasan,
-        ]);
+        return $this->respond([
+            'status' => 'gagal',
+            'pesan'  => $pesan,
+            'data'   => null,
+        ], $kodeStatus);
     }
 }
