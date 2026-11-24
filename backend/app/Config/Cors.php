@@ -41,6 +41,8 @@ class Cors extends BaseConfig
             'http://127.0.0.1:8082',
             'http://70.153.136.38:8081',
             'http://70.153.136.38:8082',
+            'https://vulnera.web.id',
+            'https://jejaksumut.vulnera.web.id',
         ],
 
         /**
@@ -58,6 +60,7 @@ class Cors extends BaseConfig
             'https?://localhost(:[0-9]+)?',
             'https?://127\.0\.0\.1(:[0-9]+)?',
             'https?://70\.153\.136\.38(:[0-9]+)?',
+            'https?://([a-z0-9-]+\.)?vulnera\.web\.id(:[0-9]+)?',
         ],
 
         /**
