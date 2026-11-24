@@ -49,6 +49,10 @@ $routes->post('pemesanan/batal/(:num)', 'PemesananController::batal/$1');
 // POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail
 $routes->post('ulasan/kirim', 'UlasanController::kirim');
 
+// --- Proxy API Mitra Transportasi (Anggota 2) ---
+$routes->get('mitra/transportasi/lokasi', 'MitraTransportController::lokasi');
+$routes->get('mitra/transportasi/tarif', 'MitraTransportController::tarif');
+
 // --- Admin Dashboard (Anggota 5) ---
 // $routes->get('admin',                        'Admin\DasborController::index');
 // $routes->get('admin/pemesanan',               'Admin\PemesananAdminController::index');

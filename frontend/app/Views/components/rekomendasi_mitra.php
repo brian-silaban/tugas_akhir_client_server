@@ -26,8 +26,9 @@ if ($kotaAktif === '') {
 // Ambil rekomendasi dari 4 kelompok mitra jika belum dikirimkan oleh Controller
 if (! isset($hasilMitra) || ! is_array($hasilMitra)) {
     try {
-        $layananMitra = new LayananApiMitra();
-        $hasilMitra   = $layananMitra->ambilSemuaRekomendasi($kotaAktif, 3);
+        $layananMitra     = new LayananApiMitra();
+        $konteksDestinasi = is_array($destinasi ?? null) ? $destinasi : null;
+        $hasilMitra       = $layananMitra->ambilSemuaRekomendasi($kotaAktif, 3, $konteksDestinasi);
     } catch (\Throwable $kesalahan) {
         $hasilMitra = [
             'kota_asli'       => $kotaAktif,
@@ -164,7 +165,8 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <p class="font-body-sm text-body-sm text-on-surface-variant">
                             <?= esc((string) ($layanan['deskripsi_singkat'] ?? '')) ?>
-                            <span class="text-outline">• Query: <code>GET ?kota=<?= esc($kotaPencarian) ?></code></span>
+                            <?php $labelEndpoint = trim((string) ($layanan['endpoint_label'] ?? '')); ?>
+                            <span class="text-outline">• Query: <code><?= esc($labelEndpoint !== '' ? $labelEndpoint : ('GET ?kota=' . $kotaPencarian)) ?></code></span>
                         </p>
 
                         <?php if ($apakahLivePanel) : ?>
@@ -186,6 +188,124 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
                         </p>
                     <?php endif; ?>
                 </div>
+
+                <?php if ($kodeMitra === 'transportasi' && $apakahLivePanel && ! empty($layanan['data_transportasi']['daftar_lokasi'])) : ?>
+                    <?php
+                    $infoTransport        = $layanan['data_transportasi'];
+                    $daftarLokasiTrans    = is_array($infoTransport['daftar_lokasi'] ?? null) ? $infoTransport['daftar_lokasi'] : [];
+                    $idAsalDefault        = (int) ($infoTransport['id_asal_default'] ?? 0);
+                    $idTujuanDefault      = (int) ($infoTransport['id_tujuan_default'] ?? 0);
+                    $namaTujuanTerdekat   = (string) ($infoTransport['nama_tujuan_terdekat'] ?? '');
+                    $jarakKeWisataKm      = (float) ($infoTransport['jarak_ke_wisata_km'] ?? 0);
+
+                    $daftarLokasiSumut    = array_values(array_filter($daftarLokasiTrans, static fn (array $item): bool => ! empty($item['dalam_sumut'])));
+                    $daftarLokasiNasional = array_values(array_filter($daftarLokasiTrans, static fn (array $item): bool => empty($item['dalam_sumut'])));
+                    ?>
+                    <div class="mb-6 rounded-2xl border border-surface-variant/70 bg-surface-container-low p-4 sm:p-5">
+                        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="font-headline-sm text-headline-sm text-on-surface flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-lg text-primary" aria-hidden="true">route</span>
+                                    <span>Simulasi Cek Tarif &amp; Jadwal Rute</span>
+                                </h3>
+                                <?php if ($namaTujuanTerdekat !== '') : ?>
+                                    <p class="font-body-sm text-body-sm text-on-surface-variant mt-1 tabular-nums">
+                                        Simpul terdekat dari wisata ini: <strong class="text-on-surface"><?= esc($namaTujuanTerdekat) ?></strong> (sekitar <?= esc(number_format($jarakKeWisataKm, 1, ',', '.')) ?> km)
+                                    </p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <form id="form-cek-tarif-mitra" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                            <div class="sm:col-span-4">
+                                <label for="input-asal-transport" class="block font-label-caps text-label-caps text-outline uppercase mb-1.5">
+                                    Titik Berangkat
+                                </label>
+                                <select
+                                    id="input-asal-transport"
+                                    name="id_asal"
+                                    class="w-full rounded-xl border border-outline-variant/80 bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                >
+                                    <?php if ($daftarLokasiSumut !== []) : ?>
+                                        <optgroup label="Sumatera Utara">
+                                            <?php foreach ($daftarLokasiSumut as $lokasiItem) : ?>
+                                                <option value="<?= esc((string) $lokasiItem['id']) ?>" <?= (int) $lokasiItem['id'] === $idAsalDefault ? 'selected' : '' ?>>
+                                                    <?= esc((string) $lokasiItem['nama_lokasi']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                    <?php if ($daftarLokasiNasional !== []) : ?>
+                                        <optgroup label="Bandara &amp; Kota Luar Sumut">
+                                            <?php foreach ($daftarLokasiNasional as $lokasiItem) : ?>
+                                                <option value="<?= esc((string) $lokasiItem['id']) ?>" <?= (int) $lokasiItem['id'] === $idAsalDefault ? 'selected' : '' ?>>
+                                                    <?= esc((string) $lokasiItem['nama_lokasi']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+
+                            <div class="sm:col-span-4">
+                                <label for="input-tujuan-transport" class="block font-label-caps text-label-caps text-outline uppercase mb-1.5">
+                                    Titik Tujuan
+                                </label>
+                                <select
+                                    id="input-tujuan-transport"
+                                    name="id_tujuan"
+                                    class="w-full rounded-xl border border-outline-variant/80 bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                >
+                                    <?php if ($daftarLokasiSumut !== []) : ?>
+                                        <optgroup label="Sumatera Utara">
+                                            <?php foreach ($daftarLokasiSumut as $lokasiItem) : ?>
+                                                <option value="<?= esc((string) $lokasiItem['id']) ?>" <?= (int) $lokasiItem['id'] === $idTujuanDefault ? 'selected' : '' ?>>
+                                                    <?= esc((string) $lokasiItem['nama_lokasi']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                    <?php if ($daftarLokasiNasional !== []) : ?>
+                                        <optgroup label="Bandara &amp; Kota Luar Sumut">
+                                            <?php foreach ($daftarLokasiNasional as $lokasiItem) : ?>
+                                                <option value="<?= esc((string) $lokasiItem['id']) ?>" <?= (int) $lokasiItem['id'] === $idTujuanDefault ? 'selected' : '' ?>>
+                                                    <?= esc((string) $lokasiItem['nama_lokasi']) ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </optgroup>
+                                    <?php endif; ?>
+                                </select>
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <label for="input-jam-transport" class="block font-label-caps text-label-caps text-outline uppercase mb-1.5">
+                                    Jam
+                                </label>
+                                <input
+                                    id="input-jam-transport"
+                                    type="time"
+                                    name="jam"
+                                    value="08:30"
+                                    required
+                                    class="w-full rounded-xl border border-outline-variant/80 bg-surface-container-lowest px-3 py-2.5 text-sm text-on-surface tabular-nums focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+                                />
+                            </div>
+
+                            <div class="sm:col-span-2">
+                                <button
+                                    type="submit"
+                                    id="tombol-cek-tarif-mitra"
+                                    class="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary hover:bg-primary-container active:scale-[0.98] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-60"
+                                >
+                                    <span class="material-symbols-outlined text-base" aria-hidden="true">search</span>
+                                    <span>Cek Tarif</span>
+                                </button>
+                            </div>
+                        </form>
+
+                        <div id="hasil-cek-tarif-mitra" class="hidden mt-4 pt-4 border-t border-surface-variant/60" aria-live="polite"></div>
+                    </div>
+                <?php endif; ?>
 
                 <?php if ($daftarItemPanel === []) : ?>
                     <div class="rounded-2xl bg-surface-container-low border border-surface-variant/50 p-6 text-center">
@@ -430,6 +550,136 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
                     aktifkanTabMitra(kodeDipilih);
                 }
             });
+        });
+    })();
+
+    // Interaksi form Simulasi Cek Tarif & Jadwal Rute ke proxy API Transportasi
+    (function () {
+        const formulir = document.getElementById('form-cek-tarif-mitra');
+        const wadahHasil = document.getElementById('hasil-cek-tarif-mitra');
+        const tombolSubmit = document.getElementById('tombol-cek-tarif-mitra');
+        if (!formulir || !wadahHasil || !tombolSubmit) {
+            return;
+        }
+
+        const urlProxyTarif = <?= json_encode(base_url('mitra/transportasi/tarif')) ?>;
+
+        function tampilkanPesanStatus(teks, apakahError) {
+            wadahHasil.replaceChildren();
+            wadahHasil.classList.remove('hidden');
+
+            const kotak = document.createElement('p');
+            kotak.className = apakahError
+                ? 'rounded-xl border border-error/30 bg-error-container/60 px-4 py-3 text-sm text-on-error-container'
+                : 'text-sm text-on-surface-variant';
+            kotak.textContent = teks;
+            wadahHasil.appendChild(kotak);
+        }
+
+        function renderHasilTarif(responJson) {
+            wadahHasil.replaceChildren();
+            wadahHasil.classList.remove('hidden');
+
+            const data = responJson.data || {};
+            const rute = data.rute || {};
+            const asalNama = (rute.asal && rute.asal.nama_lokasi) ? rute.asal.nama_lokasi : '-';
+            const tujuanNama = (rute.tujuan && rute.tujuan.nama_lokasi) ? rute.tujuan.nama_lokasi : '-';
+            const jarakKm = typeof rute.jarak_km === 'number' ? rute.jarak_km : (rute.jarak_km || 0);
+            const pilihan = Array.isArray(data.pilihan_transportasi) ? data.pilihan_transportasi : [];
+
+            const ringkasan = document.createElement('div');
+            ringkasan.className = 'flex flex-wrap items-center justify-between gap-2 mb-3 text-xs text-on-surface-variant';
+
+            const infoRute = document.createElement('span');
+            infoRute.className = 'font-medium text-on-surface';
+            infoRute.textContent = asalNama + ' -> ' + tujuanNama + ' (' + jarakKm + ' km)';
+
+            const infoLatensi = document.createElement('span');
+            infoLatensi.className = 'tabular-nums';
+            infoLatensi.textContent = pilihan.length + ' jadwal tersedia • ' + (responJson.waktu_respon_ms || 0) + ' ms';
+
+            ringkasan.appendChild(infoRute);
+            ringkasan.appendChild(infoLatensi);
+            wadahHasil.appendChild(ringkasan);
+
+            if (pilihan.length === 0) {
+                const kosong = document.createElement('p');
+                kosong.className = 'rounded-xl border border-surface-variant bg-surface-container-lowest px-4 py-3 text-sm text-on-surface-variant';
+                kosong.textContent = 'Belum ada jadwal armada langsung pada rute dan jam keberangkatan tersebut. Coba rute antar-terminal/stasiun utama atau ubah jam berangkat.';
+                wadahHasil.appendChild(kosong);
+                return;
+            }
+
+            const daftarEl = document.createElement('ul');
+            daftarEl.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+
+            pilihan.forEach(function (opsi) {
+                const itemEl = document.createElement('li');
+                itemEl.className = 'rounded-xl border border-surface-variant/80 bg-surface-container-lowest px-4 py-3 flex items-center justify-between gap-3';
+
+                const kolomKiri = document.createElement('div');
+                kolomKiri.className = 'min-w-0';
+
+                const namaArmada = document.createElement('p');
+                namaArmada.className = 'text-sm font-semibold text-on-surface truncate';
+                namaArmada.textContent = opsi.penyedia || 'Armada Mitra';
+
+                const detailJadwal = document.createElement('p');
+                detailJadwal.className = 'text-xs text-on-surface-variant mt-0.5 tabular-nums';
+                detailJadwal.textContent = (opsi.jenis_transport || '-') + ' • Berlaku ' + (opsi.jam_berlaku || '-');
+
+                kolomKiri.appendChild(namaArmada);
+                kolomKiri.appendChild(detailJadwal);
+
+                const hargaEl = document.createElement('span');
+                hargaEl.className = 'text-sm font-bold text-primary shrink-0 tabular-nums';
+                hargaEl.textContent = opsi.estimasi_tarif_format || '-';
+
+                itemEl.appendChild(kolomKiri);
+                itemEl.appendChild(hargaEl);
+                daftarEl.appendChild(itemEl);
+            });
+
+            wadahHasil.appendChild(daftarEl);
+        }
+
+        formulir.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const idAsal = document.getElementById('input-asal-transport').value;
+            const idTujuan = document.getElementById('input-tujuan-transport').value;
+            const jam = document.getElementById('input-jam-transport').value || '08:30';
+
+            if (idAsal === idTujuan) {
+                tampilkanPesanStatus('Titik berangkat dan titik tujuan tidak boleh sama.', true);
+                return;
+            }
+
+            tombolSubmit.disabled = true;
+            tampilkanPesanStatus('Menghubungi REST API mitra transportasi...', false);
+
+            try {
+                const parameter = new URLSearchParams({
+                    id_asal: idAsal,
+                    id_tujuan: idTujuan,
+                    jam: jam
+                });
+                const respon = await fetch(urlProxyTarif + '?' + parameter.toString(), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                const isiJson = await respon.json();
+
+                if (!respon.ok || isiJson.status !== 'berhasil') {
+                    tampilkanPesanStatus(isiJson.pesan || 'Gagal menghitung tarif rute transportasi.', true);
+                    return;
+                }
+
+                renderHasilTarif(isiJson);
+            } catch (kesalahan) {
+                tampilkanPesanStatus('Koneksi ke proxy API transportasi terputus. Coba ulangi beberapa saat lagi.', true);
+            } finally {
+                tombolSubmit.disabled = false;
+            }
         });
     })();
 </script>
