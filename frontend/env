@@ -73,3 +73,9 @@
 #--------------------------------------------------------------------
 
 # logger.threshold = 4
+
+# Mode client: gabungan (default), wisatawan, atau admin
+# JEJAKSUMUT_MODE_CLIENT = 'gabungan'
+# JEJAKSUMUT_PANEL_ADMIN_URL = 'http://localhost:8086/admin'
+# session.cookieName = 'jejaksumut_admin'
+# security.cookieName = 'jejaksumut_admin_csrf'

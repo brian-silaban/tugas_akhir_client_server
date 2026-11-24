@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk — JejakSumut</title>
+    <title><?= ($mode_admin ?? false) ? 'Masuk Panel Pengelola' : 'Masuk' ?> — JejakSumut</title>
 
     <!-- Tailwind CSS CDN & Design Tokens Resmi JejakSumut -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -98,8 +98,9 @@
             <div class="w-full max-w-md mx-auto">
                 <!-- Judul halaman -->
                 <h1 class="font-serif text-3xl font-semibold text-on-surface tracking-tight leading-[1.1]">
-                    Masuk ke Akun Anda
+                    <?= ($mode_admin ?? false) ? 'Masuk Panel Pengelola' : 'Masuk ke Akun Anda' ?>
                 </h1>
+                <?php if (! ($mode_admin ?? false)): ?>
                 <p class="mt-2 text-on-surface-variant text-sm">
                     Belum punya akun?
                     <a href="<?= base_url('/daftar') ?>"
@@ -107,6 +108,7 @@
                         Daftar sekarang
                     </a>
                 </p>
+                <?php endif ?>
 
                 <!-- ================================================== -->
                 <!-- Notifikasi Flash: Error / Sukses                   -->
@@ -195,6 +197,7 @@
                 </form>
 
                 <!-- Pemisah visual -->
+                <?php if (! ($mode_admin ?? false)): ?>
                 <div class="relative mt-8">
                     <div class="absolute inset-0 flex items-center" aria-hidden="true">
                         <div class="w-full border-t border-surface-variant"></div>
@@ -213,6 +216,7 @@
                     <span class="material-symbols-outlined text-base">arrow_back</span>
                     <span>Kembali ke Beranda</span>
                 </a>
+                <?php endif ?>
             </div>
 
             <!-- Footer kecil -->

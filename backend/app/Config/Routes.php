@@ -17,9 +17,6 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($rout
     // --- Destinasi Wisata (Anggota 1) ---
     $routes->get('destinasi', 'DestinasiApiController::index');
     $routes->get('destinasi/(:segment)', 'DestinasiApiController::show/$1');
-    // $routes->post('destinasi',         'DestinasiApiController::create');
-    // $routes->put('destinasi/(:num)',   'DestinasiApiController::update/$1');
-    // $routes->delete('destinasi/(:num)','DestinasiApiController::delete/$1');
 
     // --- Kategori & Wilayah Kabupaten/Kota (Anggota 1) ---
     $routes->get('kategori', 'KategoriApiController::index');
@@ -61,8 +58,16 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($rout
     $routes->post('ulasan', 'UlasanApiController::create');
 
     // --- Admin (Anggota 5) ---
-    // $routes->get('admin/statistik',               'AdminApiController::statistik');
-    // $routes->patch('pemesanan/(:num)/status',      'AdminApiController::ubahStatusPemesanan/$1');
-    // $routes->delete('ulasan/(:num)',               'AdminApiController::hapusUlasan/$1');
-});
+    $routes->group('', ['filter' => 'admin-api'], static function (RouteCollection $routes) {
+        $routes->get('admin/statistik', 'AdminApiController::statistik');
+        $routes->get('admin/pemesanan', 'AdminApiController::daftarPemesanan');
+        $routes->get('admin/ulasan', 'AdminApiController::daftarUlasan');
+        $routes->patch('pemesanan/(:num)/status', 'AdminApiController::ubahStatusPemesanan/$1');
+        $routes->delete('ulasan/(:num)', 'AdminApiController::hapusUlasan/$1');
 
+        $routes->get('admin/destinasi/(:num)', 'DestinasiAdminApiController::show/$1');
+        $routes->post('destinasi', 'DestinasiAdminApiController::create');
+        $routes->put('destinasi/(:num)', 'DestinasiAdminApiController::update/$1');
+        $routes->delete('destinasi/(:num)', 'DestinasiAdminApiController::delete/$1');
+    });
+});

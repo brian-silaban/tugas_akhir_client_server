@@ -65,6 +65,7 @@ GRANT USAGE, SELECT ON SEQUENCE
     favorit_id_seq
 TO jejaksumut_app_publik;
 
+GRANT EXECUTE ON FUNCTION fn_kunci_destinasi_pemesanan(INTEGER) TO jejaksumut_app_publik;
 GRANT EXECUTE ON FUNCTION fn_buat_kode_pemesanan(DATE) TO jejaksumut_app_publik;
 
 -- ============================================================================

@@ -6,55 +6,63 @@ use CodeIgniter\Router\RouteCollection;
  * @var RouteCollection $routes
  */
 
-// Halaman beranda JejakSumut
-$routes->get('/', 'Home::index');
+// Client pengelola dapat dijalankan pada proses dan sesi terpisah.
+$modeClient = env('JEJAKSUMUT_MODE_CLIENT', 'gabungan');
 
-// ============================================================
-// RUTE FRONTEND CLIENT — JejakSumut
-// ============================================================
+$routes->get('masuk', 'AutentikasiController::masuk');
+$routes->post('masuk', 'AutentikasiController::prosesMasuk', $modeClient === 'admin' ? ['filter' => 'csrf'] : []);
 
-// --- Destinasi Wisata (Anggota 1) ---
-$routes->get('destinasi', 'DestinasiController::index');
-$routes->get('destinasi/(:segment)', 'DestinasiController::detail/$1');
+if ($modeClient === 'admin') {
+    $routes->get('/', static fn () => redirect()->to(site_url('admin')));
+} else {
+    $routes->get('/', 'Home::index');
+    $routes->get('destinasi', 'DestinasiController::index');
+    $routes->get('destinasi/(:segment)', 'DestinasiController::detail/$1');
+    $routes->get('daftar', 'AutentikasiController::daftar');
+    $routes->post('daftar', 'AutentikasiController::prosesDaftar');
+    $routes->get('keluar', 'AutentikasiController::keluar');
 
-// --- Autentikasi & Akun (Anggota 3) ---
-$routes->get('masuk',   'AutentikasiController::masuk');
-$routes->post('masuk',  'AutentikasiController::prosesMasuk');
-$routes->get('daftar',  'AutentikasiController::daftar');
-$routes->post('daftar', 'AutentikasiController::prosesDaftar');
-$routes->get('keluar',  'AutentikasiController::keluar');
+    // --- Favorit (Anggota 3) ---
+    $routes->get('favorit-saya',     'FavoritController::index');
+    $routes->post('favorit/ubah',    'FavoritController::ubah');
 
-// --- Favorit (Anggota 3) ---
-$routes->get('favorit-saya',     'FavoritController::index');
-$routes->post('favorit/ubah',    'FavoritController::ubah');
+    // ================================================================
+    // MODUL ANGGOTA 4 — Pemesanan Tiket & Ulasan (Frontend Client)
+    // ================================================================
 
-// ================================================================
-// MODUL ANGGOTA 4 — Pemesanan Tiket & Ulasan (Frontend Client)
-// ================================================================
+    // --- Halaman Tiket Saya ---
+    // GET  /pemesanan                → Daftar riwayat tiket pengguna
+    $routes->get('pemesanan', 'PemesananController::index');
 
-// --- Halaman Tiket Saya ---
-// GET  /pemesanan                → Daftar riwayat tiket pengguna
-$routes->get('pemesanan', 'PemesananController::index');
+    // GET  /pemesanan/etiket/{id}   → Halaman E-Ticket digital
+    $routes->get('pemesanan/etiket/(:num)', 'PemesananController::tampilEtiket/$1');
 
-// GET  /pemesanan/etiket/{id}   → Halaman E-Ticket digital
-$routes->get('pemesanan/etiket/(:num)', 'PemesananController::tampilEtiket/$1');
+    // POST /pemesanan/buat          → Proses form pemesanan tiket baru
+    $routes->post('pemesanan/buat', 'PemesananController::buat');
 
-// POST /pemesanan/buat          → Proses form pemesanan tiket baru
-$routes->post('pemesanan/buat', 'PemesananController::buat');
+    // POST /pemesanan/batal/{id}    → Batalkan tiket
+    $routes->post('pemesanan/batal/(:num)', 'PemesananController::batal/$1');
 
-// POST /pemesanan/batal/{id}    → Batalkan tiket
-$routes->post('pemesanan/batal/(:num)', 'PemesananController::batal/$1');
+    // --- Ulasan & Rating ---
+    // POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail
+    $routes->post('ulasan/kirim', 'UlasanController::kirim');
+}
 
-// --- Ulasan & Rating ---
-// POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail
-$routes->post('ulasan/kirim', 'UlasanController::kirim');
+if ($modeClient !== 'wisatawan') {
+    $routes->group('admin', ['namespace' => 'App\Controllers\Admin', 'filter' => 'admin'], static function (RouteCollection $routes) {
+        $routes->get('', 'DasborController::index');
+        $routes->get('destinasi', 'DestinasiAdminController::index');
+        $routes->get('destinasi/tambah', 'DestinasiAdminController::tambah');
+        $routes->get('destinasi/(:num)/edit', 'DestinasiAdminController::edit/$1');
+        $routes->get('pemesanan', 'PemesananAdminController::index');
+        $routes->get('ulasan', 'PemesananAdminController::ulasan');
 
-// --- Proxy API Mitra Transportasi (Anggota 2) ---
-$routes->get('mitra/transportasi/lokasi', 'MitraTransportController::lokasi');
-$routes->get('mitra/transportasi/tarif', 'MitraTransportController::tarif');
+        $routes->post('destinasi', 'DestinasiAdminController::buat', ['filter' => 'csrf']);
+        $routes->post('destinasi/(:num)', 'DestinasiAdminController::ubah/$1', ['filter' => 'csrf']);
+        $routes->post('destinasi/(:num)/hapus', 'DestinasiAdminController::hapus/$1', ['filter' => 'csrf']);
+        $routes->post('pemesanan/(:num)/status', 'PemesananAdminController::ubahStatus/$1', ['filter' => 'csrf']);
+        $routes->post('ulasan/(:num)/hapus', 'PemesananAdminController::hapusUlasan/$1', ['filter' => 'csrf']);
 
-// --- Admin Dashboard (Anggota 5) ---
-// $routes->get('admin',                        'Admin\DasborController::index');
-// $routes->get('admin/pemesanan',               'Admin\PemesananAdminController::index');
-// $routes->post('admin/pemesanan/(:num)/status', 'Admin\PemesananAdminController::ubahStatus/$1');
-// $routes->get('admin/destinasi',               'Admin\DestinasiAdminController::index');
+        $routes->post('keluar', '\App\Controllers\AutentikasiController::keluarAdmin', ['filter' => 'csrf']);
+    });
+}
