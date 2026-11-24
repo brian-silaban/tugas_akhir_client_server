@@ -2,13 +2,13 @@
   "info": {
     "_postman_id": "a7f9c1b2-4e8a-4a91-9b1c-701531363801",
     "name": "JejakSumut REST API v1 — Wisata Sumatera Utara",
-    "description": "Koleksi resmi Postman untuk pengujian REST API JejakSumut (Backend Port 8080 & Frontend Port 8081/8082). Mencakup endpoint publik wisata Sumatera Utara untuk 4 kelompok mitra, modul pemesanan tiket (ACID), modul ulasan & rating, serta kerangka autentikasi & admin sesuai rubrik evaluasi MDCS (K3–K5).",
+    "description": "Koleksi resmi Postman untuk pengujian REST API JejakSumut (Backend HTTPS: https://api-jejaksumut.vulnera.web.id & Frontend HTTPS: https://jejaksumut.vulnera.web.id). Mencakup endpoint publik wisata Sumatera Utara untuk 4 kelompok mitra, modul pemesanan tiket (ACID), modul ulasan & rating, serta kerangka autentikasi & admin sesuai rubrik evaluasi MDCS (K3–K5).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "base_url",
-      "value": "http://70.153.136.38:8080",
+      "value": "https://api-jejaksumut.vulnera.web.id",
       "type": "string"
     },
     {

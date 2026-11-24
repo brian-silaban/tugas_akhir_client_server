@@ -12,9 +12,9 @@ Dokumen ini menjadi panduan pertukaran data **JSON REST API** antara platform wi
 
 | Layanan | URL Aktif | Keterangan |
 | :--- | :--- | :--- |
-| **REST API Backend (JSON)** | `http://70.153.136.38:8080/api/v1` | Endpoint utama untuk diakses aplikasi client/mitra (`621` objek wisata berkoordinat GPS di Sumatera Utara). |
-| **Status Server API** | `http://70.153.136.38:8080/` | Menampilkan status koneksi database `jejaksumut_db` dan daftar rute. |
-| **Aplikasi Web Frontend** | `http://70.153.136.38:8082/` | Antarmuka pengguna JejakSumut (tujuan tautan `url_detail`). |
+| **REST API Backend (JSON)** | `https://api-jejaksumut.vulnera.web.id/api/v1` | Endpoint utama untuk diakses aplikasi client/mitra (`621` objek wisata berkoordinat GPS di Sumatera Utara). |
+| **Status Server API** | `https://api-jejaksumut.vulnera.web.id/` | Menampilkan status koneksi database `jejaksumut_db` dan daftar rute. |
+| **Aplikasi Web Frontend** | `https://jejaksumut.vulnera.web.id/` | Antarmuka pengguna JejakSumut (tujuan tautan `url_detail`). |
 
 ---
 
@@ -32,13 +32,13 @@ Seluruh endpoint di bawah ini dapat dipanggil langsung dengan metode **`GET`** t
 ### Contoh Perintah Uji `curl`
 ```bash
 # 1. Mengambil 5 destinasi wisata di sekitar Samosir
-curl "http://70.153.136.38:8080/api/v1/destinasi?kota=Samosir&batas=5"
+curl "https://api-jejaksumut.vulnera.web.id/api/v1/destinasi?kota=Samosir&batas=5"
 
 # 2. Mengambil detail lengkap Danau Toba
-curl "http://70.153.136.38:8080/api/v1/destinasi/danau-toba"
+curl "https://api-jejaksumut.vulnera.web.id/api/v1/destinasi/danau-toba"
 
 # 3. Mengambil daftar 33 kabupaten/kota di Sumatera Utara
-curl "http://70.153.136.38:8080/api/v1/kabupaten-kota"
+curl "https://api-jejaksumut.vulnera.web.id/api/v1/kabupaten-kota"
 ```
 
 ### Contoh Respons JSON Aktual (`GET /api/v1/destinasi?kota=Samosir&batas=1`)
@@ -75,7 +75,7 @@ curl "http://70.153.136.38:8080/api/v1/kabupaten-kota"
       "rata_rating": 0,
       "jumlah_ulasan": 0,
       "foto_utama": "...",
-      "url_detail": "http://70.153.136.38:8082/destinasi/danau-toba"
+      "url_detail": "https://jejaksumut.vulnera.web.id/destinasi/danau-toba"
     }
   ]
 }
