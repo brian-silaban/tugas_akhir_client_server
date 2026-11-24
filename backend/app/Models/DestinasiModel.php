@@ -229,24 +229,36 @@ class DestinasiModel extends Model
     }
 
     /**
-     * Memastikan URL foto aman ditampilkan; bila path lokal belum tersedia, gunakan foto cadangan kategori.
+     * Memastikan URL foto aman ditampilkan; bila path lokal belum tersedia atau masih memakai fallback lama, gunakan foto cadangan kategori.
      */
     private function resolveFotoUtama(?string $fotoUtama, string $namaKategori): string
     {
         $foto = trim((string) $fotoUtama);
-        if ($foto !== '' && preg_match('#^https?://#i', $foto) === 1) {
+        if (
+            $foto !== ''
+            && preg_match('#^https?://#i', $foto) === 1
+            && ! str_contains($foto, 'photo-1544644181-1484b3fdfc62')
+        ) {
             return $foto;
         }
 
-        if ($foto !== '' && defined('FCPATH')) {
+        if ($foto !== '' && ! str_contains($foto, 'photo-1544644181-1484b3fdfc62') && defined('FCPATH')) {
             $jalurLokal = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $foto), '/\\');
             if (is_file($jalurLokal)) {
                 return base_url(ltrim($foto, '/'));
             }
         }
 
+        return $this->tentukanFotoFallbackKategori($namaKategori);
+    }
+
+    /**
+     * Menentukan URL foto cadangan bernuansa Sumatera Utara berdasarkan kategori wisata.
+     */
+    public function tentukanFotoFallbackKategori(string $namaKategori): string
+    {
         $petaFoto = [
-            'Wisata Alam'             => 'https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1200&q=80',
+            'Wisata Alam'             => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg',
             'Wisata Bahari & Pantai'  => 'https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?auto=format&fit=crop&w=1200&q=80',
             'Wisata Budaya & Sejarah' => 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80',
             'Wisata Religi'           => 'https://upload.wikimedia.org/wikipedia/commons/7/71/TamanLumbini20110607.jpg',
