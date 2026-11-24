@@ -88,7 +88,7 @@
                     // Foto utama fallback jika kosong
                     $fotoDestinasi = !empty($item['foto_utama'])
                         ? $item['foto_utama']
-                        : 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=800&q=80';
+                        : 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg';
                 ?>
 
                 <div class="group flex flex-col justify-between rounded-2xl border border-surface-variant/80 bg-surface-container-lowest overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300">

@@ -56,8 +56,8 @@
         <!-- ============================================================ -->
         <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-surface-container">
             <img
-                src="https://images.unsplash.com/photo-1544644181-1484b3fdfc62?auto=format&fit=crop&w=1200&q=80"
-                alt="Keindahan Alam Sumatera Utara"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Air_terjun_Ponot.jpg/1280px-Air_terjun_Ponot.jpg"
+                alt="Air Terjun Ponot di Asahan, Sumatera Utara"
                 class="absolute inset-0 h-full w-full object-cover"
             />
             <!-- Gradient overlay gelap agar teks terbaca jelas -->

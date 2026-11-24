@@ -56,7 +56,7 @@
         <!-- ============================================================ -->
         <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-surface-container">
             <img
-                src="https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80"
+                src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg"
                 alt="Panorama Danau Toba dan Perbukitan Sumatera Utara"
                 class="absolute inset-0 h-full w-full object-cover"
             />
