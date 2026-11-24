@@ -105,7 +105,7 @@ CREATE TABLE IF NOT EXISTS pemesanan (
     id SERIAL PRIMARY KEY,
     kode_pemesanan VARCHAR(40) NOT NULL UNIQUE,
     id_pengguna INTEGER NOT NULL REFERENCES pengguna(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    id_destinasi INTEGER NOT NULL REFERENCES destinasi(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    id_destinasi INTEGER NOT NULL REFERENCES destinasi(id) ON UPDATE CASCADE ON DELETE RESTRICT,
     tanggal_kunjungan DATE NOT NULL,
     jumlah_pengunjung INTEGER NOT NULL DEFAULT 1 CHECK (jumlah_pengunjung >= 1),
     total_harga INTEGER NOT NULL DEFAULT 0 CHECK (total_harga >= 0),
@@ -197,6 +197,21 @@ FROM pemesanan p
 JOIN pengguna u ON u.id = p.id_pengguna
 JOIN destinasi d ON d.id = p.id_destinasi
 JOIN kabupaten_kota kb ON kb.kode_kabupaten = d.kode_kabupaten;
+
+-- Kunci harga dalam transaksi pembelian dengan hak akses minimum.
+CREATE OR REPLACE FUNCTION fn_kunci_destinasi_pemesanan(p_id_destinasi INTEGER)
+RETURNS TABLE (id INTEGER, harga_tiket INTEGER)
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = pg_catalog, pg_temp
+AS $$
+    SELECT d.id, d.harga_tiket
+    FROM public.destinasi d
+    WHERE d.id = p_id_destinasi
+    FOR SHARE OF d;
+$$;
+
+REVOKE EXECUTE ON FUNCTION fn_kunci_destinasi_pemesanan(INTEGER) FROM PUBLIC;
 
 -- 12. Stored Function: Pembuat Kode Pemesanan Unik (JSM-YYYYMMDD-XXX + Advisory Lock)
 CREATE OR REPLACE FUNCTION fn_buat_kode_pemesanan(p_tanggal DATE DEFAULT CURRENT_DATE)

@@ -2,6 +2,7 @@
 
 namespace App\Controllers\Api;
 
+use App\Libraries\TokenApi;
 use App\Models\PenggunaModel;
 use CodeIgniter\HTTP\ResponseInterface;
 use CodeIgniter\RESTful\ResourceController;
@@ -55,6 +56,19 @@ class AutentikasiApiController extends ResourceController
             ], ResponseInterface::HTTP_UNAUTHORIZED);
         }
 
+        $token = (new TokenApi())->terbitkan((int) $pengguna['id']);
+        if ($token === null) {
+            log_message('error', 'JEJAKSUMUT_KUNCI_TOKEN belum dikonfigurasi untuk autentikasi API.');
+
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Layanan autentikasi belum dikonfigurasi.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_SERVICE_UNAVAILABLE);
+        }
+
+        $this->response->setHeader('Cache-Control', 'no-store');
+
         // Hapus hash kata sandi sebelum dikirim ke client
         unset($pengguna['kata_sandi']);
 
@@ -63,7 +77,7 @@ class AutentikasiApiController extends ResourceController
             'pesan'  => 'Login berhasil.',
             'data'   => [
                 'pengguna' => $pengguna,
-                'token'    => base64_encode($pengguna['id'] . ':' . $pengguna['email'] . ':' . time()),
+                'token'    => $token,
             ],
         ], ResponseInterface::HTTP_OK);
     }

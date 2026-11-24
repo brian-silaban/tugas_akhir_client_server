@@ -34,20 +34,11 @@ class JejakSumutSeeder extends Seeder
     }
 
     /**
-     * Mengisi 3 akun pengguna awal secara idempotent.
+     * Mengisi akun awal secara idempotent.
      */
     private function isiPenggunaAwal(string $waktuSekarang): void
     {
         $daftarPengguna = [
-            [
-                'nama'            => 'Admin JejakSumut',
-                'email'           => 'admin@jejaksumut.id',
-                'kata_sandi'      => password_hash('admin123', PASSWORD_DEFAULT),
-                'peran'           => 'admin',
-                'foto_profil'     => null,
-                'dibuat_pada'     => $waktuSekarang,
-                'diperbarui_pada' => $waktuSekarang,
-            ],
             [
                 'nama'            => 'Raka Pratama',
                 'email'           => 'raka@jejaksumut.id',
@@ -67,6 +58,24 @@ class JejakSumutSeeder extends Seeder
                 'diperbarui_pada' => $waktuSekarang,
             ],
         ];
+
+        // Akun admin baru hanya dibuat bila operator memasok kata sandi sendiri.
+        $kataSandiAdmin = (string) env('JEJAKSUMUT_KATA_SANDI_ADMIN_AWAL', '');
+        if ($kataSandiAdmin !== '') {
+            if (strlen($kataSandiAdmin) < 16) {
+                throw new \InvalidArgumentException('Kata sandi admin awal minimal 16 karakter.');
+            }
+
+            $daftarPengguna[] = [
+                'nama'            => 'Admin JejakSumut',
+                'email'           => 'admin@jejaksumut.id',
+                'kata_sandi'      => password_hash($kataSandiAdmin, PASSWORD_DEFAULT),
+                'peran'           => 'admin',
+                'foto_profil'     => null,
+                'dibuat_pada'     => $waktuSekarang,
+                'diperbarui_pada' => $waktuSekarang,
+            ];
+        }
 
         $barisExisting = $this->db->table('pengguna')->select('email')->get()->getResultArray();
         $emailTerdaftar = array_flip(array_column($barisExisting, 'email'));

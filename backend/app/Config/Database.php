@@ -19,6 +19,8 @@ class Database extends Config
      */
     public string $defaultGroup = 'default';
 
+    public array $admin = [];
+
     /**
      * The default database connection.
      *
@@ -189,6 +191,15 @@ class Database extends Config
     public function __construct()
     {
         parent::__construct();
+
+        // Kredensial admin dipakai hanya setelah token dan peran pengguna lolos pemeriksaan.
+        $namaPenggunaAdmin = (string) env('JEJAKSUMUT_DB_ADMIN_USER', '');
+        if ($namaPenggunaAdmin !== '') {
+            $this->admin = array_replace($this->default, [
+                'username' => $namaPenggunaAdmin,
+                'password' => (string) env('JEJAKSUMUT_DB_ADMIN_PASSWORD', ''),
+            ]);
+        }
 
         // Ensure that we always set the database group to 'tests' if
         // we are currently running an automated test suite, so that
