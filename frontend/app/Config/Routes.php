@@ -46,6 +46,10 @@ if ($modeClient === 'admin') {
     // --- Ulasan & Rating ---
     // POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail
     $routes->post('ulasan/kirim', 'UlasanController::kirim');
+
+    // --- Proxy API Mitra Transportasi (Anggota 2) ---
+    $routes->get('mitra/transportasi/lokasi', 'MitraTransportController::lokasi');
+    $routes->get('mitra/transportasi/tarif', 'MitraTransportController::tarif');
 }
 
 if ($modeClient !== 'wisatawan') {
