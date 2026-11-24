@@ -106,11 +106,13 @@
                         <?= esc($destinasi['nama']) ?>
                     </h1>
 
-                    <?php if (! empty($destinasi['alamat'])) : ?>
-                        <p class="font-body-md text-body-md text-on-surface-variant mt-2">
+                    <p class="font-body-md text-body-md text-on-surface-variant mt-2">
+                        <?php if (! empty($destinasi['alamat'])) : ?>
                             <?= esc($destinasi['alamat']) ?>, <?= esc($destinasi['provinsi'] ?? 'Sumatera Utara') ?>
-                        </p>
-                    <?php endif; ?>
+                        <?php else : ?>
+                            <?= esc(($destinasi['nama_kabupaten_kota'] ?? $destinasi['kota'] ?? 'Sumatera Utara') . ', ' . ($destinasi['provinsi'] ?? 'Sumatera Utara')) ?>
+                        <?php endif; ?>
+                    </p>
                 </header>
 
                 <!-- Deskripsi Naratif -->
@@ -181,6 +183,23 @@
                         <p class="text-xs text-outline mt-3">
                             Sumber data resmi: <?= esc($destinasi['sumber_data']) ?>
                         </p>
+                    <?php endif; ?>
+
+                    <?php if ($garisLintang !== null && $garisBujur !== null) : ?>
+                        <?php
+                        $lat = (float) $garisLintang;
+                        $lon = (float) $garisBujur;
+                        $bbox = ($lon - 0.015) . ',' . ($lat - 0.015) . ',' . ($lon + 0.015) . ',' . ($lat + 0.015);
+                        ?>
+                        <div class="mt-6 rounded-2xl overflow-hidden border border-surface-variant/50 bg-surface-container">
+                            <iframe
+                                title="Peta lokasi <?= esc($destinasi['nama']) ?>"
+                                src="https://www.openstreetmap.org/export/embed.html?bbox=<?= esc($bbox) ?>&amp;layer=mapnik&amp;marker=<?= esc((string) $lat) ?>,<?= esc((string) $lon) ?>"
+                                class="w-full h-64 border-0"
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade"
+                            ></iframe>
+                        </div>
                     <?php endif; ?>
                 </section>
 

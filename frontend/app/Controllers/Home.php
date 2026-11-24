@@ -28,7 +28,7 @@ class Home extends BaseController
 
         // Ambil 3 destinasi unggulan untuk Bento Grid
         $daftarSorotanBento = [];
-        foreach (['air-terjun-ponot', 'pulau-samosir', 'taman-alam-lumbini'] as $slugSorotan) {
+        foreach (['air-terjun-ponot', 'pulau-samosir', 'istana-maimun'] as $slugSorotan) {
             $detailSorotan = $layananApi->ambilDetailDestinasi($slugSorotan);
             if (! empty($detailSorotan['data'])) {
                 $daftarSorotanBento[] = $detailSorotan['data'];

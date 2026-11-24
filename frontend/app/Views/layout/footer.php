@@ -33,7 +33,7 @@ $daftarKategoriFooter = [
                 </p>
                 <div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
                     <span class="material-symbols-outlined text-secondary text-base">verified</span>
-                    <span>971 Objek Wisata di 33 Kabupaten &amp; Kota</span>
+                    <span>621 Objek Wisata Berkoordinat GPS di Sumatera Utara</span>
                 </div>
             </div>
 

@@ -15,7 +15,7 @@ $tagPencarianPopuler = [
 
 $daftarStatistikUtama = [
     [
-        'angka'       => $totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '971',
+        'angka'       => $totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '621',
         'keterangan'  => 'Objek Wisata Sumut',
         'kelas_warna' => 'text-primary',
     ],
@@ -87,7 +87,7 @@ $daftarWilayahUnggulan             = array_slice($daftarKabupatenKota ?? [], 0, 
                     </h1>
 
                     <p class="font-body-lg text-body-lg text-on-surface-variant mt-5 max-w-xl leading-relaxed">
-                        Direktori resmi <?= esc($totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '971') ?> objek wisata di 33 kabupaten dan kota Sumatera Utara — lengkap dengan tarif tiket transparan, titik koordinat GPS, fasilitas, serta informasi pengelola.
+                        Direktori resmi <?= esc($totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '621') ?> objek wisata berkoordinat GPS di Sumatera Utara — lengkap dengan tarif tiket transparan, fasilitas lapangan, serta informasi pengelola.
                     </p>
 
                     <!-- Form Pencarian Interaktif (mengarah ke /destinasi) -->

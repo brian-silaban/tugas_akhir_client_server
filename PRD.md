@@ -30,7 +30,7 @@ Sesuai arahan dosen pengampu mata kuliah **Manajemen Database Client Server (`PL
 ## 3. Referensi Skema Database PostgreSQL (`backend/app/Database/`)
 > **Status Evaluasi K1 & K2 (`Form_Evaluasi_Proyek_MDCS.docx.pdf`):** Skema sudah memenuhi **3NF**, lengkap dengan constraint (`PK`, `FK`, `UNIQUE`, `CHECK`), `INDEX`, **objek database K2** (`View`, `Trigger`, `Stored Function`, `Stored Procedure`), transaksi ACID di Model, serta skrip role *Least Privilege* di [`backend/app/Database/setup_hak_akses_k2.sql`](backend/app/Database/setup_hak_akses_k2.sql).
 
-Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (9 tabel + 2 SQL View + Trigger & Stored Function/Procedure untuk 971 objek wisata di 33 kabupaten/kota Sumatera Utara):
+Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (9 tabel + 2 SQL View + Trigger & Stored Function/Procedure untuk 621 objek wisata berkoordinat GPS di 31 dari 33 kabupaten/kota Sumatera Utara):
 1. **`kabupaten_kota`**: `kode_kabupaten` (PK), `nama_kabupaten_kota` (Unique), `jenis_daerah`, `ibu_kota`
 2. **`pengguna`**: `id` (PK), `nama`, `email` (Unique), `kata_sandi`, `peran` (`'admin'` | `'member'`), `foto_profil`, `dibuat_pada`, `diperbarui_pada`
 3. **`kategori`**: `id` (PK), `nama`, `slug` (Unique), `deskripsi`, `dibuat_pada`, `diperbarui_pada`

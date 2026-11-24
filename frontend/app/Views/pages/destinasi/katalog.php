@@ -154,10 +154,10 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
         <div class="mt-10 bg-surface-container-lowest rounded-3xl p-12 text-center border border-surface-variant/40">
             <span class="material-symbols-outlined text-5xl text-outline">search_off</span>
             <h2 class="font-headline-md text-headline-md text-on-surface mt-3">
-                Tidak Ada Destinasi yang Cocok
+                Belum Ada Destinasi yang Cocok
             </h2>
             <p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-md mx-auto">
-                Coba ubah kata kunci pencarian, pilih kabupaten/kota lain, atau reset filter kategori.
+                Belum ada objek wisata terdata untuk filter atau kabupaten/kota yang dipilih. Coba ubah kata kunci pencarian, pilih kabupaten/kota lain, atau reset filter.
             </p>
             <a href="<?= base_url('destinasi') ?>" class="inline-flex mt-6 px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-colors">
                 Tampilkan Semua Destinasi

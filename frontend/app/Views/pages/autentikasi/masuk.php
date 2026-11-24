@@ -72,7 +72,7 @@
                     </span>
                 </a>
                 <h2 class="font-serif text-3xl font-semibold text-white leading-[1.15] tracking-tight max-w-md">
-                    Jelajahi 971 Pesona Wisata Sumatera Utara
+                    Jelajahi 621 Pesona Wisata Sumatera Utara
                 </h2>
                 <p class="mt-3 text-white/80 text-sm leading-relaxed max-w-sm">
                     Dari keajaiban Kaldera Toba hingga eksotisme Nias dan Leuser. Masuk ke akun Anda untuk merencanakan liburan impian.

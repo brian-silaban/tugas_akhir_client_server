@@ -12,7 +12,7 @@ Dokumen ini menjadi panduan pertukaran data **JSON REST API** antara platform wi
 
 | Layanan | URL Aktif | Keterangan |
 | :--- | :--- | :--- |
-| **REST API Backend (JSON)** | `http://70.153.136.38:8080/api/v1` | Endpoint utama untuk diakses aplikasi client/mitra (`971` objek wisata di `33` kab/kota Sumut). |
+| **REST API Backend (JSON)** | `http://70.153.136.38:8080/api/v1` | Endpoint utama untuk diakses aplikasi client/mitra (`621` objek wisata berkoordinat GPS di Sumatera Utara). |
 | **Status Server API** | `http://70.153.136.38:8080/` | Menampilkan status koneksi database `jejaksumut_db` dan daftar rute. |
 | **Aplikasi Web Frontend** | `http://70.153.136.38:8082/` | Antarmuka pengguna JejakSumut (tujuan tautan `url_detail`). |
 

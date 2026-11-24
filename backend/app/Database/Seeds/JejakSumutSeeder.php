@@ -231,7 +231,7 @@ class JejakSumutSeeder extends Seeder
     }
 
     /**
-     * Mengisi 971 objek wisata Sumatera Utara beserta tabel pivot destinasi_fasilitas.
+     * Mengisi 621 objek wisata Sumatera Utara beserta tabel pivot destinasi_fasilitas.
      *
      * @param array<string, int> $petaKategori
      * @param array<string, int> $petaFasilitas
