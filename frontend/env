@@ -33,7 +33,7 @@
 # Semua API URL dibawah ini hanya contoh saja, nanti kita sesuaikan dengan API kita dan kelompok lain.
 #--------------------------------------------------------------------
 
-# JEJAKSUMUT_BACKEND_API_URL = 'http://70.153.136.38:8080/api/v1'
+# JEJAKSUMUT_BACKEND_API_URL = 'https://api-jejaksumut.vulnera.web.id/api/v1'
 # (Alternatif lokal: 'http://localhost:8080/api/v1' jika sedang tes backend di laptop)
 # BACKEND_API_TIMEOUT = 5
 # PARTNER_KULINER_API_URL = 'http://localhost:8082/api/kuliner'

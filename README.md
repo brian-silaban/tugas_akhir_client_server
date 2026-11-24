@@ -45,7 +45,7 @@ php spark serve --port 8081
 Buka **`http://localhost:8081`** di browser. Langsung nongol Landing Page-nya!
 
 ### B. Cara Jalanin Server REST API (`backend`):
-> 💡 **Info Penting:** Server Backend & Database PostgreSQL kita sudah jalan **online 24 jam di VM Azure** (`http://70.153.136.38:8080`)! Jadi kalau mau nyoba dari laptop masing-masing atau ngetes kode baru:
+> 💡 **Info Penting:** Server Backend & Database PostgreSQL kita sudah jalan **online 24 jam di VM Azure** (`https://api-jejaksumut.vulnera.web.id`)! Jadi kalau mau nyoba dari laptop masing-masing atau ngetes kode baru:
 Buka terminal baru, lalu jalankan:
 ```bash
 cd backend
@@ -54,7 +54,7 @@ cp env .env
 composer install
 php spark serve --port 8080
 ```
-Buka **`http://localhost:8080`** di browser (atau **`http://70.153.136.38:8080`** untuk versi online VM Azure), nanti bakal muncul teks **JSON** status API Server kita.
+Buka **`http://localhost:8080`** di browser (atau **`https://api-jejaksumut.vulnera.web.id`** untuk versi online VM Azure), nanti bakal muncul teks **JSON** status API Server kita.
 
 ---
 

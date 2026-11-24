@@ -20,9 +20,9 @@
 # APP
 #--------------------------------------------------------------------
 
-# app.baseURL = ''
+# app.baseURL = 'https://api-jejaksumut.vulnera.web.id/'
 # URL Frontend Client untuk membentuk field url_detail pada respons JSON API
-# JEJAKSUMUT_FRONTEND_URL = 'http://70.153.136.38:8082'
+# JEJAKSUMUT_FRONTEND_URL = 'https://jejaksumut.vulnera.web.id'
 # If you have trouble with `.`, you could also use `_`.
 # app_baseURL = ''
 # app.forceGlobalSecureRequests = false
