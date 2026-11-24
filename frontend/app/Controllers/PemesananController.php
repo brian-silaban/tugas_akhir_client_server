@@ -7,17 +7,12 @@ use CodeIgniter\HTTP\RedirectResponse;
 
 /**
  * Controller halaman web modul Pemesanan Tiket JejakSumut.
- * Semua data diambil lewat LayananApiBackend (REST API backend) dengan token Bearer
- * dari sesi login — frontend tidak pernah menyentuh PostgreSQL secara langsung.
- *
- * Anggota 4 — Frontend: Tiket Saya & E-Ticket Digital
+ * Seluruh data diambil lewat LayananApiBackend (REST API backend) dengan token Bearer
+ * dari sesi login sehingga frontend tidak mengakses PostgreSQL secara langsung.
  */
 class PemesananController extends BaseController
 {
-    // =========================================================================
-    // GET /pemesanan
-    // Halaman "Tiket Saya" berisi riwayat tiket pengguna yang sedang login.
-    // =========================================================================
+    // GET /pemesanan: daftar riwayat tiket milik pengguna yang sedang login.
     public function index(): string|RedirectResponse
     {
         $idPengguna = (int) session('id_pengguna');
@@ -28,7 +23,6 @@ class PemesananController extends BaseController
         $layananApi = new LayananApiBackend();
         $hasilApi   = $layananApi->ambilDaftarPemesanan($idPengguna, (string) session('token_api'));
 
-        // Ambil daftar tiket bila respons sukses, selain itu tampilkan pesan error dari API
         $daftarTiket = [];
         $pesanError  = '';
         if ($hasilApi['berhasil'] && is_array($hasilApi['data'])) {
@@ -38,16 +32,15 @@ class PemesananController extends BaseController
         }
 
         return view('pages/member/pemesanan', [
+            'judulHalaman'  => 'Tiket Saya | JejakSumut',
             'judul_halaman' => 'Tiket Saya',
+            'menuAktif'     => 'pemesanan',
             'daftar_tiket'  => $daftarTiket,
             'pesan_error'   => $pesanError,
         ]);
     }
 
-    // =========================================================================
-    // GET /pemesanan/etiket/{id}
-    // Halaman E-Ticket untuk satu tiket.
-    // =========================================================================
+    // GET /pemesanan/etiket/{id}: halaman E-Ticket untuk satu transaksi.
     public function tampilEtiket(int $id): string|RedirectResponse
     {
         $idPengguna = (int) session('id_pengguna');
@@ -66,21 +59,22 @@ class PemesananController extends BaseController
 
         $dataEtiket = $hasilApi['data'];
 
-        // Cegah pengguna membuka E-Ticket milik orang lain
+        // Cegah pengguna membuka E-Ticket milik akun lain.
         if ((int) ($dataEtiket['id_pengguna'] ?? 0) !== $idPengguna) {
             return redirect()->to('/pemesanan')->with('pesan_error', 'Tiket ini bukan milik akun kamu.');
         }
 
+        $kodeTiket = (string) ($dataEtiket['kode_pemesanan'] ?? '');
+
         return view('pages/member/etiket', [
-            'judul_halaman' => 'E-Ticket ' . ($dataEtiket['kode_pemesanan'] ?? ''),
+            'judulHalaman'  => 'E-Ticket ' . $kodeTiket . ' | JejakSumut',
+            'judul_halaman' => 'E-Ticket ' . $kodeTiket,
+            'menuAktif'     => 'pemesanan',
             'data_etiket'   => $dataEtiket,
         ]);
     }
 
-    // =========================================================================
-    // POST /pemesanan/buat
-    // Meneruskan form pemesanan ke POST /api/v1/pemesanan.
-    // =========================================================================
+    // POST /pemesanan/buat: meneruskan form pemesanan ke POST /api/v1/pemesanan.
     public function buat(): RedirectResponse
     {
         $idPengguna = (int) session('id_pengguna');
@@ -98,7 +92,7 @@ class PemesananController extends BaseController
         $layananApi = new LayananApiBackend();
         $hasilApi   = $layananApi->buatPemesanan($dataPemesanan, (string) session('token_api'));
 
-        // Sukses (201) → langsung buka E-Ticket yang baru dibuat
+        // Arahkan langsung ke E-Ticket setelah backend mengembalikan status 201 Created.
         $idTiketBaru = (int) ($hasilApi['data']['id'] ?? 0);
         if ($hasilApi['berhasil'] && $idTiketBaru > 0) {
             $kodeTiket = (string) ($hasilApi['data']['kode_pemesanan'] ?? '');
@@ -113,10 +107,7 @@ class PemesananController extends BaseController
         return redirect()->back()->withInput()->with('pesan_error', $pesanError);
     }
 
-    // =========================================================================
-    // POST /pemesanan/batal/{id}
-    // Meneruskan pembatalan ke PATCH /api/v1/pemesanan/{id}/batal.
-    // =========================================================================
+    // POST /pemesanan/batal/{id}: meneruskan pembatalan ke PATCH /api/v1/pemesanan/{id}/batal.
     public function batal(int $id): RedirectResponse
     {
         $idPengguna = (int) session('id_pengguna');
