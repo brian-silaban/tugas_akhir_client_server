@@ -86,6 +86,21 @@ class UlasanApiController extends ResourceController
         $nilaiRating = (int) $inputData['rating'];
         $isiKomentar = trim((string) $inputData['komentar']);
 
+        // Pastikan pengguna hanya menulis ulasan atas nama akunnya sendiri (kecuali admin)
+        $dataToken = AutentikasiApiController::verifikasiHeaderOtorisasi(
+            $this->request->getHeaderLine('Authorization')
+        );
+        if (
+            $dataToken !== null
+            && ($dataToken['peran'] ?? '') !== 'admin'
+            && (int) $dataToken['id_pengguna'] !== $idPengguna
+        ) {
+            return $this->kirimGagal(
+                'Akses ditolak. Anda hanya dapat mengirim ulasan menggunakan akun sendiri.',
+                ResponseInterface::HTTP_FORBIDDEN
+            );
+        }
+
         if ($nilaiRating < 1 || $nilaiRating > 5) {
             return $this->kirimGagal(
                 'Rating harus berupa angka antara 1 sampai 5.',

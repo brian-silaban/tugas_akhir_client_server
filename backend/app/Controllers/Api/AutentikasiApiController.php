@@ -22,27 +22,47 @@ class AutentikasiApiController extends ResourceController
     // -------------------------------------------------------------------------
 
     /**
+     * Mengambil kunci rahasia penandatanganan token dari variabel lingkungan.
+     * Minimal 32 karakter agar keamanan HMAC-SHA256 tetap terjaga.
+     */
+    private static function ambilKunciRahasia(): ?string
+    {
+        $kunci = trim((string) env('JEJAKSUMUT_KUNCI_TOKEN', ''));
+        if ($kunci === '') {
+            $kunci = trim((string) env('API_TOKEN_SECRET', ''));
+        }
+
+        if (strlen($kunci) < 32) {
+            return null;
+        }
+
+        return $kunci;
+    }
+
+    /**
      * Membuat token HMAC-SHA256 yang bertanda tangan.
      * Payload memuat id, email, peran, dan exp (waktu kedaluwarsa).
      *
      * @param int    $idPengguna
      * @param string $email
      * @param string $peran
-     * @return string
+     * @return string|null
      */
-    public static function buatToken(int $idPengguna, string $email, string $peran): string
+    public static function buatToken(int $idPengguna, string $email, string $peran): ?string
     {
+        $kunciRahasia = self::ambilKunciRahasia();
+        if ($kunciRahasia === null) {
+            return null;
+        }
+
         // Masa berlaku token: 24 jam ke depan
         $waktuKedaluwarsa = time() + (60 * 60 * 24);
 
         // Susun payload sebagai string terformat
         $payload = $idPengguna . '|' . $email . '|' . $peran . '|' . $waktuKedaluwarsa;
 
-        // Dapatkan secret key dari .env (prioritas API_TOKEN_SECRET, fallback JEJAKSUMUT_KUNCI_TOKEN)
-        $secretKey = (string) env('API_TOKEN_SECRET', env('JEJAKSUMUT_KUNCI_TOKEN', 'jejaksumut-rahasia-anggota3-2026'));
-
         // Buat tanda tangan HMAC-SHA256
-        $tandaTangan = hash_hmac('sha256', $payload, $secretKey);
+        $tandaTangan = hash_hmac('sha256', $payload, $kunciRahasia);
 
         // Gabungkan payload dan tanda tangan, lalu encode Base64Url
         $tokenMentah = $payload . '.' . $tandaTangan;
@@ -59,6 +79,11 @@ class AutentikasiApiController extends ResourceController
      */
     public static function verifikasiToken(string $token): ?array
     {
+        $kunciRahasia = self::ambilKunciRahasia();
+        if ($kunciRahasia === null) {
+            return null;
+        }
+
         // Decode Base64Url kembali ke string mentah
         $tokenMentah = base64_decode(strtr($token, '-_', '+/') . str_repeat('=', 3 - (3 + strlen($token)) % 4));
         if ($tokenMentah === false) {
@@ -75,8 +100,7 @@ class AutentikasiApiController extends ResourceController
         $tandaTangan = substr($tokenMentah, $posisiTitik + 1);
 
         // Hitung ulang tanda tangan yang diharapkan
-        $secretKey             = (string) env('API_TOKEN_SECRET', env('JEJAKSUMUT_KUNCI_TOKEN', 'jejaksumut-rahasia-anggota3-2026'));
-        $tandaTanganDiharapkan = hash_hmac('sha256', $payload, $secretKey);
+        $tandaTanganDiharapkan = hash_hmac('sha256', $payload, $kunciRahasia);
 
         // Bandingkan tanda tangan dengan aman (mencegah timing attack)
         if (! hash_equals($tandaTanganDiharapkan, $tandaTangan)) {
@@ -104,12 +128,31 @@ class AutentikasiApiController extends ResourceController
         ];
     }
 
+    /**
+     * Memverifikasi header Authorization bertipe Bearer dan mengembalikan payload token.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function verifikasiHeaderOtorisasi(string $headerOtorisasi): ?array
+    {
+        if (preg_match('/\ABearer\s+(.+)\z/i', trim($headerOtorisasi), $cocok) !== 1) {
+            return null;
+        }
+
+        $token = trim($cocok[1]);
+        if ($token === '') {
+            return null;
+        }
+
+        return self::verifikasiToken($token);
+    }
+
     // -------------------------------------------------------------------------
     // Endpoint REST API
     // -------------------------------------------------------------------------
 
     /**
-     * POST /api/v1/auth/masuk
+     * POST /api/v1/auth/masuk dan POST /api/v1/autentikasi/masuk
      * Memverifikasi email dan kata sandi pengguna, mengembalikan token HMAC.
      */
     public function masuk(): ResponseInterface
@@ -141,6 +184,15 @@ class AutentikasiApiController extends ResourceController
 
         // Buat token HMAC bertanda tangan
         $tokenBaru = self::buatToken((int) $pengguna['id'], $pengguna['email'], $pengguna['peran']);
+        if ($tokenBaru === null) {
+            log_message('error', 'JEJAKSUMUT_KUNCI_TOKEN atau API_TOKEN_SECRET belum dikonfigurasi (minimal 32 karakter).');
+
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Layanan autentikasi belum dikonfigurasi.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_SERVICE_UNAVAILABLE);
+        }
 
         // Hapus hash kata sandi sebelum dikirim ke klien
         unset($pengguna['kata_sandi']);
@@ -158,7 +210,7 @@ class AutentikasiApiController extends ResourceController
     }
 
     /**
-     * POST /api/v1/auth/daftar
+     * POST /api/v1/auth/daftar dan POST /api/v1/autentikasi/daftar
      * Mendaftarkan member baru ke database.
      */
     public function daftar(): ResponseInterface

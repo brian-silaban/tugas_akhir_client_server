@@ -74,12 +74,32 @@ class DestinasiController extends BaseController
 
         $destinasi = $hasilDetail['data'];
 
+        // Periksa apakah destinasi ini sudah disimpan di daftar favorit pengguna yang login
+        $sudahDifavorit  = false;
+        $idPenggunaLogin = (int) session('id_pengguna');
+        $tokenApi        = (string) session('token_api');
+
+        if ($idPenggunaLogin > 0 && $tokenApi !== '') {
+            $hasilFavorit = $layananApi->kirimGet('/favorit/' . $idPenggunaLogin, [], $tokenApi);
+            if ($hasilFavorit['terhubung'] && $hasilFavorit['berhasil'] && is_array($hasilFavorit['data'])) {
+                $idDestinasiSaatIni = (int) ($destinasi['id'] ?? 0);
+                foreach ($hasilFavorit['data'] as $itemFavorit) {
+                    $idFavoritDestinasi = (int) ($itemFavorit['id_destinasi'] ?? $itemFavorit['id'] ?? 0);
+                    if ($idFavoritDestinasi > 0 && $idFavoritDestinasi === $idDestinasiSaatIni) {
+                        $sudahDifavorit = true;
+                        break;
+                    }
+                }
+            }
+        }
+
         return view('pages/destinasi/detail', [
             'judulHalaman'     => ($destinasi['nama'] ?? 'Detail Destinasi') . ' — JejakSumut',
             'menuAktif'        => 'katalog',
             'terhubungBackend' => true,
             'pesanErrorApi'    => null,
             'destinasi'        => $destinasi,
+            'sudahDifavorit'   => $sudahDifavorit,
         ]);
     }
 }

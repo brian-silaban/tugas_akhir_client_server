@@ -2,7 +2,6 @@
 
 namespace Config;
 
-use App\Filters\AdminApiFilter;
 use App\Filters\AutentikasiTokenFilter;
 use App\Filters\PeranAdminFilter;
 use CodeIgniter\Config\Filters as BaseFilters;

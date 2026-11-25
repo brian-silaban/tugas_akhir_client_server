@@ -37,6 +37,14 @@ class PemesananApiController extends ResourceController
             );
         }
 
+        $tolakAkses = $this->cekKepemilikanPengguna(
+            (int) $idPengguna,
+            'Akses ditolak. Anda hanya dapat melihat riwayat tiket milik akun sendiri.'
+        );
+        if ($tolakAkses !== null) {
+            return $tolakAkses;
+        }
+
         $pemesananModel = new PemesananModel();
 
         // Satu query ke SQL View v_ringkasan_pemesanan (tanpa loop query N+1)
@@ -79,6 +87,14 @@ class PemesananApiController extends ResourceController
                 'Tiket dengan ID ' . $id . ' tidak ditemukan.',
                 ResponseInterface::HTTP_NOT_FOUND
             );
+        }
+
+        $tolakAkses = $this->cekKepemilikanPengguna(
+            (int) $tiket['id_pengguna'],
+            'Akses ditolak. Tiket ini bukan milik akun Anda.'
+        );
+        if ($tolakAkses !== null) {
+            return $tolakAkses;
         }
 
         // Lengkapi data E-Ticket dengan alamat, foto, dan jam operasional destinasi
@@ -130,6 +146,14 @@ class PemesananApiController extends ResourceController
         $idDestinasi      = (int) $inputData['id_destinasi'];
         $tanggalKunjungan = (string) $inputData['tanggal_kunjungan'];
         $jumlahPengunjung = (int) $inputData['jumlah_pengunjung'];
+
+        $tolakAkses = $this->cekKepemilikanPengguna(
+            $idPengguna,
+            'Akses ditolak. Anda hanya dapat memesan tiket untuk akun sendiri.'
+        );
+        if ($tolakAkses !== null) {
+            return $tolakAkses;
+        }
 
         // Tanggal harus berformat YYYY-MM-DD dan tidak boleh di masa lampau
         $tanggalValid = \DateTime::createFromFormat('Y-m-d', $tanggalKunjungan);
@@ -199,6 +223,14 @@ class PemesananApiController extends ResourceController
 
         if ($tiket === null) {
             return $this->kirimGagal('Tiket tidak ditemukan.', ResponseInterface::HTTP_NOT_FOUND);
+        }
+
+        $tolakAkses = $this->cekKepemilikanPengguna(
+            (int) $tiket['id_pengguna'],
+            'Kamu tidak berhak membatalkan tiket milik pengguna lain.'
+        );
+        if ($tolakAkses !== null) {
+            return $tolakAkses;
         }
 
         // Jika klien mengirim id_pengguna, pastikan tiket memang milik pengguna tersebut
@@ -280,6 +312,26 @@ class PemesananApiController extends ResourceController
     private function formatRupiah(int $nominal): string
     {
         return 'Rp ' . number_format($nominal, 0, ',', '.');
+    }
+
+    /**
+     * Memastikan pemesanan hanya diakses atau diubah oleh pemilik akunnya (kecuali admin).
+     */
+    private function cekKepemilikanPengguna(int $idPenggunaTarget, string $pesanTolak): ?ResponseInterface
+    {
+        $dataToken = AutentikasiApiController::verifikasiHeaderOtorisasi(
+            $this->request->getHeaderLine('Authorization')
+        );
+
+        if (
+            $dataToken !== null
+            && ($dataToken['peran'] ?? '') !== 'admin'
+            && (int) $dataToken['id_pengguna'] !== $idPenggunaTarget
+        ) {
+            return $this->kirimGagal($pesanTolak, ResponseInterface::HTTP_FORBIDDEN);
+        }
+
+        return null;
     }
 
     /**

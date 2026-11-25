@@ -57,7 +57,7 @@
         <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-surface-container">
             <img
                 src="https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1280&q=80"
-                alt="Pemandangan Danau Toba dari perbukitan, Sumatera Utara"
+                alt="Lanskap alam perbukitan hijau wisata Sumatera Utara"
                 class="absolute inset-0 h-full w-full object-cover"
             />
             <!-- Gradient overlay gelap agar teks terbaca jelas -->

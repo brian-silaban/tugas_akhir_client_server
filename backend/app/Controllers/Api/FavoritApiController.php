@@ -32,6 +32,11 @@ class FavoritApiController extends ResourceController
             ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        $tolakAkses = $this->cekKepemilikanPengguna((int) $idPengguna);
+        if ($tolakAkses !== null) {
+            return $tolakAkses;
+        }
+
         // Validasi keberadaan pengguna di database
         $modelPengguna = new PenggunaModel();
         $penggunaAda   = $modelPengguna->find((int) $idPengguna);
@@ -68,6 +73,11 @@ class FavoritApiController extends ResourceController
                 'pesan'  => 'Parameter id_pengguna wajib disertakan dan berupa angka.',
                 'data'   => [],
             ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $tolakAkses = $this->cekKepemilikanPengguna((int) $idPengguna);
+        if ($tolakAkses !== null) {
+            return $tolakAkses;
         }
 
         // Validasi keberadaan pengguna
@@ -113,6 +123,11 @@ class FavoritApiController extends ResourceController
             ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
         }
 
+        $tolakAkses = $this->cekKepemilikanPengguna($idPengguna);
+        if ($tolakAkses !== null) {
+            return $tolakAkses;
+        }
+
         // Validasi keberadaan pengguna di database
         $modelPengguna = new PenggunaModel();
         if ($modelPengguna->find($idPengguna) === null) {
@@ -137,5 +152,29 @@ class FavoritApiController extends ResourceController
         $hasil        = $favoritModel->ubahFavorit($idPengguna, $idDestinasi);
 
         return $this->respond($hasil, ResponseInterface::HTTP_OK);
+    }
+
+    /**
+     * Memastikan pengguna hanya mengelola data favorit miliknya sendiri (kecuali admin).
+     */
+    private function cekKepemilikanPengguna(int $idPenggunaTarget): ?ResponseInterface
+    {
+        $dataToken = AutentikasiApiController::verifikasiHeaderOtorisasi(
+            $this->request->getHeaderLine('Authorization')
+        );
+
+        if (
+            $dataToken !== null
+            && ($dataToken['peran'] ?? '') !== 'admin'
+            && (int) $dataToken['id_pengguna'] !== $idPenggunaTarget
+        ) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Akses ditolak. Anda hanya dapat mengelola favorit milik akun sendiri.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_FORBIDDEN);
+        }
+
+        return null;
     }
 }

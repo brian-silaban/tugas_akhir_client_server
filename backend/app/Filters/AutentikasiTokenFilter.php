@@ -3,6 +3,7 @@
 namespace App\Filters;
 
 use App\Controllers\Api\AutentikasiApiController;
+use App\Models\PenggunaModel;
 use CodeIgniter\Filters\FilterInterface;
 use CodeIgniter\HTTP\RequestInterface;
 use CodeIgniter\HTTP\ResponseInterface;
@@ -10,7 +11,7 @@ use Config\Services;
 
 /**
  * AutentikasiTokenFilter – Filter REST API Backend JejakSumut.
- * Memeriksa keberadaan dan keabsahan token HMAC-SHA256 pada header Authorization.
+ * Memeriksa keberadaan, keabsahan token HMAC-SHA256, dan keberadaan pengguna di DB.
  * Juga menerapkan Rate Limiting: maks. 60 request/menit per IP.
  *
  * Anggota 3 – Autentikasi, Sesi Pengguna & Filter Hak Akses
@@ -19,15 +20,14 @@ class AutentikasiTokenFilter implements FilterInterface
 {
     /**
      * Dijalankan sebelum controller diproses.
-     * Tolak request jika token tidak ada, tidak valid, atau kedaluwarsa.
-     * Tolak request jika IP melampaui batas 60 request per menit.
+     * Tolak request jika token tidak ada, tidak valid, kedaluwarsa, atau melebihi batas rate limit.
      *
      * @param array<string, mixed>|null $arguments
      * @return ResponseInterface|null
      */
     public function before(RequestInterface $request, $arguments = null)
     {
-        $response = Services::response();
+        $respons = Services::response();
 
         // --- Rate Limiting: 60 request per menit per IP ---
         $throttler  = Services::throttler();
@@ -35,62 +35,65 @@ class AutentikasiTokenFilter implements FilterInterface
         $batasMenit = 60;
 
         if (! $throttler->check($kunciIp, $batasMenit, MINUTE)) {
-            return $response
-                ->setStatusCode(ResponseInterface::HTTP_TOO_MANY_REQUESTS)
-                ->setContentType('application/json')
-                ->setBody(json_encode([
-                    'status' => 'gagal',
-                    'pesan'  => 'Terlalu banyak permintaan. Silakan coba lagi dalam 1 menit.',
-                    'data'   => null,
-                ]));
+            return $this->buatResponsGagal(
+                $respons,
+                ResponseInterface::HTTP_TOO_MANY_REQUESTS,
+                'Terlalu banyak permintaan. Silakan coba lagi dalam 1 menit.'
+            );
         }
 
         // --- Verifikasi token dari header Authorization: Bearer <token> ---
-        $headerAuthorization = $request->getHeaderLine('Authorization');
-
-        if (empty($headerAuthorization) || ! str_starts_with($headerAuthorization, 'Bearer ')) {
-            return $response
-                ->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)
-                ->setContentType('application/json')
-                ->setBody(json_encode([
-                    'status' => 'gagal',
-                    'pesan'  => 'Akses ditolak. Token autentikasi tidak ditemukan atau format tidak valid.',
-                    'data'   => null,
-                ]));
+        $headerOtorisasi = $request->getHeaderLine('Authorization');
+        if ($headerOtorisasi === '' || preg_match('/\ABearer\s+(.+)\z/i', trim($headerOtorisasi)) !== 1) {
+            return $this->buatResponsGagal(
+                $respons,
+                ResponseInterface::HTTP_UNAUTHORIZED,
+                'Akses ditolak. Token autentikasi tidak ditemukan atau format tidak valid.'
+            );
         }
 
-        // Ambil string token dari header
-        $token = trim(substr($headerAuthorization, 7));
-
-        if ($token === '') {
-            return $response
-                ->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)
-                ->setContentType('application/json')
-                ->setBody(json_encode([
-                    'status' => 'gagal',
-                    'pesan'  => 'Akses ditolak. Token autentikasi kosong.',
-                    'data'   => null,
-                ]));
-        }
-
-        // Verifikasi tanda tangan dan masa berlaku token
-        $dataToken = AutentikasiApiController::verifikasiToken($token);
-
+        $dataToken = AutentikasiApiController::verifikasiHeaderOtorisasi($headerOtorisasi);
         if ($dataToken === null) {
-            return $response
-                ->setStatusCode(ResponseInterface::HTTP_UNAUTHORIZED)
-                ->setContentType('application/json')
-                ->setBody(json_encode([
-                    'status' => 'gagal',
-                    'pesan'  => 'Akses ditolak. Token tidak valid atau sudah kedaluwarsa. Silakan masuk kembali.',
-                    'data'   => null,
-                ]));
+            return $this->buatResponsGagal(
+                $respons,
+                ResponseInterface::HTTP_UNAUTHORIZED,
+                'Akses ditolak. Token tidak valid atau sudah kedaluwarsa. Silakan masuk kembali.'
+            );
         }
 
-        // Simpan data token ke dalam request agar bisa dibaca controller
-        $request->dataToken = $dataToken;
+        // Pastikan akun pengguna masih ada di database
+        $penggunaAktif = (new PenggunaModel())->select('id, peran')->find((int) $dataToken['id_pengguna']);
+        if ($penggunaAktif === null) {
+            return $this->buatResponsGagal(
+                $respons,
+                ResponseInterface::HTTP_UNAUTHORIZED,
+                'Akses ditolak. Akun pengguna tidak ditemukan atau sudah tidak aktif.'
+            );
+        }
 
         return null;
+    }
+
+    /**
+     * Menyusun respons JSON penolakan dengan header keamanan yang sesuai.
+     */
+    private function buatResponsGagal(ResponseInterface $respons, int $kodeStatus, string $pesan): ResponseInterface
+    {
+        $respons
+            ->setStatusCode($kodeStatus)
+            ->setHeader('Cache-Control', 'no-store')
+            ->setContentType('application/json')
+            ->setBody((string) json_encode([
+                'status' => 'gagal',
+                'pesan'  => $pesan,
+                'data'   => null,
+            ]));
+
+        if ($kodeStatus === ResponseInterface::HTTP_UNAUTHORIZED) {
+            $respons->setHeader('WWW-Authenticate', 'Bearer');
+        }
+
+        return $respons;
     }
 
     /**
