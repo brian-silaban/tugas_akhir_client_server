@@ -35,7 +35,16 @@ class Home extends BaseController
                 'total_kategori'       => $kategoriModel->countAllResults(),
             ];
         } catch (Throwable $kesalahan) {
-            $ringkasanDatabase['pesan_error'] = $kesalahan->getMessage();
+            log_message('error', 'Koneksi basis data pada endpoint status gagal: {pesan}', [
+                'pesan' => $kesalahan->getMessage(),
+            ]);
+
+            // Jangan bocorkan pesan error mentah DBMS pada lingkungan produksi
+            if (ENVIRONMENT === 'production') {
+                $ringkasanDatabase['pesan_error'] = 'Layanan basis data sedang tidak dapat dijangkau.';
+            } else {
+                $ringkasanDatabase['pesan_error'] = $kesalahan->getMessage();
+            }
         }
 
         $informasiLayanan = [
@@ -43,7 +52,6 @@ class Home extends BaseController
             'nama_layanan'    => 'JejakSumut Backend REST API Server',
             'cakupan_wilayah' => 'Provinsi Sumatera Utara',
             'versi_api'       => 'v1',
-            'basis_data'      => 'PostgreSQL (jejaksumut_db)',
             'ringkasan_data'  => $ringkasanDatabase,
             'daftar_rute'     => [
                 'GET /api/v1/destinasi'        => 'Mengambil daftar destinasi wisata Sumatera Utara (mendukung filter ?kota= & ?kategori=)',
@@ -51,6 +59,11 @@ class Home extends BaseController
                 'GET /api/v1/kategori'         => 'Mengambil daftar kategori wisata Sumatera Utara',
             ],
         ];
+
+        // Tampilkan detail mesin basis data hanya di lingkungan pengembangan lokal
+        if (ENVIRONMENT !== 'production') {
+            $informasiLayanan['basis_data'] = 'PostgreSQL';
+        }
 
         return $this->response->setJSON($informasiLayanan);
     }

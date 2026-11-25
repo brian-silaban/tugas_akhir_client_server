@@ -440,6 +440,14 @@ class LayananApiBackend
             $header['Authorization'] = 'Bearer ' . $tokenAktif;
         }
 
+        // Teruskan IP asli pengunjung ke Backend agar Rate Limiting dihitung per pengguna, bukan per server
+        if (! is_cli()) {
+            $ipPengunjung = Services::request()->getIPAddress();
+            if ($ipPengunjung !== '' && $ipPengunjung !== '0.0.0.0') {
+                $header['X-Forwarded-For'] = $ipPengunjung;
+            }
+        }
+
         return $header;
     }
 

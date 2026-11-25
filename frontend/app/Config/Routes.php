@@ -10,7 +10,7 @@ use CodeIgniter\Router\RouteCollection;
 $modeClient = env('JEJAKSUMUT_MODE_CLIENT', 'gabungan');
 
 $routes->get('masuk', 'AutentikasiController::masuk');
-$routes->post('masuk', 'AutentikasiController::prosesMasuk', $modeClient === 'admin' ? ['filter' => 'csrf'] : []);
+$routes->post('masuk', 'AutentikasiController::prosesMasuk', ['filter' => 'csrf']);
 
 if ($modeClient === 'admin') {
     $routes->get('/', static fn () => redirect()->to(site_url('admin')));
@@ -19,12 +19,12 @@ if ($modeClient === 'admin') {
     $routes->get('destinasi', 'DestinasiController::index');
     $routes->get('destinasi/(:segment)', 'DestinasiController::detail/$1');
     $routes->get('daftar', 'AutentikasiController::daftar');
-    $routes->post('daftar', 'AutentikasiController::prosesDaftar');
+    $routes->post('daftar', 'AutentikasiController::prosesDaftar', ['filter' => 'csrf']);
     $routes->get('keluar', 'AutentikasiController::keluar');
 
-    // --- Favorit (Anggota 3) – dilindungi filter autentikasi ---
+    // --- Favorit (Anggota 3) – dilindungi filter autentikasi & CSRF ---
     $routes->get('favorit-saya',     'FavoritController::index',  ['filter' => 'autentikasi']);
-    $routes->post('favorit/ubah',    'FavoritController::ubah',   ['filter' => 'autentikasi']);
+    $routes->post('favorit/ubah',    'FavoritController::ubah',   ['filter' => ['autentikasi', 'csrf']]);
 
     // ================================================================
     // MODUL ANGGOTA 4 – Pemesanan Tiket & Ulasan (Frontend Client)
@@ -38,14 +38,14 @@ if ($modeClient === 'admin') {
     $routes->get('pemesanan/etiket/(:num)', 'PemesananController::tampilEtiket/$1', ['filter' => 'autentikasi']);
 
     // POST /pemesanan/buat          → Proses form pemesanan tiket baru
-    $routes->post('pemesanan/buat', 'PemesananController::buat', ['filter' => 'autentikasi']);
+    $routes->post('pemesanan/buat', 'PemesananController::buat', ['filter' => ['autentikasi', 'csrf']]);
 
     // POST /pemesanan/batal/{id}    → Batalkan tiket
-    $routes->post('pemesanan/batal/(:num)', 'PemesananController::batal/$1', ['filter' => 'autentikasi']);
+    $routes->post('pemesanan/batal/(:num)', 'PemesananController::batal/$1', ['filter' => ['autentikasi', 'csrf']]);
 
     // --- Ulasan & Rating ---
     // POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail (Member)
-    $routes->post('ulasan/kirim', 'UlasanController::kirim', ['filter' => 'autentikasi']);
+    $routes->post('ulasan/kirim', 'UlasanController::kirim', ['filter' => ['autentikasi', 'csrf']]);
 
     // --- Proxy API Mitra Transportasi (Anggota 2) ---
     $routes->get('mitra/transportasi/lokasi', 'MitraTransportController::lokasi');

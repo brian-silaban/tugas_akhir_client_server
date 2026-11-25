@@ -104,4 +104,21 @@ class Cookie extends BaseConfig
      * @see https://tools.ietf.org/html/rfc2616#section-2.2
      */
     public bool $raw = false;
+
+    public function __construct()
+    {
+        parent::__construct();
+
+        // Aktifkan atribut Secure otomatis saat diakses via HTTPS (langsung atau Cloudflare Tunnel lokal)
+        $httpsLangsung = strtolower((string) ($_SERVER['HTTPS'] ?? ''));
+        $alamatRemote  = (string) ($_SERVER['REMOTE_ADDR'] ?? '');
+        $protokolProxy = strtolower(trim((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '')));
+
+        $lewatHttpsLangsung = $httpsLangsung !== '' && $httpsLangsung !== 'off';
+        $lewatProxyHttps    = in_array($alamatRemote, ['127.0.0.1', '::1'], true) && $protokolProxy === 'https';
+
+        if ($lewatHttpsLangsung || $lewatProxyHttps) {
+            $this->secure = true;
+        }
+    }
 }

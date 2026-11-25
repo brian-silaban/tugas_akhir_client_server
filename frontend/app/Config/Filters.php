@@ -4,6 +4,7 @@ namespace Config;
 
 use App\Filters\AdminFilter;
 use App\Filters\AutentikasiFilter;
+use App\Filters\HeaderKeamananFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
 use CodeIgniter\Filters\Cors;
 use CodeIgniter\Filters\CSRF;
@@ -37,9 +38,10 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
 
-        // Filter buatan JejakSumut – Anggota 3
-        'autentikasi'   => AutentikasiFilter::class,
-        'admin'         => AdminFilter::class,
+        // Filter buatan JejakSumut – Anggota 3 & Keamanan HTTP
+        'autentikasi'    => AutentikasiFilter::class,
+        'admin'          => AdminFilter::class,
+        'headerKeamanan' => HeaderKeamananFilter::class,
     ];
 
     /**
@@ -61,9 +63,10 @@ class Filters extends BaseFilters
             'pagecache',  // Web Page Caching
         ],
         'after' => [
-            'pagecache',   // Web Page Caching
-            'performance', // Performance Metrics
-            'toolbar',     // Debug Toolbar
+            'pagecache',      // Web Page Caching
+            'performance',    // Performance Metrics
+            'toolbar',        // Debug Toolbar
+            'headerKeamanan', // HTTP Security Headers & hapus X-Powered-By
         ],
     ];
 
