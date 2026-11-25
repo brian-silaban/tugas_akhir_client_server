@@ -14,15 +14,15 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'jejaksumut_app_publik') THEN
-        CREATE USER jejaksumut_app_publik WITH PASSWORD 'GantiPasswordPublik123!';
+        CREATE USER jejaksumut_app_publik WITH PASSWORD 'passwordpublik123!';
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'jejaksumut_app_admin') THEN
-        CREATE USER jejaksumut_app_admin WITH PASSWORD 'GantiPasswordAdmin123!';
+        CREATE USER jejaksumut_app_admin WITH PASSWORD 'passwordadmin123!';
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'jejaksumut_mitra_readonly') THEN
-        CREATE USER jejaksumut_mitra_readonly WITH PASSWORD 'GantiPasswordMitra123!';
+        CREATE USER jejaksumut_mitra_readonly WITH PASSWORD 'passwordmitra123!';
     END IF;
 END $$;
 
