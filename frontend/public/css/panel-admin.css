@@ -100,6 +100,12 @@ legend { padding-inline: .45rem; font-size: 1.2rem; }
 summary { cursor: pointer; color: #8a2d08; font-weight: 700; }
 details form { margin-top: .7rem; }
 details p { margin-bottom: .65rem; }
+.konfirmasi-pemesanan { max-width: 290px; }
+.konfirmasi-pemesanan summary { color: var(--teal); }
+.konfirmasi-pemesanan summary .material-symbols-outlined { transition: transform .15s; }
+.konfirmasi-pemesanan[open] summary .material-symbols-outlined { transform: rotate(180deg); }
+.konfirmasi-pemesanan form { border-left: 2px solid var(--garis); padding-left: .75rem; }
+.konfirmasi-pemesanan p, .konfirmasi-pemesanan small { overflow-wrap: anywhere; }
 
 @media (max-width: 970px) {
     body { grid-template-columns: minmax(0, 1fr); }

@@ -38,13 +38,31 @@
                     <td><span class="status <?= $status === 'lunas' ? 'aktif' : '' ?>"><?= esc(ucfirst($status)) ?></span></td>
                     <td>
                         <?php if ($status === 'menunggu'): ?>
-                            <form class="aksi" method="post" action="<?= esc(site_url('admin/pemesanan/' . $pemesanan['id'] . '/status'), 'attr') ?>">
-                                <?= csrf_field() ?>
-                                <input type="hidden" name="filter_status" value="<?= esc($filter_status, 'attr') ?>">
-                                <input type="hidden" name="halaman" value="<?= esc($paginasi['halaman'] ?? 1, 'attr') ?>">
-                                <button class="tombol tombol-utama" name="status" value="lunas" type="submit">Verifikasi lunas</button>
-                                <button class="tombol tombol-ghost" name="status" value="dibatalkan" type="submit">Batalkan</button>
-                            </form>
+                            <div class="aksi">
+                                <?php foreach (['lunas' => 'Verifikasi lunas', 'dibatalkan' => 'Batalkan'] as $statusBaru => $labelAksi): ?>
+                                    <details class="konfirmasi-pemesanan">
+                                        <summary class="tombol tombol-ghost">
+                                            <?= esc($labelAksi) ?>
+                                            <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
+                                        </summary>
+                                        <form method="post" action="<?= esc(site_url('admin/pemesanan/' . $pemesanan['id'] . '/status'), 'attr') ?>">
+                                            <?= csrf_field() ?>
+                                            <input type="hidden" name="filter_status" value="<?= esc($filter_status, 'attr') ?>">
+                                            <input type="hidden" name="halaman" value="<?= esc($paginasi['halaman'] ?? 1, 'attr') ?>">
+                                            <p>Ubah tiket <strong class="angka"><?= esc($pemesanan['kode_pemesanan']) ?></strong> menjadi <strong><?= esc($statusBaru) ?></strong>?</p>
+                                            <?php if ($statusBaru === 'lunas'): ?>
+                                                <p>Pastikan pembayaran Rp <?= esc(number_format($pemesanan['total_harga'], 0, ',', '.')) ?> sudah diterima.</p>
+                                            <?php else: ?>
+                                                <p>Tiket yang dibatalkan tidak dapat diverifikasi lunas.</p>
+                                            <?php endif ?>
+                                            <button class="tombol <?= $statusBaru === 'lunas' ? 'tombol-utama' : 'tombol-bahaya' ?>" name="status" value="<?= esc($statusBaru, 'attr') ?>" type="submit">
+                                                <?= $statusBaru === 'lunas' ? 'Ya, verifikasi lunas' : 'Ya, batalkan tiket' ?>
+                                            </button>
+                                            <small>Klik kembali <?= esc($labelAksi) ?> untuk menutup tanpa mengubah status.</small>
+                                        </form>
+                                    </details>
+                                <?php endforeach ?>
+                            </div>
                         <?php else: ?>
                             <span aria-label="Pemesanan sudah diproses">—</span>
                         <?php endif ?>
