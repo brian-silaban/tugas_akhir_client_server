@@ -8,13 +8,18 @@ class PemesananAdminController extends BasisAdminController
 {
     public function index(): string
     {
-        $hasil = $this->layananApi->kirimGet('/admin/pemesanan', ['halaman' => $this->nomorHalaman()]);
+        $status = $this->request->getGet('status') ?? '';
+        $hasil = $this->layananApi->kirimGet('/admin/pemesanan', [
+            'halaman' => $this->nomorHalaman(),
+            'status' => $status,
+        ]);
 
         return view('pages/admin/pemesanan', [
             'judul_halaman' => 'Pemesanan',
             'pesan_api' => $hasil['pesan_error'],
             'daftar_pemesanan' => $hasil['data']['daftar'] ?? [],
             'paginasi' => $hasil['data']['paginasi'] ?? [],
+            'filter_status' => is_string($status) ? $status : '',
         ]);
     }
 
@@ -24,7 +29,14 @@ class PemesananAdminController extends BasisAdminController
             'status' => $this->request->getPost('status'),
         ]);
 
-        return $this->hasilAksi($hasil, 'admin/pemesanan');
+        $statusFilter = $this->request->getPost('filter_status');
+        $halaman = filter_var($this->request->getPost('halaman'), FILTER_VALIDATE_INT);
+        $parameter = ['halaman' => min(1000000, max(1, (int) $halaman))];
+        if (in_array($statusFilter, ['menunggu', 'lunas', 'dibatalkan'], true)) {
+            $parameter['status'] = $statusFilter;
+        }
+
+        return $this->hasilAksi($hasil, 'admin/pemesanan?' . http_build_query($parameter));
     }
 
     public function ulasan(): string

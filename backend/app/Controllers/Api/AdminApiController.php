@@ -37,11 +37,21 @@ class AdminApiController extends BasisAdminApiController
 
     public function daftarPemesanan(): ResponseInterface
     {
-        $koneksi = $this->koneksiAdmin();
-        $modelPemesanan = new PemesananModel($koneksi);
-        $jumlah = $koneksi->table('v_ringkasan_pemesanan')->countAllResults();
+        $status = $this->request->getGet('status') ?? '';
+        if (! in_array($status, ['', 'menunggu', 'lunas', 'dibatalkan'], true)) {
+            return $this->gagal(422, 'Filter status harus menunggu, lunas, atau dibatalkan.');
+        }
+
+        $kueri = $this->koneksiAdmin()->table('v_ringkasan_pemesanan');
+        if ($status !== '') {
+            $kueri->where('status', $status);
+        }
+
+        // Hitungan dan daftar memakai filter yang sama; pertahankan kondisi setelah menghitung.
+        $jumlah = $kueri->countAllResults(false);
         $paginasi = $this->buatPaginasi($jumlah);
-        $daftar = $modelPemesanan->ambilRingkasanPemesanan(null, 25, ($paginasi['halaman'] - 1) * 25);
+        $daftar = $kueri->orderBy('dibuat_pada', 'DESC')->orderBy('id', 'DESC')
+            ->limit(25, ($paginasi['halaman'] - 1) * 25)->get()->getResultArray();
 
         return $this->berhasil(['daftar' => $daftar, 'paginasi' => $paginasi]);
     }
