@@ -15,7 +15,7 @@ $tagPencarianPopuler = [
 
 $daftarStatistikUtama = [
     [
-        'angka'       => $totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '621',
+        'angka'       => $totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '615',
         'keterangan'  => 'Objek Wisata Sumut',
         'kelas_warna' => 'text-primary',
     ],
@@ -87,7 +87,7 @@ $daftarWilayahUnggulan             = array_slice($daftarKabupatenKota ?? [], 0, 
                     </h1>
 
                     <p class="font-body-lg text-body-lg text-on-surface-variant mt-5 max-w-xl leading-relaxed">
-                        Direktori resmi <?= esc($totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '621') ?> objek wisata berkoordinat GPS di Sumatera Utara — lengkap dengan tarif tiket transparan, fasilitas lapangan, serta informasi pengelola.
+                        Direktori resmi <?= esc($totalDestinasiTampil > 0 ? number_format($totalDestinasiTampil, 0, ',', '.') : '615') ?> objek wisata berkoordinat GPS di Sumatera Utara — lengkap dengan tarif tiket transparan, fasilitas lapangan, serta informasi pengelola.
                     </p>
 
                     <!-- Form Pencarian Interaktif (mengarah ke /destinasi) -->
@@ -333,9 +333,13 @@ $daftarWilayahUnggulan             = array_slice($daftarKabupatenKota ?? [], 0, 
                                         <span class="font-label-md text-label-md text-on-surface">
                                             <?php
                                             $daftarFasilitasUtama = $destinasiUnggulanUtama['daftar_fasilitas'] ?? [];
-                                            $ringkasanUtama       = $daftarFasilitasUtama !== []
-                                                ? implode(', ', array_slice($daftarFasilitasUtama, 0, 3))
-                                                : ($destinasiUnggulanUtama['pengelola'] ?: 'Pengelola Lokal / Pemda');
+                                            if ($daftarFasilitasUtama !== []) {
+                                                $ringkasanUtama = implode(', ', array_slice($daftarFasilitasUtama, 0, 3));
+                                            } elseif (! empty($destinasiUnggulanUtama['pengelola'])) {
+                                                $ringkasanUtama = (string) $destinasiUnggulanUtama['pengelola'];
+                                            } else {
+                                                $ringkasanUtama = 'Pengelola Lokal / Pemda';
+                                            }
                                             ?>
                                             <?= esc($ringkasanUtama) ?>
                                         </span>

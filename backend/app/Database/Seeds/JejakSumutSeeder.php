@@ -240,7 +240,7 @@ class JejakSumutSeeder extends Seeder
     }
 
     /**
-     * Mengisi 621 objek wisata Sumatera Utara beserta tabel pivot destinasi_fasilitas.
+     * Menyinkronkan 615 objek wisata Sumatera Utara beserta tabel pivot destinasi_fasilitas secara penuh.
      *
      * @param array<string, int> $petaKategori
      * @param array<string, int> $petaFasilitas
@@ -251,37 +251,49 @@ class JejakSumutSeeder extends Seeder
         array $petaFasilitas,
         string $waktuSekarang
     ): void {
-        $barisExisting = $this->db->table('destinasi')->select('id, slug')->get()->getResultArray();
-        $idTerdaftar   = [];
-        $slugTerpakai  = [];
-        foreach ($barisExisting as $baris) {
-            $idTerdaftar[(int) $baris['id']] = true;
-            $slugTerpakai[$baris['slug']]    = true;
-        }
+        $this->db->transBegin();
 
-        $relasiExisting = $this->db->table('destinasi_fasilitas')
-            ->select('id_destinasi, id_fasilitas')
-            ->get()
-            ->getResultArray();
-        $relasiTerdaftar = [];
-        foreach ($relasiExisting as $rel) {
-            $relasiTerdaftar[$rel['id_destinasi'] . ':' . $rel['id_fasilitas']] = true;
-        }
+        try {
+            $daftarIdDataset = [];
+            foreach ($daftarObjek as $objek) {
+                $daftarIdDataset[(int) $objek['id_wisata']] = true;
+            }
 
-        $destinasiBaru = [];
-        $relasiBaru    = [];
+            $barisExisting = $this->db->table('destinasi')->select('id')->get()->getResultArray();
+            $idTerdaftar   = [];
+            $idDihapus     = [];
+            foreach ($barisExisting as $baris) {
+                $idLama = (int) $baris['id'];
+                if (isset($daftarIdDataset[$idLama])) {
+                    $idTerdaftar[$idLama] = true;
+                } else {
+                    $idDihapus[] = $idLama;
+                }
+            }
 
-        foreach ($daftarObjek as $objek) {
-            $idDestinasi       = (int) $objek['id_wisata'];
-            $nama              = trim((string) $objek['nama']);
-            $kota              = trim((string) $objek['kabupaten_kota']);
-            $kategoriUtama     = trim((string) $objek['kategori_utama']);
-            $subKategori       = trim((string) $objek['sub_kategori']);
-            $klasifikasiStatus = $this->nilaiAtauNull($objek['klasifikasi_status'] ?? null);
-            $fasilitasAktif    = $this->saringFasilitasAktif($objek['fasilitas'] ?? []);
+            // Hapus entri destinasi yang sudah dikeluarkan dari dataset bersih (misal 616..621)
+            if ($idDihapus !== []) {
+                foreach (array_chunk($idDihapus, 100) as $potonganId) {
+                    $this->db->table('destinasi_fasilitas')->whereIn('id_destinasi', $potonganId)->delete();
+                    $this->db->table('destinasi')->whereIn('id', $potonganId)->delete();
+                }
+            }
 
-            if (! isset($idTerdaftar[$idDestinasi])) {
-                // Pastikan slug unik; tambahkan nama kabupaten/kota atau ID bila ada duplikat nama lintas kabupaten
+            $slugTerpakai        = [];
+            $destinasiBaru       = [];
+            $destinasiDiperbarui = [];
+            $relasiTarget        = [];
+
+            foreach ($daftarObjek as $objek) {
+                $idDestinasi       = (int) $objek['id_wisata'];
+                $nama              = trim((string) $objek['nama']);
+                $kota              = trim((string) $objek['kabupaten_kota']);
+                $kategoriUtama     = trim((string) $objek['kategori_utama']);
+                $subKategori       = trim((string) $objek['sub_kategori']);
+                $klasifikasiStatus = $this->nilaiAtauNull($objek['klasifikasi_status'] ?? null);
+                $fasilitasAktif    = $this->saringFasilitasAktif($objek['fasilitas'] ?? []);
+
+                // Pastikan slug unik di antara seluruh 615 destinasi aktif
                 $slugDasar = $this->buatSlug($nama);
                 $slug      = $slugDasar;
                 if (isset($slugTerpakai[$slug])) {
@@ -310,8 +322,7 @@ class JejakSumutSeeder extends Seeder
                     ? json_encode($fasilitasAktif, JSON_UNESCAPED_UNICODE)
                     : null;
 
-                $destinasiBaru[] = [
-                    'id'                 => $idDestinasi,
+                $dataUmum = [
                     'id_kategori'        => $petaKategori[$kategoriUtama] ?? 1,
                     'kode_kabupaten'     => (string) $objek['kode_kabupaten'],
                     'nama'               => $nama,
@@ -326,8 +337,6 @@ class JejakSumutSeeder extends Seeder
                     'harga_tiket'        => (int) ($objek['harga_tiket_rp'] ?? 0),
                     'label_harga_tiket'  => (string) ($objek['harga_tiket'] ?? 'Gratis (Rp 0)'),
                     'keterangan_tiket'   => (string) ($objek['keterangan_tiket'] ?? 'Belum ada tarif resmi terpublikasi'),
-                    'jam_buka'           => null,
-                    'jam_tutup'          => null,
                     'deskripsi'          => $deskripsi,
                     'fasilitas'          => $fasilitasJson,
                     'pengelola'          => $this->nilaiAtauNull($objek['pengelola'] ?? null),
@@ -337,39 +346,100 @@ class JejakSumutSeeder extends Seeder
                     'foto_utama'         => $fotoUtama,
                     'sumber_data'        => $this->nilaiAtauNull($objek['sumber_data'] ?? null),
                     'sumber_url'         => $this->nilaiAtauNull($objek['sumber_url'] ?? null),
-                    'rata_rating'        => 0.00,
-                    'jumlah_ulasan'      => 0,
-                    'dibuat_pada'        => $waktuSekarang,
                     'diperbarui_pada'    => $waktuSekarang,
                 ];
-            }
 
-            foreach ($fasilitasAktif as $namaFasilitas) {
-                if (! isset($petaFasilitas[$namaFasilitas])) {
-                    continue;
+                if (isset($idTerdaftar[$idDestinasi])) {
+                    $destinasiDiperbarui[$idDestinasi] = $dataUmum;
+                } else {
+                    $destinasiBaru[] = array_merge(
+                        ['id' => $idDestinasi],
+                        $dataUmum,
+                        [
+                            'jam_buka'      => null,
+                            'jam_tutup'     => null,
+                            'rata_rating'   => 0.00,
+                            'jumlah_ulasan' => 0,
+                            'dibuat_pada'   => $waktuSekarang,
+                        ]
+                    );
                 }
-                $idFasilitas = $petaFasilitas[$namaFasilitas];
-                $kunciRelasi = $idDestinasi . ':' . $idFasilitas;
-                if (! isset($relasiTerdaftar[$kunciRelasi])) {
-                    $relasiTerdaftar[$kunciRelasi] = true;
-                    $relasiBaru[]                  = [
+
+                foreach ($fasilitasAktif as $namaFasilitas) {
+                    if (! isset($petaFasilitas[$namaFasilitas])) {
+                        continue;
+                    }
+                    $idFasilitas                               = $petaFasilitas[$namaFasilitas];
+                    $kunciRelasi                               = $idDestinasi . ':' . $idFasilitas;
+                    $relasiTarget[$kunciRelasi]                = [
                         'id_destinasi' => $idDestinasi,
                         'id_fasilitas' => $idFasilitas,
                     ];
                 }
             }
-        }
 
-        if ($destinasiBaru !== []) {
-            foreach (array_chunk($destinasiBaru, 100) as $potongan) {
-                $this->db->table('destinasi')->insertBatch($potongan);
-            }
-        }
+            // Hindari bentrok UNIQUE slug saat baris lama bergeser ID sebelum diperbarui
+            if ($destinasiDiperbarui !== []) {
+                $daftarIdUpdate = array_keys($destinasiDiperbarui);
+                foreach (array_chunk($daftarIdUpdate, 200) as $potonganId) {
+                    $placeholders = implode(',', array_fill(0, count($potonganId), '?'));
+                    $this->db->query(
+                        "UPDATE destinasi SET slug = '__sync_tmp_' || id WHERE id IN ({$placeholders})",
+                        $potonganId
+                    );
+                }
 
-        if ($relasiBaru !== []) {
-            foreach (array_chunk($relasiBaru, 250) as $potongan) {
-                $this->db->table('destinasi_fasilitas')->insertBatch($potongan);
+                foreach ($destinasiDiperbarui as $idUpdate => $dataUpdate) {
+                    $this->db->table('destinasi')->where('id', $idUpdate)->update($dataUpdate);
+                }
             }
+
+            if ($destinasiBaru !== []) {
+                foreach (array_chunk($destinasiBaru, 100) as $potongan) {
+                    $this->db->table('destinasi')->insertBatch($potongan);
+                }
+            }
+
+            // Sinkronkan relasi pivot destinasi_fasilitas agar cocok persis dengan dataset terbaru
+            $relasiExisting = $this->db->table('destinasi_fasilitas')
+                ->select('id_destinasi, id_fasilitas')
+                ->get()
+                ->getResultArray();
+            $relasiTerdaftar = [];
+            foreach ($relasiExisting as $rel) {
+                $kunciRelasi                   = $rel['id_destinasi'] . ':' . $rel['id_fasilitas'];
+                $relasiTerdaftar[$kunciRelasi] = [
+                    'id_destinasi' => (int) $rel['id_destinasi'],
+                    'id_fasilitas' => (int) $rel['id_fasilitas'],
+                ];
+            }
+
+            foreach ($relasiTerdaftar as $kunciRelasi => $relLama) {
+                if (! isset($relasiTarget[$kunciRelasi])) {
+                    $this->db->table('destinasi_fasilitas')
+                        ->where('id_destinasi', $relLama['id_destinasi'])
+                        ->where('id_fasilitas', $relLama['id_fasilitas'])
+                        ->delete();
+                }
+            }
+
+            $relasiBaru = [];
+            foreach ($relasiTarget as $kunciRelasi => $relTarget) {
+                if (! isset($relasiTerdaftar[$kunciRelasi])) {
+                    $relasiBaru[] = $relTarget;
+                }
+            }
+
+            if ($relasiBaru !== []) {
+                foreach (array_chunk($relasiBaru, 250) as $potongan) {
+                    $this->db->table('destinasi_fasilitas')->insertBatch($potongan);
+                }
+            }
+
+            $this->db->transCommit();
+        } catch (\Throwable $galat) {
+            $this->db->transRollback();
+            throw $galat;
         }
     }
 
@@ -449,12 +519,12 @@ class JejakSumutSeeder extends Seeder
     private function ambilFotoCadanganKategori(string $namaKategori): string
     {
         $petaFoto = [
-            'Wisata Alam'             => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg',
-            'Wisata Bahari & Pantai'  => 'https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?auto=format&fit=crop&w=1200&q=80',
-            'Wisata Budaya & Sejarah' => 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80',
+            'Wisata Alam'             => 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Lake_Toba_and_the_surrounding_hills.jpg',
+            'Wisata Bahari & Pantai'  => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e1/Ndulu_pantai_sorake.jpg/1280px-Ndulu_pantai_sorake.jpg',
+            'Wisata Budaya & Sejarah' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/Maimun_Palace_Medan_Indonesia.jpg/1280px-Maimun_Palace_Medan_Indonesia.jpg',
             'Wisata Religi'           => 'https://upload.wikimedia.org/wikipedia/commons/7/71/TamanLumbini20110607.jpg',
-            'Wisata Buatan & Edukasi' => 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=1200&q=80',
-            'Desa Wisata'             => 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1200&q=80',
+            'Wisata Buatan & Edukasi' => 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Taman_Budaya_Medan.jpg',
+            'Desa Wisata'             => 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Bakkara_Village%2C_North_Sumatra%2C_Indonesia.jpg',
         ];
 
         return $petaFoto[$namaKategori] ?? $petaFoto['Wisata Alam'];

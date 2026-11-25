@@ -30,7 +30,7 @@ Sesuai arahan dosen pengampu mata kuliah **Manajemen Database Client Server (`PL
 ## 3. Referensi Skema Database PostgreSQL (`backend/app/Database/`)
 > **Status Evaluasi K1 & K2 (`Form_Evaluasi_Proyek_MDCS.docx.pdf`):** Skema sudah memenuhi **3NF**, lengkap dengan constraint (`PK`, `FK`, `UNIQUE`, `CHECK`), `INDEX`, **objek database K2** (`View`, `Trigger`, `Stored Function`, `Stored Procedure`), transaksi ACID di Model, serta skrip role *Least Privilege* di [`backend/app/Database/setup_hak_akses_k2.sql`](backend/app/Database/setup_hak_akses_k2.sql).
 
-Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (9 tabel + 2 SQL View + Trigger & Stored Function/Procedure untuk 621 objek wisata berkoordinat GPS di 31 dari 33 kabupaten/kota Sumatera Utara):
+Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backend/app/Database/) (9 tabel + 2 SQL View + Trigger & Stored Function/Procedure untuk 615 objek wisata berkoordinat GPS di 31 dari 33 kabupaten/kota Sumatera Utara):
 1. **`kabupaten_kota`**: `kode_kabupaten` (PK), `nama_kabupaten_kota` (Unique), `jenis_daerah`, `ibu_kota`
 2. **`pengguna`**: `id` (PK), `nama`, `email` (Unique), `kata_sandi`, `peran` (`'admin'` | `'member'`), `foto_profil`, `dibuat_pada`, `diperbarui_pada`
 3. **`kategori`**: `id` (PK), `nama`, `slug` (Unique), `deskripsi`, `dibuat_pada`, `diperbarui_pada`
@@ -89,7 +89,7 @@ Skema database PostgreSQL berbahasa Indonesia di [`backend/app/Database/`](backe
         "jam_operasional": "06:00 - 18:00",
         "rata_rating": 4.9,
         "jumlah_ulasan": 1640,
-        "foto_utama": "https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80",
+        "foto_utama": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Lake_Toba_and_the_surrounding_hills.jpg",
         "url_detail": "http://localhost:8081/destinasi/bukit-holbung-danau-toba"
       }
     ]

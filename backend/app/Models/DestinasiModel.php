@@ -229,20 +229,37 @@ class DestinasiModel extends Model
     }
 
     /**
-     * Memastikan URL foto aman ditampilkan; bila path lokal belum tersedia atau masih memakai fallback lama, gunakan foto cadangan kategori.
+     * Memastikan URL foto aman ditampilkan; bila path lokal belum tersedia atau masih memakai fallback lama luar Sumut, gunakan foto cadangan kategori.
      */
     private function resolveFotoUtama(?string $fotoUtama, string $namaKategori): string
     {
         $foto = trim((string) $fotoUtama);
+
+        $daftarFallbackLama = [
+            'photo-1544644181-1484b3fdfc62',
+            'photo-1588668214407-6ea9a6d8c272',
+            'photo-1516690561799-46d8f74f9abf',
+            'photo-1518548419970-58e3b4079ab2',
+            'photo-1537996194471-e657df975ab4',
+        ];
+
+        $apakahFallbackLama = false;
+        foreach ($daftarFallbackLama as $idFotoLama) {
+            if (str_contains($foto, $idFotoLama)) {
+                $apakahFallbackLama = true;
+                break;
+            }
+        }
+
         if (
             $foto !== ''
             && preg_match('#^https?://#i', $foto) === 1
-            && ! str_contains($foto, 'photo-1544644181-1484b3fdfc62')
+            && ! $apakahFallbackLama
         ) {
             return $foto;
         }
 
-        if ($foto !== '' && ! str_contains($foto, 'photo-1544644181-1484b3fdfc62') && defined('FCPATH')) {
+        if ($foto !== '' && ! $apakahFallbackLama && defined('FCPATH')) {
             $jalurLokal = rtrim(FCPATH, '/\\') . DIRECTORY_SEPARATOR . ltrim(str_replace('/', DIRECTORY_SEPARATOR, $foto), '/\\');
             if (is_file($jalurLokal)) {
                 return base_url(ltrim($foto, '/'));
@@ -258,12 +275,12 @@ class DestinasiModel extends Model
     public function tentukanFotoFallbackKategori(string $namaKategori): string
     {
         $petaFoto = [
-            'Wisata Alam'             => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg',
-            'Wisata Bahari & Pantai'  => 'https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?auto=format&fit=crop&w=1200&q=80',
-            'Wisata Budaya & Sejarah' => 'https://images.unsplash.com/photo-1588668214407-6ea9a6d8c272?auto=format&fit=crop&w=1200&q=80',
+            'Wisata Alam'             => 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Lake_Toba_and_the_surrounding_hills.jpg',
+            'Wisata Bahari & Pantai'  => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e1/Ndulu_pantai_sorake.jpg/1280px-Ndulu_pantai_sorake.jpg',
+            'Wisata Budaya & Sejarah' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/Maimun_Palace_Medan_Indonesia.jpg/1280px-Maimun_Palace_Medan_Indonesia.jpg',
             'Wisata Religi'           => 'https://upload.wikimedia.org/wikipedia/commons/7/71/TamanLumbini20110607.jpg',
-            'Wisata Buatan & Edukasi' => 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=1200&q=80',
-            'Desa Wisata'             => 'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=1200&q=80',
+            'Wisata Buatan & Edukasi' => 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Taman_Budaya_Medan.jpg',
+            'Desa Wisata'             => 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Bakkara_Village%2C_North_Sumatra%2C_Indonesia.jpg',
         ];
 
         return $petaFoto[$namaKategori] ?? $petaFoto['Wisata Alam'];
