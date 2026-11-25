@@ -37,7 +37,7 @@ class Filters extends BaseFilters
         'pagecache'     => PageCache::class,
         'performance'   => PerformanceMetrics::class,
 
-        // Filter buatan IndWalk (Anggota 3)
+        // Filter buatan JejakSumut – Anggota 3
         'autentikasi'   => AutentikasiFilter::class,
         'admin'         => AdminFilter::class,
     ];

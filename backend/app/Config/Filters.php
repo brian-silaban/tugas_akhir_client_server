@@ -3,6 +3,8 @@
 namespace Config;
 
 use App\Filters\AdminApiFilter;
+use App\Filters\AutentikasiTokenFilter;
+use App\Filters\PeranAdminFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
 use CodeIgniter\Filters\Cors;
 use CodeIgniter\Filters\CSRF;
@@ -26,16 +28,20 @@ class Filters extends BaseFilters
      * or [filter_name => [classname1, classname2, ...]]
      */
     public array $aliases = [
-        'admin-api'     => AdminApiFilter::class,
-        'csrf'          => CSRF::class,
-        'toolbar'       => DebugToolbar::class,
-        'honeypot'      => Honeypot::class,
-        'invalidchars'  => InvalidChars::class,
-        'secureheaders' => SecureHeaders::class,
-        'cors'          => Cors::class,
-        'forcehttps'    => ForceHTTPS::class,
-        'pagecache'     => PageCache::class,
-        'performance'   => PerformanceMetrics::class,
+        'admin-api'          => PeranAdminFilter::class,
+        'csrf'               => CSRF::class,
+        'toolbar'            => DebugToolbar::class,
+        'honeypot'           => Honeypot::class,
+        'invalidchars'       => InvalidChars::class,
+        'secureheaders'      => SecureHeaders::class,
+        'cors'               => Cors::class,
+        'forcehttps'         => ForceHTTPS::class,
+        'pagecache'          => PageCache::class,
+        'performance'        => PerformanceMetrics::class,
+
+        // Filter buatan JejakSumut – Anggota 3
+        'autentikasiToken'   => AutentikasiTokenFilter::class,
+        'peranAdmin'         => PeranAdminFilter::class,
     ];
 
     /**
