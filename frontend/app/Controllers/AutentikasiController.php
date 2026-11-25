@@ -37,7 +37,7 @@ class AutentikasiController extends BaseController
             return $this->arahkanSesuaiPeran((string) session()->get('peran'));
         }
 
-        return view('pages/autentikasi/masuk');
+        return view('pages/autentikasi/masuk', ['mode_admin' => env('JEJAKSUMUT_MODE_CLIENT') === 'admin']);
     }
 
     /**
@@ -54,7 +54,7 @@ class AutentikasiController extends BaseController
         ];
 
         if (! $this->validate($aturanValidasi)) {
-            return redirect()->back()
+            return redirect()->back()->withCookies()
                 ->withInput()
                 ->with('errors', $this->validator->getErrors());
         }
@@ -66,20 +66,23 @@ class AutentikasiController extends BaseController
         ]);
 
         if (! $hasil['terhubung']) {
-            return redirect()->back()
+            return redirect()->back()->withCookies()
                 ->withInput()
                 ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
         }
 
         if (! $hasil['berhasil'] || empty($hasil['data']['pengguna'])) {
             $pesanError = $hasil['pesan_error'] ?? 'Email atau kata sandi salah.';
-            return redirect()->back()
+            return redirect()->back()->withCookies()
                 ->withInput()
                 ->with('error', $pesanError);
         }
 
         $pengguna = $hasil['data']['pengguna'];
         $token    = $hasil['data']['token'] ?? null;
+        if (env('JEJAKSUMUT_MODE_CLIENT') === 'admin' && $pengguna['peran'] !== 'admin') {
+            return redirect()->to(site_url('masuk'))->withCookies()->with('error', 'Panel Pengelola hanya untuk administrator.');
+        }
 
         // Simpan sesi pengguna
         $dataSesi = [
@@ -91,6 +94,7 @@ class AutentikasiController extends BaseController
             'token_api'     => $token,
             'sudah_masuk'   => true,
         ];
+        session()->regenerate(true);
         session()->set($dataSesi);
 
         return $this->arahkanSesuaiPeran((string) $pengguna['peran']);
@@ -144,7 +148,7 @@ class AutentikasiController extends BaseController
         ];
 
         if (! $this->validate($aturanValidasi, $pesanValidasi)) {
-            return redirect()->back()
+            return redirect()->back()->withCookies()
                 ->withInput()
                 ->with('errors', $this->validator->getErrors());
         }
@@ -158,14 +162,14 @@ class AutentikasiController extends BaseController
         ]);
 
         if (! $hasil['terhubung']) {
-            return redirect()->back()
+            return redirect()->back()->withCookies()
                 ->withInput()
                 ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
         }
 
         if (! $hasil['berhasil']) {
             $pesanError = $hasil['pesan_error'] ?? 'Pendaftaran akun gagal. Silakan coba lagi.';
-            return redirect()->back()
+            return redirect()->back()->withCookies()
                 ->withInput()
                 ->with('error', $pesanError);
         }
@@ -185,8 +189,14 @@ class AutentikasiController extends BaseController
     {
         session()->destroy();
 
-        return redirect()->to('/')
-            ->with('success', 'Anda telah berhasil keluar.');
+        return redirect()->to(site_url('/'))->with('success', 'Anda telah berhasil keluar.');
+    }
+
+    public function keluarAdmin(): RedirectResponse
+    {
+        session()->destroy();
+
+        return redirect()->to(site_url('masuk'))->withCookies()->with('success', 'Anda telah berhasil keluar.');
     }
 
     // ---------------------------------------------------------------
@@ -196,7 +206,14 @@ class AutentikasiController extends BaseController
     private function arahkanSesuaiPeran(string $peran): RedirectResponse
     {
         if ($peran === 'admin') {
-            return redirect()->to('/admin');
+            if (env('JEJAKSUMUT_MODE_CLIENT') !== 'wisatawan') {
+                return redirect()->to(site_url('admin'))->withCookies();
+            }
+
+            $urlAdmin = (string) env('JEJAKSUMUT_PANEL_ADMIN_URL', '');
+            if ($urlAdmin !== '') {
+                return redirect()->to($urlAdmin);
+            }
         }
 
         return redirect()->to('/');

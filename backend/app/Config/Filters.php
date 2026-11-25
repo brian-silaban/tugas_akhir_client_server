@@ -2,6 +2,7 @@
 
 namespace Config;
 
+use App\Filters\AdminApiFilter;
 use App\Filters\AutentikasiTokenFilter;
 use App\Filters\PeranAdminFilter;
 use CodeIgniter\Config\Filters as BaseFilters;
@@ -27,6 +28,7 @@ class Filters extends BaseFilters
      * or [filter_name => [classname1, classname2, ...]]
      */
     public array $aliases = [
+        'admin-api'          => PeranAdminFilter::class,
         'csrf'               => CSRF::class,
         'toolbar'            => DebugToolbar::class,
         'honeypot'           => Honeypot::class,

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use CodeIgniter\Model;
+use DomainException;
 use InvalidArgumentException;
 use RuntimeException;
 use Throwable;
@@ -49,9 +50,12 @@ class PemesananModel extends Model
         try {
             // Kunci baca baris destinasi (FOR SHARE) agar harga tiket tetap konsisten selama transaksi
             $queryDestinasi = $this->db->query(
-                'SELECT id, nama, harga_tiket FROM destinasi WHERE id = ? FOR SHARE',
+                'SELECT id, harga_tiket FROM fn_kunci_destinasi_pemesanan(?)',
                 [$idDestinasi]
             );
+            if ($queryDestinasi === false) {
+                throw new RuntimeException('Gagal membaca harga destinasi.');
+            }
             $dataDestinasi = $queryDestinasi->getRowArray();
 
             if ($dataDestinasi === null) {
@@ -110,21 +114,38 @@ class PemesananModel extends Model
      */
     public function ubahStatusDenganProsedur(int $idPemesanan, string $statusBaru): ?array
     {
+        if (! in_array($statusBaru, ['lunas', 'dibatalkan'], true)) {
+            throw new InvalidArgumentException('Status tujuan tidak valid.');
+        }
+
         $this->db->transBegin();
 
         try {
-            $this->db->query(
-                'CALL sp_verifikasi_pemesanan(?, ?)',
-                [$idPemesanan, $statusBaru]
-            );
+            // Tahan kunci sampai CALL selesai agar pembatalan member juga ikut terserialisasi.
+            $pemesanan = $this->db->query(
+                'SELECT status FROM pemesanan WHERE id = ? FOR UPDATE',
+                [$idPemesanan]
+            )->getRowArray();
 
-            if ($this->db->transStatus() === false) {
+            if ($pemesanan === null) {
+                $this->db->transRollback();
+                return null;
+            }
+            if ($pemesanan['status'] !== 'menunggu') {
+                throw new DomainException('Pemesanan sudah diproses. Muat ulang daftar pemesanan.');
+            }
+
+            $berhasil = $this->db->query('CALL sp_verifikasi_pemesanan(?, ?)', [$idPemesanan, $statusBaru]);
+            if (! $berhasil || ! $this->db->transStatus()) {
                 throw new RuntimeException('Gagal menjalankan prosedur verifikasi pemesanan.');
             }
 
-            $this->db->transCommit();
+            $ringkasan = $this->ambilSatuRingkasan($idPemesanan);
+            if (! $this->db->transCommit()) {
+                throw new RuntimeException('Gagal menyimpan status pemesanan.');
+            }
 
-            return $this->ambilSatuRingkasan($idPemesanan);
+            return $ringkasan;
         } catch (Throwable $kesalahan) {
             $this->db->transRollback();
             throw $kesalahan;

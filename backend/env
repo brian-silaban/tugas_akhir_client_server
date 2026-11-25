@@ -70,3 +70,12 @@
 #--------------------------------------------------------------------
 
 # logger.threshold = 4
+
+# Panel Pengelola
+# Gunakan kunci acak minimal 32 karakter. Contoh generator: openssl rand -hex 32
+# JEJAKSUMUT_KUNCI_TOKEN = ''
+# Khusus seeding lokal, kata sandi admin awal minimal 16 karakter
+# JEJAKSUMUT_KATA_SANDI_ADMIN_AWAL = ''
+# Pakai role admin PostgreSQL terpisah pada deployment
+# JEJAKSUMUT_DB_ADMIN_USER = 'jejaksumut_app_admin'
+# JEJAKSUMUT_DB_ADMIN_PASSWORD = ''

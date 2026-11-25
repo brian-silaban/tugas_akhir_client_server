@@ -38,8 +38,8 @@ class AutentikasiApiController extends ResourceController
         // Susun payload sebagai string terformat
         $payload = $idPengguna . '|' . $email . '|' . $peran . '|' . $waktuKedaluwarsa;
 
-        // Dapatkan secret key dari .env (wajib diisi untuk produksi)
-        $secretKey = (string) env('API_TOKEN_SECRET', 'jejaksumut-rahasia-anggota3-2026');
+        // Dapatkan secret key dari .env (prioritas API_TOKEN_SECRET, fallback JEJAKSUMUT_KUNCI_TOKEN)
+        $secretKey = (string) env('API_TOKEN_SECRET', env('JEJAKSUMUT_KUNCI_TOKEN', 'jejaksumut-rahasia-anggota3-2026'));
 
         // Buat tanda tangan HMAC-SHA256
         $tandaTangan = hash_hmac('sha256', $payload, $secretKey);
@@ -75,7 +75,7 @@ class AutentikasiApiController extends ResourceController
         $tandaTangan = substr($tokenMentah, $posisiTitik + 1);
 
         // Hitung ulang tanda tangan yang diharapkan
-        $secretKey             = (string) env('API_TOKEN_SECRET', 'jejaksumut-rahasia-anggota3-2026');
+        $secretKey             = (string) env('API_TOKEN_SECRET', env('JEJAKSUMUT_KUNCI_TOKEN', 'jejaksumut-rahasia-anggota3-2026'));
         $tandaTanganDiharapkan = hash_hmac('sha256', $payload, $secretKey);
 
         // Bandingkan tanda tangan dengan aman (mencegah timing attack)
@@ -144,6 +144,8 @@ class AutentikasiApiController extends ResourceController
 
         // Hapus hash kata sandi sebelum dikirim ke klien
         unset($pengguna['kata_sandi']);
+
+        $this->response->setHeader('Cache-Control', 'no-store');
 
         return $this->respond([
             'status' => 'berhasil',

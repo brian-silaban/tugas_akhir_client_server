@@ -14,12 +14,9 @@ $routes->get('/', 'Home::index');
 // ============================================================
 $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($routes) {
 
-    // --- Destinasi Wisata (Anggota 1) ---
+    // --- Destinasi Wisata Publik (Anggota 1) ---
     $routes->get('destinasi', 'DestinasiApiController::index');
     $routes->get('destinasi/(:segment)', 'DestinasiApiController::show/$1');
-    $routes->post('destinasi',           'DestinasiApiController::create',     ['filter' => 'peranAdmin']);
-    $routes->put('destinasi/(:num)',     'DestinasiApiController::update/$1',  ['filter' => 'peranAdmin']);
-    $routes->delete('destinasi/(:num)',  'DestinasiApiController::delete/$1',  ['filter' => 'peranAdmin']);
 
     // --- Kategori & Wilayah Kabupaten/Kota (Anggota 1) ---
     $routes->get('kategori', 'KategoriApiController::index');
@@ -53,9 +50,6 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($rout
     // PATCH /api/v1/pemesanan/{id}/batal    → Batalkan tiket (status menunggu)
     $routes->patch('pemesanan/(:num)/batal', 'PemesananApiController::batalkan/$1', ['filter' => 'autentikasiToken']);
 
-    // PATCH /api/v1/pemesanan/{id}/status   → Ubah status pesanan (Admin only)
-    $routes->patch('pemesanan/(:num)/status', 'AdminApiController::ubahStatusPemesanan/$1', ['filter' => 'peranAdmin']);
-
     // --- Ulasan & Rating Bintang ---
     // GET  /api/v1/ulasan?id_destinasi=X     → Daftar ulasan destinasi
     $routes->get('ulasan', 'UlasanApiController::index');
@@ -63,12 +57,19 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($rout
     // POST /api/v1/ulasan                    → Kirim ulasan & rating bintang baru (Member)
     $routes->post('ulasan', 'UlasanApiController::create', ['filter' => 'autentikasiToken']);
 
-    // DELETE /api/v1/ulasan/{id}             → Hapus ulasan (Admin only)
-    $routes->delete('ulasan/(:num)', 'AdminApiController::hapusUlasan/$1', ['filter' => 'peranAdmin']);
+    // ================================================================
+    // MODUL ADMIN (Anggota 5) – dilindungi filter peranAdmin
+    // ================================================================
+    $routes->group('', ['filter' => 'peranAdmin'], static function (RouteCollection $routes) {
+        $routes->get('admin/statistik', 'AdminApiController::statistik');
+        $routes->get('admin/pemesanan', 'AdminApiController::daftarPemesanan');
+        $routes->get('admin/ulasan', 'AdminApiController::daftarUlasan');
+        $routes->patch('pemesanan/(:num)/status', 'AdminApiController::ubahStatusPemesanan/$1');
+        $routes->delete('ulasan/(:num)', 'AdminApiController::hapusUlasan/$1');
 
-    // --- Admin (Anggota 5) ---
-    $routes->get('admin/statistik',               'AdminApiController::statistik', ['filter' => 'peranAdmin']);
-    $routes->get('admin/(:any)',                  'AdminApiController::$1',         ['filter' => 'peranAdmin']);
-    $routes->post('admin/(:any)',                 'AdminApiController::$1',         ['filter' => 'peranAdmin']);
+        $routes->get('admin/destinasi/(:num)', 'DestinasiAdminApiController::show/$1');
+        $routes->post('destinasi', 'DestinasiAdminApiController::create');
+        $routes->put('destinasi/(:num)', 'DestinasiAdminApiController::update/$1');
+        $routes->delete('destinasi/(:num)', 'DestinasiAdminApiController::delete/$1');
+    });
 });
-

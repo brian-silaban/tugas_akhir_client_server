@@ -36,6 +36,7 @@ class LayananApiMitra
             'tur_guide' => [
                 'nama_layanan'      => 'Penyedia Tur Guide',
                 'env_key'           => 'PARTNER_TUR_GUIDE_API_URL',
+                'env_api_key'       => 'PARTNER_TUR_GUIDE_API_KEY',
                 'ikon'              => 'hiking',
                 'satuan_harga'      => '/ paket',
                 'deskripsi_singkat' => 'Pemandu wisata lokal bersertifikat & paket jelajah rute Sumut.',
@@ -43,6 +44,7 @@ class LayananApiMitra
             'kuliner' => [
                 'nama_layanan'      => 'Kuliner & Rumah Makan',
                 'env_key'           => 'PARTNER_KULINER_API_URL',
+                'env_api_key'       => 'PARTNER_KULINER_API_KEY',
                 'ikon'              => 'restaurant',
                 'satuan_harga'      => '/ porsi',
                 'deskripsi_singkat' => 'Rekomendasi hidangan khas dan rumah makan di sekitar destinasi.',
@@ -50,6 +52,7 @@ class LayananApiMitra
             'penginapan' => [
                 'nama_layanan'      => 'Penginapan & Homestay',
                 'env_key'           => 'PARTNER_HOTEL_API_URL',
+                'env_api_key'       => 'PARTNER_HOTEL_API_KEY',
                 'ikon'              => 'hotel',
                 'satuan_harga'      => '/ malam',
                 'deskripsi_singkat' => 'Pilihan homestay, cottage, dan hotel nyaman dekat lokasi wisata.',
@@ -57,6 +60,7 @@ class LayananApiMitra
             'transportasi' => [
                 'nama_layanan'      => 'Layanan Transportasi',
                 'env_key'           => 'PARTNER_TRANSPORT_API_URL',
+                'env_api_key'       => 'PARTNER_TRANSPORT_API_KEY',
                 'ikon'              => 'directions_bus',
                 'satuan_harga'      => '/ perjalanan',
                 'deskripsi_singkat' => 'Akses shuttle, travel, sewa kendaraan, dan kapal penyeberangan.',
@@ -72,10 +76,13 @@ class LayananApiMitra
                 $urlMitra = trim((string) env($metaMitra['env_key'], ''));
             }
 
+            $apiKeyMitra = trim((string) env($metaMitra['env_api_key'], ''));
+
             $this->konfigurasiMitra[$kodeMitra] = [
                 'kode_mitra'        => $kodeMitra,
                 'nama_layanan'      => $metaMitra['nama_layanan'],
                 'env_key'           => $metaMitra['env_key'],
+                'api_key'           => $apiKeyMitra,
                 'ikon'              => $metaMitra['ikon'],
                 'satuan_harga'      => $metaMitra['satuan_harga'],
                 'deskripsi_singkat' => $metaMitra['deskripsi_singkat'],
@@ -150,9 +157,10 @@ class LayananApiMitra
     /**
      * Mengambil rekomendasi dari seluruh 4 kelompok mitra sekaligus untuk suatu kabupaten/kota.
      *
+     * @param array<string, mixed>|null $konteksDestinasi Opsional data destinasi (nama, koordinat GPS)
      * @return array<string, mixed>
      */
-    public function ambilSemuaRekomendasi(string $kota, int $batasPerMitra = 3): array
+    public function ambilSemuaRekomendasi(string $kota, int $batasPerMitra = 3, ?array $konteksDestinasi = null): array
     {
         $kotaAsli      = trim($kota) !== '' ? trim($kota) : 'Sumatera Utara';
         $kotaPencarian = $this->bersihkanNamaKota($kotaAsli);
@@ -163,7 +171,7 @@ class LayananApiMitra
         $totalItem          = 0;
 
         foreach (array_keys($this->konfigurasiMitra) as $kodeMitra) {
-            $hasilMitra = $this->ambilRekomendasiPerMitra($kodeMitra, $kotaAsli, $batasPerMitra);
+            $hasilMitra = $this->ambilRekomendasiPerMitra($kodeMitra, $kotaAsli, $batasPerMitra, $konteksDestinasi);
             $layananTerhimpun[$kodeMitra] = $hasilMitra;
 
             if ($hasilMitra['sumber_data'] === 'api_mitra') {
@@ -192,10 +200,15 @@ class LayananApiMitra
     /**
      * Mengambil rekomendasi layanan dari satu kelompok mitra tertentu dengan auto-fallback.
      *
+     * @param array<string, mixed>|null $konteksDestinasi Opsional data destinasi (nama, koordinat GPS)
      * @return array<string, mixed>
      */
-    public function ambilRekomendasiPerMitra(string $kodeMitra, string $kota, int $batasItem = 3): array
-    {
+    public function ambilRekomendasiPerMitra(
+        string $kodeMitra,
+        string $kota,
+        int $batasItem = 3,
+        ?array $konteksDestinasi = null
+    ): array {
         if (! array_key_exists($kodeMitra, $this->konfigurasiMitra)) {
             return [
                 'kode_mitra'        => $kodeMitra,
@@ -219,16 +232,38 @@ class LayananApiMitra
         $batasAman     = max(1, min(12, $batasItem));
 
         $urlDasar       = $infoMitra['url_api'];
+        $apiKey         = $infoMitra['api_key'] ?? '';
         $urlTujuan      = '';
         $statusKode     = 0;
         $waktuResponMs  = 0;
         $alasanFallback = null;
 
-        if ($urlDasar !== '') {
+        // Jalur khusus API kelompok Transportasi (/api/transport/lokasi, /tarif, /rekomendasi-wisata)
+        $apakahAdapterTransportasi = $kodeMitra === 'transportasi'
+            && $urlDasar !== ''
+            && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'));
+
+        if ($apakahAdapterTransportasi) {
+            $hasilTransport = $this->ambilRekomendasiTransportasiMitra(
+                $infoMitra,
+                $kotaPencarian,
+                $batasAman,
+                $konteksDestinasi
+            );
+
+            if ($hasilTransport['berhasil']) {
+                return $hasilTransport['data'];
+            }
+
+            $urlTujuan      = $hasilTransport['url_tujuan'];
+            $statusKode     = $hasilTransport['status_kode'];
+            $waktuResponMs  = $hasilTransport['waktu_respon_ms'];
+            $alasanFallback = $hasilTransport['alasan_fallback'];
+        } elseif ($urlDasar !== '') {
             $pemisahQuery = str_contains($urlDasar, '?') ? '&' : '?';
             $urlTujuan    = $urlDasar . $pemisahQuery . 'kota=' . urlencode($kotaPencarian);
 
-            $hasilPanggil = $this->panggilEndpointMitra($urlTujuan);
+            $hasilPanggil   = $this->panggilEndpointMitra($urlTujuan, $apiKey);
             $statusKode     = $hasilPanggil['status_kode'];
             $waktuResponMs  = $hasilPanggil['waktu_respon_ms'];
             $alasanFallback = $hasilPanggil['pesan_error'];
@@ -326,6 +361,7 @@ class LayananApiMitra
 
         foreach ($this->konfigurasiMitra as $kodeMitra => $infoMitra) {
             $urlDasar = $infoMitra['url_api'];
+            $apiKey   = $infoMitra['api_key'] ?? '';
 
             if ($urlDasar === '') {
                 $daftarStatus[] = [
@@ -341,9 +377,14 @@ class LayananApiMitra
                 continue;
             }
 
-            $pemisahQuery = str_contains($urlDasar, '?') ? '&' : '?';
-            $urlUji       = $urlDasar . $pemisahQuery . 'kota=' . urlencode($kotaPencarian);
-            $hasilPanggil = $this->panggilEndpointMitra($urlUji);
+            if ($kodeMitra === 'transportasi' && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'))) {
+                $urlUji = $this->ambilBaseUrlTransportasi($urlDasar) . '/transport/lokasi';
+            } else {
+                $pemisahQuery = str_contains($urlDasar, '?') ? '&' : '?';
+                $urlUji       = $urlDasar . $pemisahQuery . 'kota=' . urlencode($kotaPencarian);
+            }
+
+            $hasilPanggil = $this->panggilEndpointMitra($urlUji, $apiKey);
 
             if ($hasilPanggil['berhasil']) {
                 $daftarStatus[] = [
@@ -374,6 +415,519 @@ class LayananApiMitra
     }
 
     // =========================================================================
+    // ADAPTER KHUSUS REST API MITRA TRANSPORTASI (/api/transport/*)
+    // =========================================================================
+
+    /**
+     * Mengambil daftar titik simpul transportasi (Bandara, Stasiun, Terminal)
+     * dari endpoint GET /api/transport/lokasi.
+     *
+     * @return array<string, mixed>
+     */
+    public function ambilDaftarLokasiTransportasi(): array
+    {
+        $infoTransport = $this->konfigurasiMitra['transportasi'] ?? [];
+        $urlDasar      = trim((string) ($infoTransport['url_api'] ?? ''));
+        $apiKey        = trim((string) ($infoTransport['api_key'] ?? ''));
+
+        if ($urlDasar === '') {
+            return [
+                'berhasil'        => false,
+                'terhubung'       => false,
+                'status_kode'     => 0,
+                'waktu_respon_ms' => 0,
+                'data'            => [],
+                'pesan_error'     => 'URL API mitra transportasi belum dikonfigurasi.',
+            ];
+        }
+
+        $urlTujuan    = $this->ambilBaseUrlTransportasi($urlDasar) . '/transport/lokasi';
+        $hasilPanggil = $this->panggilEndpointMitra($urlTujuan, $apiKey);
+
+        if (! $hasilPanggil['berhasil']) {
+            return [
+                'berhasil'        => false,
+                'terhubung'       => false,
+                'status_kode'     => $hasilPanggil['status_kode'],
+                'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+                'data'            => [],
+                'pesan_error'     => $hasilPanggil['pesan_error'],
+            ];
+        }
+
+        $daftarMentah = $this->ekstrakDaftarItemApi($hasilPanggil['isi']);
+        $daftarLokasi = [];
+        $namaSudahAda = [];
+
+        foreach ($daftarMentah as $barisLokasi) {
+            if (! is_array($barisLokasi)) {
+                continue;
+            }
+
+            $idLokasi   = (int) ($barisLokasi['id'] ?? 0);
+            $namaLokasi = trim((string) ($barisLokasi['nama_lokasi'] ?? ''));
+            $lintang    = (float) ($barisLokasi['latitude'] ?? 0);
+            $bujur      = (float) ($barisLokasi['longitude'] ?? 0);
+
+            if ($idLokasi <= 0 || $namaLokasi === '') {
+                continue;
+            }
+
+            // Hilangkan entri duplikat dengan nama lokasi yang sama persis
+            $kunciNama = strtolower($namaLokasi);
+            if (isset($namaSudahAda[$kunciNama])) {
+                continue;
+            }
+            $namaSudahAda[$kunciNama] = true;
+
+            // Tandai simpul yang berada di wilayah Sumatera Utara
+            $dalamSumut = ($lintang >= 0.5 && $lintang <= 4.5 && $bujur >= 97.0 && $bujur <= 100.5);
+
+            $daftarLokasi[] = [
+                'id'          => $idLokasi,
+                'nama_lokasi' => $namaLokasi,
+                'latitude'    => $lintang,
+                'longitude'   => $bujur,
+                'dalam_sumut' => $dalamSumut,
+            ];
+        }
+
+        // Urutkan lokasi Sumatera Utara di bagian atas, lalu urut abjad A-Z
+        usort($daftarLokasi, static function (array $lokasiA, array $lokasiB): int {
+            if ($lokasiA['dalam_sumut'] !== $lokasiB['dalam_sumut']) {
+                return $lokasiA['dalam_sumut'] ? -1 : 1;
+            }
+
+            return strcasecmp($lokasiA['nama_lokasi'], $lokasiB['nama_lokasi']);
+        });
+
+        return [
+            'berhasil'        => $daftarLokasi !== [],
+            'terhubung'       => true,
+            'status_kode'     => $hasilPanggil['status_kode'],
+            'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+            'data'            => $daftarLokasi,
+            'pesan_error'     => $daftarLokasi === [] ? 'Daftar lokasi transportasi kosong.' : null,
+        ];
+    }
+
+    /**
+     * Menghitung jarak, jadwal aktif, dan estimasi tarif antar dua simpul transportasi
+     * melalui endpoint GET /api/transport/tarif.
+     *
+     * @return array<string, mixed>
+     */
+    public function cekTarifTransportasi(int $idAsal, int $idTujuan, string $jam = '08:30'): array
+    {
+        $infoTransport = $this->konfigurasiMitra['transportasi'] ?? [];
+        $urlDasar      = trim((string) ($infoTransport['url_api'] ?? ''));
+        $apiKey        = trim((string) ($infoTransport['api_key'] ?? ''));
+
+        if ($urlDasar === '') {
+            return [
+                'berhasil'             => false,
+                'terhubung'            => false,
+                'status_kode'          => 0,
+                'waktu_respon_ms'      => 0,
+                'rute'                 => null,
+                'total_jadwal'         => 0,
+                'pilihan_transportasi' => [],
+                'pesan_error'          => 'URL API mitra transportasi belum dikonfigurasi.',
+            ];
+        }
+
+        $queryTarif   = http_build_query([
+            'id_asal'   => $idAsal,
+            'id_tujuan' => $idTujuan,
+            'jam'       => $jam,
+        ]);
+        $urlTujuan    = $this->ambilBaseUrlTransportasi($urlDasar) . '/transport/tarif?' . $queryTarif;
+        $hasilPanggil = $this->panggilEndpointMitra($urlTujuan, $apiKey);
+
+        if (! $hasilPanggil['berhasil']) {
+            return [
+                'berhasil'             => false,
+                'terhubung'            => false,
+                'status_kode'          => $hasilPanggil['status_kode'],
+                'waktu_respon_ms'      => $hasilPanggil['waktu_respon_ms'],
+                'rute'                 => null,
+                'total_jadwal'         => 0,
+                'pilihan_transportasi' => [],
+                'pesan_error'          => $hasilPanggil['pesan_error'],
+            ];
+        }
+
+        $dataRespon  = is_array($hasilPanggil['isi']['data'] ?? null) ? $hasilPanggil['isi']['data'] : [];
+        $daftarOpsi  = is_array($dataRespon['pilihan_transportasi'] ?? null) ? $dataRespon['pilihan_transportasi'] : [];
+        $totalJadwal = (int) ($dataRespon['total_jadwal_tersedia'] ?? count($daftarOpsi));
+
+        return [
+            'berhasil'             => true,
+            'terhubung'            => true,
+            'status_kode'          => $hasilPanggil['status_kode'],
+            'waktu_respon_ms'      => $hasilPanggil['waktu_respon_ms'],
+            'rute'                 => $dataRespon['rute'] ?? null,
+            'total_jadwal'         => $totalJadwal,
+            'pilihan_transportasi' => $daftarOpsi,
+            'pesan_error'          => null,
+        ];
+    }
+
+    /**
+     * Mengintegrasikan endpoint /transport/lokasi, /transport/tarif, dan /transport/rekomendasi-wisata
+     * menjadi daftar kartu rekomendasi + data form interaktif untuk halaman detail destinasi.
+     *
+     * @param array<string, string>     $infoMitra
+     * @param array<string, mixed>|null $konteksDestinasi
+     * @return array<string, mixed>
+     */
+    private function ambilRekomendasiTransportasiMitra(
+        array $infoMitra,
+        string $kotaPencarian,
+        int $batasItem,
+        ?array $konteksDestinasi
+    ): array {
+        $hasilLokasi = $this->ambilDaftarLokasiTransportasi();
+        $baseUrl     = $this->ambilBaseUrlTransportasi($infoMitra['url_api']);
+        $apiKey      = $infoMitra['api_key'] ?? '';
+
+        if (! $hasilLokasi['berhasil'] || $hasilLokasi['data'] === []) {
+            return [
+                'berhasil'        => false,
+                'url_tujuan'      => $baseUrl . '/transport/lokasi',
+                'status_kode'     => $hasilLokasi['status_kode'],
+                'waktu_respon_ms' => $hasilLokasi['waktu_respon_ms'],
+                'alasan_fallback' => $hasilLokasi['pesan_error'] ?? 'Gagal mengambil daftar lokasi transportasi.',
+            ];
+        }
+
+        $daftarLokasi = $hasilLokasi['data'];
+        $lokasiSumut  = array_values(array_filter(
+            $daftarLokasi,
+            static fn (array $item): bool => ! empty($item['dalam_sumut'])
+        ));
+        if ($lokasiSumut === []) {
+            $lokasiSumut = $daftarLokasi;
+        }
+
+        // Tentukan koordinat wisata dari data destinasi, atau cocokkan nama kota bila kosong
+        [$wisataLat, $wisataLng] = $this->tentukanKoordinatWisata(
+            $konteksDestinasi,
+            $lokasiSumut,
+            $kotaPencarian
+        );
+
+        // Cari simpul transportasi terdekat dari lokasi objek wisata
+        $lokasiTujuanTerdekat = $this->cariLokasiTerdekat($lokasiSumut, $wisataLat, $wisataLng);
+        $idTujuanDefault      = (int) ($lokasiTujuanTerdekat['id'] ?? $lokasiSumut[0]['id']);
+        $jarakKeWisataKm      = (float) ($lokasiTujuanTerdekat['jarak_km'] ?? 0);
+
+        // Pilih simpul asal utama di Medan (berbeda dari tujuan agar rute antar-kota valid)
+        $lokasiAsalDefault = $this->pilihLokasiAsalDefault($lokasiSumut, $idTujuanDefault);
+        $idAsalDefault     = (int) ($lokasiAsalDefault['id'] ?? $lokasiSumut[0]['id']);
+
+        $waktuResponMs = (int) $hasilLokasi['waktu_respon_ms'];
+        $daftarKartu   = [];
+        $namaWisata    = trim((string) ($konteksDestinasi['nama'] ?? ('Wisata ' . $kotaPencarian)));
+
+        // 1. Ambil jadwal & estimasi tarif langsung dari gerbang utama menuju simpul terdekat
+        if ($idAsalDefault > 0 && $idTujuanDefault > 0 && $idAsalDefault !== $idTujuanDefault) {
+            $hasilTarif = $this->cekTarifTransportasi($idAsalDefault, $idTujuanDefault, '08:30');
+            $waktuResponMs = max($waktuResponMs, (int) $hasilTarif['waktu_respon_ms']);
+
+            if ($hasilTarif['berhasil'] && $hasilTarif['pilihan_transportasi'] !== []) {
+                $ruteInfo   = is_array($hasilTarif['rute']) ? $hasilTarif['rute'] : [];
+                $namaAsal   = (string) ($ruteInfo['asal']['nama_lokasi'] ?? ($lokasiAsalDefault['nama_lokasi'] ?? 'Medan'));
+                $namaTujuan = (string) ($ruteInfo['tujuan']['nama_lokasi'] ?? ($lokasiTujuanTerdekat['nama_lokasi'] ?? $kotaPencarian));
+                $jarakKm    = (float) ($ruteInfo['jarak_km'] ?? 0);
+
+                foreach ($hasilTarif['pilihan_transportasi'] as $opsi) {
+                    if (! is_array($opsi) || count($daftarKartu) >= $batasItem) {
+                        continue;
+                    }
+
+                    $daftarKartu[] = [
+                        'nama'          => trim((string) ($opsi['penyedia'] ?? 'Armada Mitra')) . ' (' . $namaTujuan . ')',
+                        'sub_label'     => trim((string) ($opsi['jenis_transport'] ?? 'Transportasi')),
+                        'kota'          => $kotaPencarian,
+                        'alamat'        => $namaAsal . ' → ' . $namaTujuan . ' (' . number_format($jarakKm, 1, ',', '.') . ' km)',
+                        'harga'         => (int) ($opsi['estimasi_tarif'] ?? 0),
+                        'satuan_harga'  => '/ perjalanan',
+                        'rating'        => 4.8,
+                        'jumlah_ulasan' => 42,
+                        'kontak'        => 'Jadwal aktif ' . trim((string) ($opsi['jam_berlaku'] ?? '06:00 - 21:00')),
+                        'deskripsi'     => 'Tarif dihitung langsung dari REST API Transportasi (' . $jarakKm . ' km dari titik berangkat, jadwal 08:30).',
+                        'foto'          => $this->ambilFotoBawaanMitra('transportasi'),
+                        'url_eksternal' => null,
+                    ];
+                }
+            }
+        }
+
+        // 2. Ambil rekomendasi rute cerdas dari dalam Sumut (Medan) menuju koordinat GPS wisata
+        $queryRekomLokal = http_build_query([
+            'user_lat'    => 3.5952,
+            'user_lng'    => 98.6722,
+            'wisata_lat'  => $wisataLat,
+            'wisata_lng'  => $wisataLng,
+            'nama_wisata' => $namaWisata,
+            'trip_type'   => 'oneway',
+        ]);
+        $urlRekomLokal   = $baseUrl . '/transport/rekomendasi-wisata?' . $queryRekomLokal;
+        $hasilRekomLokal = $this->panggilEndpointMitra($urlRekomLokal, $apiKey);
+        $waktuResponMs   = max($waktuResponMs, (int) $hasilRekomLokal['waktu_respon_ms']);
+
+        if ($hasilRekomLokal['berhasil']) {
+            $kartuRekomLokal = $this->ubahRekomendasiWisataKeKartu(
+                $hasilRekomLokal['isi'],
+                $kotaPencarian,
+                'Rute Dari Pusat Kota Medan'
+            );
+            foreach ($kartuRekomLokal as $kartu) {
+                if (count($daftarKartu) >= $batasItem) {
+                    break;
+                }
+                $daftarKartu[] = $kartu;
+            }
+        }
+
+        // 3. Lengkapi dengan rekomendasi rute multi-moda luar Sumut (Jakarta CGK -> Sumut)
+        if (count($daftarKartu) < $batasItem) {
+            $queryRekomNasional = http_build_query([
+                'user_lat'    => -6.1275,
+                'user_lng'    => 106.6537,
+                'wisata_lat'  => $wisataLat,
+                'wisata_lng'  => $wisataLng,
+                'nama_wisata' => $namaWisata,
+                'trip_type'   => 'oneway',
+            ]);
+            $urlRekomNasional   = $baseUrl . '/transport/rekomendasi-wisata?' . $queryRekomNasional;
+            $hasilRekomNasional = $this->panggilEndpointMitra($urlRekomNasional, $apiKey);
+            $waktuResponMs      = max($waktuResponMs, (int) $hasilRekomNasional['waktu_respon_ms']);
+
+            if ($hasilRekomNasional['berhasil']) {
+                $kartuNasional = $this->ubahRekomendasiWisataKeKartu(
+                    $hasilRekomNasional['isi'],
+                    $kotaPencarian,
+                    'Rute Udara + Darat (Dari Jakarta CGK)'
+                );
+                foreach ($kartuNasional as $kartu) {
+                    if (count($daftarKartu) >= $batasItem) {
+                        break;
+                    }
+                    $daftarKartu[] = $kartu;
+                }
+            }
+        }
+
+        if ($daftarKartu === []) {
+            return [
+                'berhasil'        => false,
+                'url_tujuan'      => $urlRekomLokal,
+                'status_kode'     => $hasilRekomLokal['status_kode'] ?? 0,
+                'waktu_respon_ms' => $waktuResponMs,
+                'alasan_fallback' => 'API mitra transportasi belum mengembalikan rekomendasi rute untuk koordinat ini.',
+            ];
+        }
+
+        return [
+            'berhasil' => true,
+            'data'     => [
+                'kode_mitra'        => 'transportasi',
+                'nama_layanan'      => $infoMitra['nama_layanan'],
+                'ikon'              => $infoMitra['ikon'],
+                'deskripsi_singkat' => $infoMitra['deskripsi_singkat'],
+                'url_tujuan'        => $urlRekomLokal,
+                'endpoint_label'    => 'GET /api/transport/lokasi, /tarif & /rekomendasi-wisata',
+                'terhubung'         => true,
+                'status_kode'       => 200,
+                'sumber_data'       => 'api_mitra',
+                'label_sumber'      => 'Live API Mitra',
+                'alasan_fallback'   => null,
+                'waktu_respon_ms'   => $waktuResponMs,
+                'daftar_item'       => array_slice($daftarKartu, 0, $batasItem),
+                'data_transportasi' => [
+                    'daftar_lokasi'        => $daftarLokasi,
+                    'id_asal_default'      => $idAsalDefault,
+                    'id_tujuan_default'    => $idTujuanDefault,
+                    'nama_tujuan_terdekat' => (string) ($lokasiTujuanTerdekat['nama_lokasi'] ?? ''),
+                    'jarak_ke_wisata_km'   => $jarakKeWisataKm,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Mengubah hasil endpoint /api/transport/rekomendasi-wisata menjadi daftar kartu seragam.
+     *
+     * @param array<string, mixed> $isiJson
+     * @return list<array<string, mixed>>
+     */
+    private function ubahRekomendasiWisataKeKartu(array $isiJson, string $kotaPencarian, string $labelAsal): array
+    {
+        $data = is_array($isiJson['data'] ?? null) ? $isiJson['data'] : [];
+        $pergi = is_array($data['rute_perjalanan']['pergi'] ?? null) ? $data['rute_perjalanan']['pergi'] : [];
+
+        if ($pergi === []) {
+            return [];
+        }
+
+        $daftarKartu = [];
+        foreach ($pergi as $segmen) {
+            if (! is_array($segmen)) {
+                continue;
+            }
+
+            $opsiPertama   = is_array($segmen['opsi_armada'][0] ?? null) ? $segmen['opsi_armada'][0] : [];
+            $titikBerangkat = (string) ($segmen['titik_berangkat']['nama_lokasi'] ?? '');
+            $titikTiba      = (string) ($segmen['titik_tiba']['nama_lokasi'] ?? '');
+            $jarakKm        = (float) ($segmen['jarak_km'] ?? 0);
+            $jenisSegmen    = trim((string) ($segmen['jenis_segmen'] ?? 'Transportasi'));
+            $penyedia       = trim((string) ($opsiPertama['penyedia'] ?? $jenisSegmen));
+            $jamBerlaku     = trim((string) ($opsiPertama['jam_berlaku'] ?? '06:00 - 21:00'));
+
+            $daftarKartu[] = [
+                'nama'          => $penyedia . ' — ' . $labelAsal,
+                'sub_label'     => trim((string) ($opsiPertama['jenis_transport'] ?? $jenisSegmen)),
+                'kota'          => $kotaPencarian,
+                'alamat'        => $titikBerangkat . ' → ' . $titikTiba . ' (' . number_format($jarakKm, 1, ',', '.') . ' km)',
+                'harga'         => (int) ($segmen['tarif_termurah'] ?? ($opsiPertama['estimasi_tarif'] ?? 0)),
+                'satuan_harga'  => '/ perjalanan',
+                'rating'        => 4.8,
+                'jumlah_ulasan' => 56,
+                'kontak'        => 'Jadwal aktif ' . $jamBerlaku,
+                'deskripsi'     => (string) ($segmen['deskripsi'] ?? 'Rekomendasi rute menuju objek wisata.'),
+                'foto'          => $this->ambilFotoBawaanMitra('transportasi'),
+                'url_eksternal' => null,
+            ];
+        }
+
+        return $daftarKartu;
+    }
+
+    /**
+     * Menormalkan URL dasar API Transportasi agar selalu mengarah ke prefix /api.
+     */
+    private function ambilBaseUrlTransportasi(string $urlMentah): string
+    {
+        $urlBersih   = rtrim(trim($urlMentah), '/');
+        $polaAkhiran = '#/transport/(lokasi|tarif|rekomendasi-wisata|transports)$#i';
+        $urlBersih   = (string) preg_replace($polaAkhiran, '', $urlBersih);
+
+        return rtrim($urlBersih, '/');
+    }
+
+    /**
+     * Menghitung jarak garis lurus dua koordinat GPS dalam satuan kilometer (Haversine).
+     */
+    private function hitungJarakKm(float $lintang1, float $bujur1, float $lintang2, float $bujur2): float
+    {
+        $radiusBumiKm  = 6371.0;
+        $selisihLat    = deg2rad($lintang2 - $lintang1);
+        $selisihBujur  = deg2rad($bujur2 - $bujur1);
+
+        $komponen = sin($selisihLat / 2) * sin($selisihLat / 2)
+            + cos(deg2rad($lintang1)) * cos(deg2rad($lintang2))
+            * sin($selisihBujur / 2) * sin($selisihBujur / 2);
+
+        $sudut = 2 * atan2(sqrt($komponen), sqrt(1 - $komponen));
+
+        return round($radiusBumiKm * $sudut, 2);
+    }
+
+    /**
+     * Menentukan koordinat acuan wisata dari data destinasi atau pencarian nama kota.
+     *
+     * @param array<string, mixed>|null       $konteksDestinasi
+     * @param list<array<string, mixed>>      $lokasiSumut
+     * @return array{0: float, 1: float}
+     */
+    private function tentukanKoordinatWisata(
+        ?array $konteksDestinasi,
+        array $lokasiSumut,
+        string $kotaPencarian
+    ): array {
+        if (is_array($konteksDestinasi)) {
+            $lintang = (float) ($konteksDestinasi['garis_lintang'] ?? 0);
+            $bujur   = (float) ($konteksDestinasi['garis_bujur'] ?? 0);
+
+            if ($lintang !== 0.0 && $bujur !== 0.0) {
+                return [$lintang, $bujur];
+            }
+        }
+
+        $kataKota = strtolower($kotaPencarian);
+        foreach ($lokasiSumut as $lokasi) {
+            if (str_contains(strtolower($lokasi['nama_lokasi']), $kataKota)) {
+                return [(float) $lokasi['latitude'], (float) $lokasi['longitude']];
+            }
+        }
+
+        // Default acuan pusat Kota Medan jika koordinat destinasi belum tersedia
+        return [3.5952, 98.6722];
+    }
+
+    /**
+     * Mencari simpul transportasi (bandara/stasiun/terminal) terdekat dari koordinat wisata.
+     *
+     * @param list<array<string, mixed>> $daftarLokasi
+     * @return array<string, mixed>
+     */
+    private function cariLokasiTerdekat(array $daftarLokasi, float $wisataLat, float $wisataLng): array
+    {
+        $lokasiTerdekat  = $daftarLokasi[0] ?? [];
+        $jarakTerpendek  = INF;
+
+        foreach ($daftarLokasi as $lokasi) {
+            $jarak = $this->hitungJarakKm(
+                $wisataLat,
+                $wisataLng,
+                (float) $lokasi['latitude'],
+                (float) $lokasi['longitude']
+            );
+
+            if ($jarak < $jarakTerpendek) {
+                $jarakTerpendek            = $jarak;
+                $lokasiTerdekat            = $lokasi;
+                $lokasiTerdekat['jarak_km'] = $jarak;
+            }
+        }
+
+        return $lokasiTerdekat;
+    }
+
+    /**
+     * Memilih simpul asal default di gerbang Medan yang tidak sama dengan titik tujuan.
+     *
+     * @param list<array<string, mixed>> $lokasiSumut
+     * @return array<string, mixed>
+     */
+    private function pilihLokasiAsalDefault(array $lokasiSumut, int $idTujuan): array
+    {
+        $prioritasNama = [
+            'Medan - Terminal Amplas',
+            'Medan - Stasiun Medan (MDN)',
+            'Medan - Bandara Kualanamu (KNO)',
+        ];
+
+        foreach ($prioritasNama as $namaCari) {
+            foreach ($lokasiSumut as $lokasi) {
+                if ($lokasi['nama_lokasi'] === $namaCari && (int) $lokasi['id'] !== $idTujuan) {
+                    return $lokasi;
+                }
+            }
+        }
+
+        foreach ($lokasiSumut as $lokasi) {
+            if ((int) $lokasi['id'] !== $idTujuan) {
+                return $lokasi;
+            }
+        }
+
+        return $lokasiSumut[0] ?? [];
+    }
+
+    // =========================================================================
     // HELPER HTTP ADAPTER & NORMALISASI JSON MITRA
     // =========================================================================
 
@@ -382,9 +936,14 @@ class LayananApiMitra
      *
      * @return array<string, mixed>
      */
-    private function panggilEndpointMitra(string $urlTujuan): array
+    private function panggilEndpointMitra(string $urlTujuan, string $apiKey = ''): array
     {
         $waktuMulai = microtime(true);
+
+        $headerPermintaan = ['Accept' => 'application/json'];
+        if ($apiKey !== '') {
+            $headerPermintaan['X-API-KEY'] = $apiKey;
+        }
 
         try {
             // Gunakan getShared = false agar instance cURL tiap mitra berdiri sendiri
@@ -393,7 +952,7 @@ class LayananApiMitra
                 'timeout'         => $this->batasWaktuDetik,
                 'connect_timeout' => $this->batasWaktuDetik,
                 'http_errors'     => false,
-                'headers'         => ['Accept' => 'application/json'],
+                'headers'         => $headerPermintaan,
             ]);
             $waktuResponMs = (int) round((microtime(true) - $waktuMulai) * 1000);
             $statusKode    = $respon->getStatusCode();
