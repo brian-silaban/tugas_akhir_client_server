@@ -14,7 +14,14 @@ $nilai = static function (string $nama, string $bawaan = '') use ($destinasi): s
     return is_scalar($isian) ? (string) $isian : '';
 };
 $kesalahan = session()->getFlashdata('kesalahan_isian') ?? [];
+$konflikEdit = $id !== null && (int) session()->getFlashdata('konflik_destinasi') === (int) $id;
 ?>
+<?php if ($konflikEdit): ?>
+    <div class="notifikasi gagal" role="alert">
+        <p>Isian Anda masih ditampilkan agar dapat disalin. Muat data terbaru untuk memeriksa perubahan pengguna lain sebelum mengedit kembali.</p>
+        <a href="<?= esc(site_url('admin/destinasi/' . $id . '/edit'), 'attr') ?>">Muat data terbaru</a>
+    </div>
+<?php endif ?>
 <?php if ($kesalahan !== []): ?>
     <ul class="notifikasi gagal" role="alert">
         <?php foreach ($kesalahan as $pesan): ?><li><?= esc($pesan) ?></li><?php endforeach ?>
@@ -23,6 +30,9 @@ $kesalahan = session()->getFlashdata('kesalahan_isian') ?? [];
 
 <form class="formulir" method="post" action="<?= esc($tujuan, 'attr') ?>">
     <?= csrf_field() ?>
+    <?php if ($id !== null): ?>
+        <input type="hidden" name="versi_data" value="<?= esc($nilai('versi_data'), 'attr') ?>">
+    <?php endif ?>
     <fieldset>
         <legend>Informasi utama</legend>
         <div class="kisi-formulir">
@@ -88,7 +98,7 @@ $kesalahan = session()->getFlashdata('kesalahan_isian') ?? [];
             </label>
         </div>
     </fieldset>
-    <button class="tombol tombol-utama" type="submit" <?= $pesan_api ? 'disabled' : '' ?>>Simpan destinasi</button>
+    <button class="tombol tombol-utama" type="submit" <?= $pesan_api || $konflikEdit ? 'disabled' : '' ?>>Simpan destinasi</button>
 </form>
 
 <?php if ($id !== null): ?>

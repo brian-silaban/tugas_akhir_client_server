@@ -32,7 +32,10 @@ class DestinasiAdminApiController extends BasisAdminApiController
             return $this->gagal(404, 'Destinasi tidak ditemukan.');
         }
 
-        return $this->berhasil(array_intersect_key($destinasi, self::ATURAN) + ['id' => (int) $id]);
+        return $this->berhasil(array_intersect_key($destinasi, self::ATURAN) + [
+            'id' => (int) $id,
+            'versi_data' => $this->buatVersiData($destinasi),
+        ]);
     }
 
     public function create(): ResponseInterface
@@ -42,7 +45,56 @@ class DestinasiAdminApiController extends BasisAdminApiController
 
     public function update($id = null): ResponseInterface
     {
-        return $this->simpan((int) $id);
+        $koneksi = $this->koneksiAdmin();
+
+        try {
+            if (! $koneksi->transBegin()) {
+                throw new DatabaseException($koneksi->error()['message'] ?? '');
+            }
+
+            // Periksa versi setelah mendapat lock; dua penyimpan tidak dapat lolos bersamaan.
+            $destinasi = $koneksi->query('SELECT * FROM destinasi WHERE id = ? FOR UPDATE', [(int) $id])->getRowArray();
+            if ($destinasi === null) {
+                return $this->gagal(404, 'Destinasi tidak ditemukan.');
+            }
+
+            $versi = $this->bacaMasukan()['versi_data'] ?? null;
+            if (! is_string($versi) || preg_match('/\A[a-f0-9]{64}\z/', $versi) !== 1) {
+                return $this->gagal(422, 'Muat ulang formulir destinasi untuk mendapatkan versi data yang valid.');
+            }
+            if (! hash_equals($this->buatVersiData($destinasi), $versi)) {
+                return $this->gagal(409, 'Destinasi sudah diubah oleh pengguna lain. Muat data terbaru sebelum menyimpan kembali.', [
+                    'konflik' => 'versi_data',
+                ]);
+            }
+
+            $hasil = $this->simpan((int) $id);
+            if ($hasil->getStatusCode() !== 200) {
+                return $hasil;
+            }
+            if (! $koneksi->transStatus() || ! $koneksi->transCommit()) {
+                throw new DatabaseException($koneksi->error()['message'] ?? '');
+            }
+
+            return $hasil;
+        } catch (DatabaseException $kesalahan) {
+            return $this->tanganiKesalahanDatabase($kesalahan);
+        } finally {
+            // Lepaskan lock juga saat validasi/konflik gagal. Setelah commit, rollback tidak aktif.
+            $koneksi->transRollback();
+        }
+    }
+
+    private function buatVersiData(array $destinasi): string
+    {
+        $dataVersi = ['id' => (string) $destinasi['id']];
+        foreach (self::ATURAN as $kolom => $aturan) {
+            $nilai = $destinasi[$kolom] ?? null;
+            $dataVersi[$kolom] = $nilai === null ? null : (string) $nilai;
+        }
+
+        // Rating dan waktu perubahan dikelola trigger; keduanya tidak mengubah isian Admin.
+        return hash('sha256', json_encode($dataVersi, JSON_THROW_ON_ERROR));
     }
 
     public function delete($id = null): ResponseInterface
@@ -171,7 +223,12 @@ class DestinasiAdminApiController extends BasisAdminApiController
             return $this->tanganiKesalahanDatabase($kesalahan);
         }
 
-        return $this->berhasil(['id' => $id], 'Destinasi berhasil diperbarui.');
+        $destinasiTersimpan = $modelDestinasi->find($id);
+
+        return $this->berhasil([
+            'id' => $id,
+            'versi_data' => $this->buatVersiData($destinasiTersimpan),
+        ], 'Destinasi berhasil diperbarui.');
     }
 
     private function tanganiKesalahanDatabase(DatabaseException $kesalahan): ResponseInterface

@@ -261,6 +261,33 @@ git push origin main
 
 ## Demo Panel Pengelola sebagai Client Kedua (K6)
 
+### Perlindungan konflik edit destinasi (K7)
+
+`GET /api/v1/admin/destinasi/{id}` mengembalikan `data.versi_data`. Kirim nilai tersebut bersama isian pada `PUT /api/v1/destinasi/{id}`. Panel Admin meneruskannya otomatis melalui input tersembunyi. Client API yang belum mengirim versi perlu mengambil data terbaru terlebih dahulu.
+
+```json
+{
+  "harga_tiket": 25000,
+  "versi_data": "salin nilai versi_data dari respons GET admin destinasi"
+}
+```
+
+Versi adalah SHA-256 dari ID dan isian destinasi yang dapat diedit Admin. Backend memeriksanya setelah memperoleh `SELECT ... FOR UPDATE`, kemudian menyimpan perubahan dalam transaksi yang sama. Versi yang berbeda menghasilkan `409` dengan `data.konflik = "versi_data"`. Versi kosong atau tidak valid menghasilkan `422`, sedangkan ID yang sudah dihapus menghasilkan `404`. Konflik slug tetap menggunakan `409` tanpa penanda konflik versi.
+
+Tidak ada migrasi database baru untuk perubahan ini. Rating dan waktu perubahan tidak masuk perhitungan versi agar trigger ulasan tidak membatalkan formulir Admin. Setelah perubahan backend dan frontend dipasang, muat ulang formulir edit yang masih terbuka.
+
+Untuk demo, masuk sebagai Admin pada dua browser/profil terpisah (misalnya jendela biasa dan penyamaran), lalu buka destinasi yang sama. Sesi terpisah menjaga token CSRF masing-masing tetap berlaku. Simpan harga pada browser pertama, lalu simpan perubahan pada browser kedua. Browser kedua harus menampilkan konflik dan mempertahankan isian untuk disalin. Klik **Muat data terbaru**, periksa hasil browser pertama, lalu lakukan edit berikutnya. Formulir yang konflik tidak otomatis mendapat versi baru untuk mengirim ulang isian lama.
+
+Pengujian regresi tersedia di `backend/tests/integration/KonflikDestinasiTest.php`. Jalankan pada API dengan database pengujian terpisah. Tes membuat destinasi sementara dan menghapusnya kembali. Siapkan `JEJAKSUMUT_UJI_API_URL` (URL lengkap hingga `/api/v1`) dan `JEJAKSUMUT_UJI_TOKEN_ADMIN` (token login Admin pada database pengujian), lalu jalankan dari `backend/`:
+
+```sh
+php vendor/bin/phpunit --no-coverage tests/integration/KonflikDestinasiTest.php
+```
+
+Gunakan server dengan lebih dari satu worker untuk menguji permintaan bersamaan. Tanpa kedua variabel lingkungan tersebut, tes integrasi ditandai dilewati; tes yang dilewati bukan bukti keberhasilan pengujian konkurensi. Jangan menyimpan token di repository.
+
+### Menjalankan kedua client
+
 Jalankan satu REST API dan dua proses frontend. Kedua client menggunakan URL API yang sama. Jalankan perintah berikut dari root repositori setelah dependensi Composer di `backend/` dan `frontend/` terpasang.
 
 1. Atur koneksi PostgreSQL di `backend/.env` dan isi `JEJAKSUMUT_KUNCI_TOKEN` dengan hasil `openssl rand -hex 32`. Token login berlaku dua jam. Pengguna yang masih memegang token lama perlu keluar dan masuk ulang.

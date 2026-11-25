@@ -54,7 +54,12 @@ class DestinasiAdminController extends BasisAdminController
         $hasil = $this->layananApi->kirimPut('/destinasi/' . $id, $this->bacaFormulir());
         $tujuan = $hasil['berhasil'] ? 'admin/destinasi' : 'admin/destinasi/' . $id . '/edit';
 
-        return $this->hasilAksi($hasil, $tujuan, true);
+        $pengalihan = $this->hasilAksi($hasil, $tujuan, true);
+        if ($hasil['status_kode'] === 409 && ($hasil['data']['konflik'] ?? '') === 'versi_data') {
+            $pengalihan->with('konflik_destinasi', $id);
+        }
+
+        return $pengalihan;
     }
 
     public function hapus(int $id): RedirectResponse
@@ -83,7 +88,7 @@ class DestinasiAdminController extends BasisAdminController
         return $this->request->getPost([
             'nama', 'slug', 'id_kategori', 'kode_kabupaten', 'sub_kategori',
             'harga_tiket', 'alamat', 'deskripsi', 'foto_utama', 'jam_buka',
-            'jam_tutup', 'garis_lintang', 'garis_bujur',
+            'jam_tutup', 'garis_lintang', 'garis_bujur', 'versi_data',
         ]);
     }
 }
