@@ -58,19 +58,21 @@ $sudahMasuk = (int) session('id_pengguna') > 0;
         <?php endif; ?>
     </div>
 
-    <!-- Notifikasi hasil kirim ulasan -->
-    <?php if (session('pesan_sukses')) : ?>
-        <div class="mb-6 flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
-            <span class="material-symbols-outlined text-lg" aria-hidden="true">check_circle</span>
-            <span><?= esc(session('pesan_sukses')) ?></span>
-        </div>
-    <?php endif; ?>
-    <?php if (session('pesan_error')) : ?>
-        <div class="mb-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
-            <span class="material-symbols-outlined text-lg" aria-hidden="true">error</span>
-            <span><?= esc(session('pesan_error')) ?></span>
-        </div>
-    <?php endif; ?>
+    <!-- Notifikasi cadangan bila JavaScript nonaktif (versi utama tampil via SweetAlert2 toast) -->
+    <noscript>
+        <?php if (session('pesan_sukses')) : ?>
+            <div class="mb-6 flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">check_circle</span>
+                <span><?= esc(session('pesan_sukses')) ?></span>
+            </div>
+        <?php endif; ?>
+        <?php if (session('pesan_error')) : ?>
+            <div class="mb-6 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+                <span class="material-symbols-outlined text-lg" aria-hidden="true">error</span>
+                <span><?= esc(session('pesan_error')) ?></span>
+            </div>
+        <?php endif; ?>
+    </noscript>
 
     <?php if (! $hasilApi['terhubung']) : ?>
         <p class="mb-6 text-sm text-stone-600">Ulasan belum bisa dimuat karena server sedang tidak terjangkau. Coba muat ulang beberapa saat lagi.</p>

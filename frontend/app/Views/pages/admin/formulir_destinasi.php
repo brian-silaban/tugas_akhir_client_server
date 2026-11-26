@@ -105,13 +105,25 @@ $konflikEdit = $id !== null && (int) session()->getFlashdata('konflik_destinasi'
 </form>
 
 <?php if ($id !== null): ?>
-    <details class="bagian-hapus">
-        <summary>Hapus destinasi</summary>
-        <form method="post" action="<?= esc(site_url('admin/destinasi/' . $id . '/hapus'), 'attr') ?>">
+    <section class="bagian-hapus" aria-label="Zona penghapusan destinasi">
+        <div>
+            <strong>Hapus destinasi</strong>
+            <small>Menghapus <strong><?= esc($destinasi['nama']) ?></strong> dari katalog wisatawan (ditolak jika sudah ada pemesanan).</small>
+        </div>
+        <form method="post"
+              action="<?= esc(site_url('admin/destinasi/' . $id . '/hapus'), 'attr') ?>"
+              data-swal-konfirmasi
+              data-swal-ikon="warning"
+              data-swal-judul="Hapus Destinasi?"
+              data-swal-teks="Destinasi <?= esc($destinasi['nama'], 'attr') ?> akan dihapus permanen dari katalog."
+              data-swal-tombol-ya="Ya, Hapus Destinasi"
+              data-swal-bahaya="true">
             <?= csrf_field() ?>
-            <p>Hapus <strong><?= esc($destinasi['nama']) ?></strong> dari katalog wisatawan?</p>
-            <button type="submit" class="tombol tombol-bahaya">Ya, hapus destinasi</button>
+            <button type="submit" class="tombol tombol-bahaya" data-teks-proses="Menghapus...">
+                <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                <span data-teks-tombol>Hapus destinasi</span>
+            </button>
         </form>
-    </details>
+    </section>
 <?php endif ?>
 <?= $this->endSection() ?>

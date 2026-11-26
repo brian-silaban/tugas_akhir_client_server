@@ -30,20 +30,22 @@
         </div>
     </div>
 
-    <!-- Notifikasi Pesan Flash -->
-    <?php if (session()->getFlashdata('success')): ?>
-        <div class="mb-6 rounded-xl border border-secondary/40 bg-secondary-container/30 px-4 py-3 text-sm text-on-secondary-fixed-variant flex items-center gap-3">
-            <span class="material-symbols-outlined text-secondary">check_circle</span>
-            <span><?= esc(session()->getFlashdata('success')) ?></span>
-        </div>
-    <?php endif; ?>
+    <!-- Notifikasi Pesan Flash cadangan (versi utama tampil via SweetAlert2 toast) -->
+    <noscript>
+        <?php if (session()->getFlashdata('success')): ?>
+            <div class="mb-6 rounded-xl border border-secondary/40 bg-secondary-container/30 px-4 py-3 text-sm text-on-secondary-fixed-variant flex items-center gap-3">
+                <span class="material-symbols-outlined text-secondary">check_circle</span>
+                <span><?= esc(session()->getFlashdata('success')) ?></span>
+            </div>
+        <?php endif; ?>
 
-    <?php if (session()->getFlashdata('error')): ?>
-        <div class="mb-6 rounded-xl border border-error/30 bg-error-container/30 px-4 py-3 text-sm text-on-error-container flex items-center gap-3">
-            <span class="material-symbols-outlined text-error">error</span>
-            <span><?= esc(session()->getFlashdata('error')) ?></span>
-        </div>
-    <?php endif; ?>
+        <?php if (session()->getFlashdata('error')): ?>
+            <div class="mb-6 rounded-xl border border-error/30 bg-error-container/30 px-4 py-3 text-sm text-on-error-container flex items-center gap-3">
+                <span class="material-symbols-outlined text-error">error</span>
+                <span><?= esc(session()->getFlashdata('error')) ?></span>
+            </div>
+        <?php endif; ?>
+    </noscript>
 
     <!-- ============================================================ -->
     <!-- DAFTAR KARTU DESTINASI ATAU KONDISI KOSONG                   -->

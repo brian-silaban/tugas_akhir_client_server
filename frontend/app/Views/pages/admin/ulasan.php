@@ -20,13 +20,20 @@ Tinjau pengalaman wisatawan dan hapus ulasan yang tidak sesuai.
                         <p><?= esc($ulasan['komentar']) ?></p>
                     </td>
                     <td>
-                        <details>
-                            <summary>Hapus ulasan</summary>
-                            <form method="post" action="<?= esc(site_url('admin/ulasan/' . $ulasan['id'] . '/hapus'), 'attr') ?>">
-                                <?= csrf_field() ?>
-                                <button class="tombol tombol-bahaya" type="submit">Ya, hapus ulasan</button>
-                            </form>
-                        </details>
+                        <form method="post"
+                              action="<?= esc(site_url('admin/ulasan/' . $ulasan['id'] . '/hapus'), 'attr') ?>"
+                              data-swal-konfirmasi
+                              data-swal-ikon="warning"
+                              data-swal-judul="Hapus Ulasan Ini?"
+                              data-swal-teks="Ulasan dari <?= esc($ulasan['nama_pengguna'], 'attr') ?> untuk <?= esc($ulasan['nama_destinasi'], 'attr') ?> akan dihapus permanen dan rating destinasi diperbarui otomatis."
+                              data-swal-tombol-ya="Ya, Hapus Ulasan"
+                              data-swal-bahaya="true">
+                            <?= csrf_field() ?>
+                            <button class="tombol tombol-kecil tombol-bahaya" type="submit" data-teks-proses="Menghapus...">
+                                <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+                                <span data-teks-tombol>Hapus</span>
+                            </button>
+                        </form>
                     </td>
                 </tr>
             <?php endforeach ?>

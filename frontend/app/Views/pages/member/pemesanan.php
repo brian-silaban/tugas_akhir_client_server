@@ -63,18 +63,20 @@ $formatTanggalSingkat = static function (?string $tanggal) use ($namaBulanId): s
         </div>
     </div>
 
-    <?php if ($pesanSukses !== '') : ?>
-        <div role="status" class="mb-6 flex items-start gap-3 rounded-xl border border-secondary/40 bg-[#e8f6ea] px-4 py-3.5 text-sm text-on-secondary-fixed-variant">
-            <span class="material-symbols-outlined text-lg shrink-0" aria-hidden="true">check_circle</span>
-            <span><?= esc($pesanSukses) ?></span>
-        </div>
-    <?php endif; ?>
+    <noscript>
+        <?php if ($pesanSukses !== '') : ?>
+            <div role="status" class="mb-6 flex items-start gap-3 rounded-xl border border-secondary/40 bg-[#e8f6ea] px-4 py-3.5 text-sm text-on-secondary-fixed-variant">
+                <span class="material-symbols-outlined text-lg shrink-0" aria-hidden="true">check_circle</span>
+                <span><?= esc($pesanSukses) ?></span>
+            </div>
+        <?php endif; ?>
+    </noscript>
 
-    <?php if ($pesanError !== '') : ?>
+    <?php if (! empty($pesan_error)) : ?>
         <div role="alert" class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-xl border border-error/40 bg-error-container px-4 py-3.5 text-sm text-on-error-container">
             <div class="flex items-start gap-3">
                 <span class="material-symbols-outlined text-lg shrink-0" aria-hidden="true">error</span>
-                <span><?= esc($pesanError) ?></span>
+                <span><?= esc((string) $pesan_error) ?></span>
             </div>
             <a href="<?= base_url('pemesanan') ?>"
                class="transisi-tiket cursor-pointer inline-flex items-center justify-center gap-1.5 min-h-[44px] shrink-0 rounded-lg border border-on-error-container bg-surface-container-lowest px-4 py-2 text-xs font-semibold text-on-error-container hover:bg-surface-container active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition">
@@ -82,6 +84,13 @@ $formatTanggalSingkat = static function (?string $tanggal) use ($namaBulanId): s
                 <span>Muat Ulang</span>
             </a>
         </div>
+    <?php elseif ($pesanError !== '') : ?>
+        <noscript>
+            <div role="alert" class="mb-6 flex items-start gap-3 rounded-xl border border-error/40 bg-error-container px-4 py-3.5 text-sm text-on-error-container">
+                <span class="material-symbols-outlined text-lg shrink-0" aria-hidden="true">error</span>
+                <span><?= esc($pesanError) ?></span>
+            </div>
+        </noscript>
     <?php endif; ?>
 
     <?php if ($daftarTiket === [] && $pesanError === '') : ?>
@@ -228,26 +237,17 @@ $formatTanggalSingkat = static function (?string $tanggal) use ($namaBulanId): s
 </div>
 
 <script>
-    // Konfirmasi dan cegah klik ganda saat pengguna membatalkan tiket.
+    // Konfirmasi pembatalan tiket menggunakan SweetAlert2 melalui atribut data-swal-konfirmasi.
     (function () {
         document.querySelectorAll('[data-form-batal]').forEach(function (formulir) {
-            formulir.addEventListener('submit', function (event) {
-                var kode = formulir.getAttribute('data-kode') || 'ini';
-                if (!window.confirm('Batalkan tiket ' + kode + '? Tindakan ini tidak dapat dibatalkan.')) {
-                    event.preventDefault();
-                    return;
-                }
-
-                var tombol = formulir.querySelector('button[type="submit"]');
-                var label  = formulir.querySelector('[data-teks-tombol]');
-                if (tombol) {
-                    tombol.disabled = true;
-                    tombol.setAttribute('aria-busy', 'true');
-                }
-                if (label) {
-                    label.textContent = 'Membatalkan...';
-                }
-            });
+            var kode = formulir.getAttribute('data-kode') || 'ini';
+            formulir.setAttribute('data-swal-konfirmasi', '');
+            formulir.setAttribute('data-swal-ikon', 'warning');
+            formulir.setAttribute('data-swal-judul', 'Batalkan Tiket?');
+            formulir.setAttribute('data-swal-teks', 'Tiket ' + kode + ' yang dibatalkan tidak dapat dikembalikan.');
+            formulir.setAttribute('data-swal-tombol-ya', 'Ya, Batalkan Tiket');
+            formulir.setAttribute('data-swal-bahaya', 'true');
+            formulir.setAttribute('data-teks-proses', 'Membatalkan...');
         });
     })();
 </script>

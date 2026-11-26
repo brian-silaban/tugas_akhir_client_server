@@ -41,31 +41,40 @@ Periksa detail kunjungan dan verifikasi pembayaran tiket wisatawan.
                     <td><span class="status <?= esc($status, 'attr') ?>"><?= esc(ucfirst($status)) ?></span></td>
                     <td>
                         <?php if ($status === 'menunggu'): ?>
-                            <div class="aksi">
-                                <?php foreach (['lunas' => 'Verifikasi lunas', 'dibatalkan' => 'Batalkan'] as $statusBaru => $labelAksi): ?>
-                                    <details class="konfirmasi-pemesanan">
-                                        <summary class="tombol tombol-ghost">
-                                            <?= esc($labelAksi) ?>
-                                            <span class="material-symbols-outlined" aria-hidden="true">expand_more</span>
-                                        </summary>
-                                        <form method="post" action="<?= esc(site_url('admin/pemesanan/' . $pemesanan['id'] . '/status'), 'attr') ?>">
-                                            <?= csrf_field() ?>
-                                            <input type="hidden" name="filter_status" value="<?= esc($filter_status, 'attr') ?>">
-                                            <input type="hidden" name="halaman" value="<?= esc($paginasi['halaman'] ?? 1, 'attr') ?>">
-                                            <p>Ubah tiket <strong class="angka"><?= esc($pemesanan['kode_pemesanan']) ?></strong> menjadi <strong><?= esc($statusBaru) ?></strong>?</p>
-                                            <?php if ($statusBaru === 'lunas'): ?>
-                                                <p>Pastikan pembayaran Rp <?= esc(number_format($pemesanan['total_harga'], 0, ',', '.')) ?> sudah diterima.</p>
-                                            <?php else: ?>
-                                                <p>Tiket yang dibatalkan tidak dapat diverifikasi lunas.</p>
-                                            <?php endif ?>
-                                            <button class="tombol <?= $statusBaru === 'lunas' ? 'tombol-utama' : 'tombol-bahaya' ?>" name="status" value="<?= esc($statusBaru, 'attr') ?>" type="submit">
-                                                <?= $statusBaru === 'lunas' ? 'Ya, verifikasi lunas' : 'Ya, batalkan tiket' ?>
-                                            </button>
-                                            <small>Klik kembali <?= esc($labelAksi) ?> untuk menutup tanpa mengubah status.</small>
-                                        </form>
-                                    </details>
-                                <?php endforeach ?>
-                            </div>
+                            <form class="aksi"
+                                  method="post"
+                                  action="<?= esc(site_url('admin/pemesanan/' . $pemesanan['id'] . '/status'), 'attr') ?>"
+                                  data-swal-konfirmasi>
+                                <?= csrf_field() ?>
+                                <input type="hidden" name="filter_status" value="<?= esc($filter_status, 'attr') ?>">
+                                <input type="hidden" name="halaman" value="<?= esc($paginasi['halaman'] ?? 1, 'attr') ?>">
+                                <button class="tombol tombol-kecil tombol-teal"
+                                        type="submit"
+                                        name="status"
+                                        value="lunas"
+                                        data-swal-ikon="question"
+                                        data-swal-judul="Verifikasi Tiket Lunas?"
+                                        data-swal-teks="Pastikan pembayaran Rp <?= esc(number_format($pemesanan['total_harga'], 0, ',', '.'), 'attr') ?> untuk tiket <?= esc($pemesanan['kode_pemesanan'], 'attr') ?> sudah diterima."
+                                        data-swal-tombol-ya="Ya, Verifikasi Lunas"
+                                        data-swal-bahaya="false"
+                                        data-teks-proses="Memverifikasi...">
+                                    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+                                    <span data-teks-tombol>Verifikasi lunas</span>
+                                </button>
+                                <button class="tombol tombol-kecil tombol-bahaya"
+                                        type="submit"
+                                        name="status"
+                                        value="dibatalkan"
+                                        data-swal-ikon="warning"
+                                        data-swal-judul="Batalkan Pemesanan?"
+                                        data-swal-teks="Tiket <?= esc($pemesanan['kode_pemesanan'], 'attr') ?> yang dibatalkan tidak dapat diverifikasi lunas lagi."
+                                        data-swal-tombol-ya="Ya, Batalkan Tiket"
+                                        data-swal-bahaya="true"
+                                        data-teks-proses="Membatalkan...">
+                                    <span class="material-symbols-outlined" aria-hidden="true">close</span>
+                                    <span data-teks-tombol>Batalkan</span>
+                                </button>
+                            </form>
                         <?php else: ?>
                             <span aria-label="Pemesanan sudah diproses">—</span>
                         <?php endif ?>

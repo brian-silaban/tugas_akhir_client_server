@@ -41,19 +41,21 @@
             <span class="text-on-surface font-semibold truncate max-w-xs sm:max-w-md"><?= esc($destinasi['nama']) ?></span>
         </nav>
 
-        <?php if (session()->getFlashdata('success')) : ?>
-            <div class="mb-6 rounded-xl border border-secondary/40 bg-secondary-container/30 px-4 py-3 text-sm text-on-secondary-fixed-variant flex items-center gap-3" role="status">
-                <span class="material-symbols-outlined text-secondary">check_circle</span>
-                <span><?= esc(session()->getFlashdata('success')) ?></span>
-            </div>
-        <?php endif; ?>
+        <noscript>
+            <?php if (session()->getFlashdata('success')) : ?>
+                <div class="mb-6 rounded-xl border border-secondary/40 bg-secondary-container/30 px-4 py-3 text-sm text-on-secondary-fixed-variant flex items-center gap-3" role="status">
+                    <span class="material-symbols-outlined text-secondary">check_circle</span>
+                    <span><?= esc(session()->getFlashdata('success')) ?></span>
+                </div>
+            <?php endif; ?>
 
-        <?php if (session()->getFlashdata('error')) : ?>
-            <div class="mb-6 rounded-xl border border-error/30 bg-error-container/30 px-4 py-3 text-sm text-on-error-container flex items-center gap-3" role="alert">
-                <span class="material-symbols-outlined text-error">error</span>
-                <span><?= esc(session()->getFlashdata('error')) ?></span>
-            </div>
-        <?php endif; ?>
+            <?php if (session()->getFlashdata('error')) : ?>
+                <div class="mb-6 rounded-xl border border-error/30 bg-error-container/30 px-4 py-3 text-sm text-on-error-container flex items-center gap-3" role="alert">
+                    <span class="material-symbols-outlined text-error">error</span>
+                    <span><?= esc(session()->getFlashdata('error')) ?></span>
+                </div>
+            <?php endif; ?>
+        </noscript>
 
         <!-- Galeri Foto Utama & Pendukung -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-8" data-animasi="skala">

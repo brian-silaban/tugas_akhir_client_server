@@ -225,8 +225,16 @@
     </script>
 </head>
 
-<?php $apakahBeranda = (($menuAktif ?? '') === 'beranda'); ?>
+<?php
+$apakahBeranda = (($menuAktif ?? '') === 'beranda');
+$pesanSwalSukses = session()->getFlashdata('success') ?? session()->getFlashdata('pesan_sukses') ?? '';
+$pesanSwalGagal = session()->getFlashdata('error') ?? session()->getFlashdata('pesan_error') ?? '';
+?>
 <body class="bg-surface font-body-md text-on-surface antialiased overflow-x-hidden">
+    <div id="wadah-notifikasi-swal"
+         data-swal-sukses="<?= esc((string) $pesanSwalSukses, 'attr') ?>"
+         data-swal-gagal="<?= esc((string) $pesanSwalGagal, 'attr') ?>"
+         aria-hidden="true"></div>
     <?= $this->include('layout/navbar') ?>
 
     <main class="w-full <?= $apakahBeranda ? '' : 'pt-20 ' ?>bg-surface min-h-[calc(100vh-80px)]">
@@ -349,5 +357,7 @@
             }
         })();
     </script>
+    <script src="<?= esc(base_url('js/sweetalert2.all.min.js'), 'attr') ?>"></script>
+    <script src="<?= esc(base_url('js/notifikasi-swal.js?v=' . @filemtime(FCPATH . 'js/notifikasi-swal.js')), 'attr') ?>"></script>
 </body>
 </html>
