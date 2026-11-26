@@ -7,11 +7,11 @@ use Throwable;
 
 /**
  * HTTP Client + Resilient Adapter untuk mengonsumsi REST API dari 4 kelompok mitra
- * di kelas (Penyedia Tur Guide, Kuliner/Rumah Makan, Penginapan, dan Transportasi).
+ * di kelas (Transportasi, Kuliner/Rumah Makan, Penginapan, dan Penyedia Tur Guide).
  *
- * Jika API mitra belum aktif, timeout, atau merespons error, library ini otomatis
- * menyediakan data simulasi Sumatera Utara (Mock Fallback) agar tampilan detail
- * destinasi tidak pernah gagal dimuat.
+ * Mitra Transportasi, Kuliner, dan Penginapan sudah murni menggunakan REST API resmi
+ * mitra tanpa data dummy. Data simulasi cadangan hanya dipertahankan untuk mitra yang
+ * dokumentasi/API-nya belum tersedia (Penyedia Tur Guide).
  *
  * Anggota 2 (Brian) — Integrasi REST API 4 Kelompok Mitra
  */
@@ -33,14 +33,6 @@ class LayananApiMitra
     ) {
         // Daftar 4 kelompok mitra resmi sesuai PRD.md (prioritaskan mitra Live API di tab awal)
         $definisiMitra = [
-            'penginapan' => [
-                'nama_layanan'      => 'Penginapan & Hotel',
-                'env_key'           => 'PARTNER_HOTEL_API_URL',
-                'env_api_key'       => 'PARTNER_HOTEL_API_KEY',
-                'ikon'              => 'hotel',
-                'satuan_harga'      => '/ malam',
-                'deskripsi_singkat' => 'Pilihan hotel, homestay, dan penginapan nyaman di Sumatera Utara.',
-            ],
             'transportasi' => [
                 'nama_layanan'      => 'Layanan Transportasi',
                 'env_key'           => 'PARTNER_TRANSPORT_API_URL',
@@ -49,14 +41,6 @@ class LayananApiMitra
                 'satuan_harga'      => '/ perjalanan',
                 'deskripsi_singkat' => 'Akses shuttle, travel, kereta bandara, dan penerbangan menuju destinasi.',
             ],
-            'tur_guide' => [
-                'nama_layanan'      => 'Penyedia Tur Guide',
-                'env_key'           => 'PARTNER_TUR_GUIDE_API_URL',
-                'env_api_key'       => 'PARTNER_TUR_GUIDE_API_KEY',
-                'ikon'              => 'hiking',
-                'satuan_harga'      => '/ paket',
-                'deskripsi_singkat' => 'Pemandu wisata lokal bersertifikat & paket jelajah rute Sumut.',
-            ],
             'kuliner' => [
                 'nama_layanan'      => 'Kuliner & Rumah Makan',
                 'env_key'           => 'PARTNER_KULINER_API_URL',
@@ -64,6 +48,22 @@ class LayananApiMitra
                 'ikon'              => 'restaurant',
                 'satuan_harga'      => '/ porsi',
                 'deskripsi_singkat' => 'Rekomendasi hidangan khas dan rumah makan di sekitar destinasi.',
+            ],
+            'penginapan' => [
+                'nama_layanan'      => 'Penginapan & Hotel',
+                'env_key'           => 'PARTNER_HOTEL_API_URL',
+                'env_api_key'       => 'PARTNER_HOTEL_API_KEY',
+                'ikon'              => 'hotel',
+                'satuan_harga'      => '/ malam',
+                'deskripsi_singkat' => 'Pilihan hotel, homestay, dan penginapan nyaman di Sumatera Utara.',
+            ],
+            'tur_guide' => [
+                'nama_layanan'      => 'Penyedia Tur Guide',
+                'env_key'           => 'PARTNER_TUR_GUIDE_API_URL',
+                'env_api_key'       => 'PARTNER_TUR_GUIDE_API_KEY',
+                'ikon'              => 'hiking',
+                'satuan_harga'      => '/ paket',
+                'deskripsi_singkat' => 'Pemandu wisata lokal bersertifikat & paket jelajah rute Sumut.',
             ],
         ];
 
@@ -247,6 +247,10 @@ class LayananApiMitra
             && $urlDasar !== ''
             && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'));
 
+        // Jalur khusus API kelompok Kuliner Khas Medan (/api/v1/restoran/terdekat & /restoran)
+        $apakahAdapterKuliner = $kodeMitra === 'kuliner'
+            && $this->apakahAdapterKulinerKhasMedan($urlDasar);
+
         if ($apakahAdapterPenginapan) {
             $hasilPenginapan = $this->ambilRekomendasiPenginapanMitra(
                 $infoMitra,
@@ -279,6 +283,22 @@ class LayananApiMitra
             $statusKode     = $hasilTransport['status_kode'];
             $waktuResponMs  = $hasilTransport['waktu_respon_ms'];
             $alasanFallback = $hasilTransport['alasan_fallback'];
+        } elseif ($apakahAdapterKuliner) {
+            $hasilKuliner = $this->ambilRekomendasiKulinerMitra(
+                $infoMitra,
+                $kotaPencarian,
+                $batasAman,
+                $konteksDestinasi
+            );
+
+            if ($hasilKuliner['berhasil']) {
+                return $hasilKuliner['data'];
+            }
+
+            $urlTujuan      = $hasilKuliner['url_tujuan'];
+            $statusKode     = $hasilKuliner['status_kode'];
+            $waktuResponMs  = $hasilKuliner['waktu_respon_ms'];
+            $alasanFallback = $hasilKuliner['alasan_fallback'];
         } elseif ($urlDasar !== '') {
             $pemisahQuery = str_contains($urlDasar, '?') ? '&' : '?';
             $urlTujuan    = $urlDasar . $pemisahQuery . 'kota=' . urlencode($kotaPencarian);
@@ -327,7 +347,7 @@ class LayananApiMitra
             $alasanFallback = 'URL API mitra belum dikonfigurasi pada file .env.';
         }
 
-        // Jalankan fallback data simulasi Sumatera Utara jika diizinkan
+        // Jalankan fallback data simulasi hanya untuk mitra yang belum terintegrasi Live API
         if ($this->modeCadanganMock) {
             $daftarSimulasi = $this->ambilDataSimulasiSumut(
                 $kodeMitra,
@@ -336,20 +356,22 @@ class LayananApiMitra
                 $batasAman
             );
 
-            return [
-                'kode_mitra'        => $kodeMitra,
-                'nama_layanan'      => $infoMitra['nama_layanan'],
-                'ikon'              => $infoMitra['ikon'],
-                'deskripsi_singkat' => $infoMitra['deskripsi_singkat'],
-                'url_tujuan'        => $urlTujuan,
-                'terhubung'         => false,
-                'status_kode'       => $statusKode,
-                'sumber_data'       => 'simulasi_fallback',
-                'label_sumber'      => 'Simulasi Fallback',
-                'alasan_fallback'   => $alasanFallback,
-                'waktu_respon_ms'   => $waktuResponMs,
-                'daftar_item'       => $daftarSimulasi,
-            ];
+            if ($daftarSimulasi !== []) {
+                return [
+                    'kode_mitra'        => $kodeMitra,
+                    'nama_layanan'      => $infoMitra['nama_layanan'],
+                    'ikon'              => $infoMitra['ikon'],
+                    'deskripsi_singkat' => $infoMitra['deskripsi_singkat'],
+                    'url_tujuan'        => $urlTujuan,
+                    'terhubung'         => false,
+                    'status_kode'       => $statusKode,
+                    'sumber_data'       => 'simulasi_fallback',
+                    'label_sumber'      => 'Simulasi Fallback',
+                    'alasan_fallback'   => $alasanFallback,
+                    'waktu_respon_ms'   => $waktuResponMs,
+                    'daftar_item'       => $daftarSimulasi,
+                ];
+            }
         }
 
         return [
@@ -380,19 +402,24 @@ class LayananApiMitra
         $daftarStatus  = [];
 
         foreach ($this->konfigurasiMitra as $kodeMitra => $infoMitra) {
-            $urlDasar = $infoMitra['url_api'];
-            $apiKey   = $infoMitra['api_key'] ?? '';
+            $urlDasar      = $infoMitra['url_api'];
+            $apiKey        = $infoMitra['api_key'] ?? '';
+            $pakaiSimulasi = $this->modeCadanganMock && $this->punyaDataSimulasi($kodeMitra);
 
             if ($urlDasar === '') {
+                $pesanBelumDiatur = $pakaiSimulasi
+                    ? 'URL API belum diatur; memakai data simulasi fallback.'
+                    : 'URL API belum diatur; tidak ada data cadangan.';
+
                 $daftarStatus[] = [
                     'kode_mitra'      => $kodeMitra,
                     'nama_layanan'    => $infoMitra['nama_layanan'],
                     'url_api'         => '',
                     'terhubung'       => false,
                     'status_kode'     => 0,
-                    'sumber_aktif'    => $this->modeCadanganMock ? 'simulasi_fallback' : 'tidak_tersedia',
+                    'sumber_aktif'    => $pakaiSimulasi ? 'simulasi_fallback' : 'tidak_tersedia',
                     'waktu_respon_ms' => 0,
-                    'pesan_status'    => 'URL API belum diatur; memakai data simulasi fallback.',
+                    'pesan_status'    => $pesanBelumDiatur,
                 ];
                 continue;
             }
@@ -403,6 +430,9 @@ class LayananApiMitra
                 $batasUjiDetik = max($this->batasWaktuDetik, 8);
             } elseif ($kodeMitra === 'transportasi' && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'))) {
                 $urlUji = $this->ambilBaseUrlTransportasi($urlDasar) . '/transport/lokasi';
+            } elseif ($kodeMitra === 'kuliner' && $this->apakahAdapterKulinerKhasMedan($urlDasar)) {
+                $urlUji        = $this->ambilBaseUrlKuliner($urlDasar) . '/kategori';
+                $batasUjiDetik = max($this->batasWaktuDetik, 10);
             } else {
                 $pemisahQuery = str_contains($urlDasar, '?') ? '&' : '?';
                 $urlUji       = $urlDasar . $pemisahQuery . 'kota=' . urlencode($kotaPencarian);
@@ -428,7 +458,7 @@ class LayananApiMitra
                     'url_api'         => $urlDasar,
                     'terhubung'       => false,
                     'status_kode'     => $hasilPanggil['status_kode'],
-                    'sumber_aktif'    => $this->modeCadanganMock ? 'simulasi_fallback' : 'tidak_tersedia',
+                    'sumber_aktif'    => $pakaiSimulasi ? 'simulasi_fallback' : 'tidak_tersedia',
                     'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
                     'pesan_status'    => $hasilPanggil['pesan_error'] ?? 'Server mitra tidak merespons.',
                 ];
@@ -1279,6 +1309,310 @@ class LayananApiMitra
     }
 
     // =========================================================================
+    // ADAPTER KHUSUS REST API MITRA KULINER KHAS MEDAN (/api/v1/restoran/*)
+    // =========================================================================
+
+    /**
+     * Mengambil rekomendasi restoran dari API Kuliner Khas Medan berdasarkan koordinat
+     * wisata (terdekat untuk area Medan, atau daftar restoran Medan untuk tujuan luar kota).
+     *
+     * @param array<string, string>     $infoMitra
+     * @param array<string, mixed>|null $konteksDestinasi
+     * @return array<string, mixed>
+     */
+    private function ambilRekomendasiKulinerMitra(
+        array $infoMitra,
+        string $kotaPencarian,
+        int $batasItem,
+        ?array $konteksDestinasi
+    ): array {
+        $baseUrl      = $this->ambilBaseUrlKuliner($infoMitra['url_api']);
+        $apiKey       = $infoMitra['api_key'] ?? '';
+        $batasTimeout = max($this->batasWaktuDetik, 10);
+
+        [$wisataLat, $wisataLng] = $this->tentukanKoordinatWisata($konteksDestinasi, [], $kotaPencarian);
+        // Hitung jarak dari pusat Kota Medan untuk membedakan kuliner terdekat vs persinggahan Medan
+        $jarakDariMedanKm  = $this->hitungJarakKm($wisataLat, $wisataLng, 3.5952, 98.6722);
+        $apakahAreaMedan   = ($jarakDariMedanKm <= 25.0);
+
+        $daftarRestoranMentah = [];
+        $urlTujuan            = $baseUrl . '/restoran?per_page=10&page=1';
+        $statusKode           = 0;
+        $waktuResponMs        = 0;
+        $pesanErrorTerakhir   = null;
+        $modeTransit          = false;
+
+        // 1. Untuk destinasi di wilayah Medan & sekitarnya, cari kuliner terdekat dari titik GPS
+        if ($apakahAreaMedan) {
+            $kunciLat   = str_replace(['-', '.'], ['m', 'd'], number_format($wisataLat, 3, '.', ''));
+            $kunciLng   = str_replace(['-', '.'], ['m', 'd'], number_format($wisataLng, 3, '.', ''));
+            $kunciCache = 'jejaksumut_kuliner_terdekat_' . $kunciLat . '_' . $kunciLng . '_' . $batasItem;
+            $dataCache  = $this->ambilDariCacheSingkat($kunciCache);
+
+            if (is_array($dataCache) && $dataCache !== []) {
+                $daftarRestoranMentah = $dataCache;
+                $statusKode           = 200;
+                $waktuResponMs        = 1;
+            } else {
+                foreach ([5, 20] as $radiusKm) {
+                    $urlTerdekat   = $baseUrl . '/restoran/terdekat?' . http_build_query([
+                        'lat'    => $wisataLat,
+                        'lng'    => $wisataLng,
+                        'radius' => $radiusKm,
+                        'limit'  => $batasItem,
+                    ]);
+                    $urlTujuan     = $urlTerdekat;
+                    $hasilTerdekat = $this->panggilEndpointMitra($urlTerdekat, $apiKey, $batasTimeout);
+                    $statusKode    = (int) $hasilTerdekat['status_kode'];
+                    $waktuResponMs = max($waktuResponMs, (int) $hasilTerdekat['waktu_respon_ms']);
+
+                    if (! $hasilTerdekat['berhasil']) {
+                        $pesanErrorTerakhir = $hasilTerdekat['pesan_error'];
+                        break;
+                    }
+
+                    $daftarCoba = $this->ekstrakDaftarItemApi($hasilTerdekat['isi']);
+                    if ($daftarCoba !== []) {
+                        $daftarRestoranMentah = $daftarCoba;
+                        $this->simpanKeCacheSingkat($kunciCache, $daftarRestoranMentah, 300);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 2. Untuk destinasi luar Medan atau bila /terdekat kosong, tampilkan kuliner pilihan di Medan
+        if ($daftarRestoranMentah === [] && $pesanErrorTerakhir === null) {
+            $modeTransit      = true;
+            $kunciCacheDaftar = 'jejaksumut_kuliner_medan_daftar_10_v1';
+            $cacheDaftar      = $this->ambilDariCacheSingkat($kunciCacheDaftar);
+
+            if (is_array($cacheDaftar) && $cacheDaftar !== []) {
+                $daftarRestoranMentah = $cacheDaftar;
+                $statusKode           = 200;
+                $waktuResponMs        = max($waktuResponMs, 1);
+            } else {
+                $urlDaftar   = $baseUrl . '/restoran?per_page=10&page=1';
+                $urlTujuan   = $urlDaftar;
+                $hasilDaftar = $this->panggilEndpointMitra($urlDaftar, $apiKey, $batasTimeout);
+                $statusKode  = (int) $hasilDaftar['status_kode'];
+                $waktuResponMs = max($waktuResponMs, (int) $hasilDaftar['waktu_respon_ms']);
+
+                if (! $hasilDaftar['berhasil']) {
+                    $pesanErrorTerakhir = $hasilDaftar['pesan_error'];
+                } else {
+                    $daftarRestoranMentah = $this->ekstrakDaftarItemApi($hasilDaftar['isi']);
+                    if ($daftarRestoranMentah !== []) {
+                        $this->simpanKeCacheSingkat($kunciCacheDaftar, $daftarRestoranMentah, 300);
+                    }
+                }
+            }
+        }
+
+        if ($daftarRestoranMentah === []) {
+            return [
+                'berhasil'        => false,
+                'url_tujuan'      => $urlTujuan,
+                'status_kode'     => $statusKode,
+                'waktu_respon_ms' => $waktuResponMs,
+                'alasan_fallback' => $pesanErrorTerakhir ?? 'Data restoran dari mitra Kuliner Khas Medan kosong.',
+            ];
+        }
+
+        $daftarKartu = [];
+        foreach (array_slice($daftarRestoranMentah, 0, $batasItem) as $restoran) {
+            if (is_array($restoran)) {
+                $daftarKartu[] = $this->normalisasiKulinerMedan($restoran, $baseUrl, $modeTransit);
+            }
+        }
+
+        if ($daftarKartu === []) {
+            return [
+                'berhasil'        => false,
+                'url_tujuan'      => $urlTujuan,
+                'status_kode'     => $statusKode,
+                'waktu_respon_ms' => $waktuResponMs,
+                'alasan_fallback' => 'Data restoran dari mitra Kuliner Khas Medan tidak memiliki format valid.',
+            ];
+        }
+
+        $deskripsiLayanan = $modeTransit
+            ? 'Pilihan kuliner khas Kota Medan dari mitra Kuliner Khas Medan untuk persinggahan sebelum atau sesudah perjalanan ke ' . $kotaPencarian . '.'
+            : 'Pilihan rumah makan dan kuliner terdekat di sekitar ' . $kotaPencarian . ' dari mitra Kuliner Khas Medan.';
+
+        return [
+            'berhasil' => true,
+            'data'     => [
+                'kode_mitra'        => 'kuliner',
+                'nama_layanan'      => $infoMitra['nama_layanan'],
+                'ikon'              => $infoMitra['ikon'],
+                'deskripsi_singkat' => $deskripsiLayanan,
+                'url_tujuan'        => $urlTujuan,
+                'terhubung'         => true,
+                'status_kode'       => 200,
+                'sumber_data'       => 'api_mitra',
+                'label_sumber'      => 'Live Mitra',
+                'alasan_fallback'   => null,
+                'waktu_respon_ms'   => $waktuResponMs,
+                'daftar_item'       => $daftarKartu,
+            ],
+        ];
+    }
+
+    /**
+     * Memeriksa apakah konfigurasi URL mengarah ke API Kuliner Khas Medan.
+     */
+    private function apakahAdapterKulinerKhasMedan(string $urlDasar): bool
+    {
+        if ($urlDasar === '') {
+            return false;
+        }
+
+        $urlRapi = rtrim($urlDasar, '/');
+
+        return str_ends_with($urlRapi, '/api/v1')
+            || str_contains($urlRapi, '/restoran')
+            || str_contains($urlRapi, 'ngrok');
+    }
+
+    /**
+     * Menormalkan URL dasar API Kuliner Khas Medan agar berakhiran /api/v1.
+     */
+    private function ambilBaseUrlKuliner(string $urlMentah): string
+    {
+        $urlBersih   = rtrim(trim($urlMentah), '/');
+        $polaAkhiran = '#/restoran(/terdekat)?$#i';
+        $urlBersih   = (string) preg_replace($polaAkhiran, '', $urlBersih);
+
+        return rtrim($urlBersih, '/');
+    }
+
+    /**
+     * Membangun URL foto absolut restoran dari path relatif API Kuliner Khas Medan.
+     */
+    private function bangunUrlFotoKuliner(string $baseUrlApi, ?string $fotoMentah): string
+    {
+        $fotoTeks = trim((string) $fotoMentah);
+        if ($fotoTeks === '') {
+            return $this->ambilFotoBawaanMitra('kuliner');
+        }
+
+        if (preg_match('/^https?:\/\//i', $fotoTeks) === 1) {
+            return $fotoTeks;
+        }
+
+        $komponenBase = parse_url($baseUrlApi);
+        $skemaBase    = is_array($komponenBase) ? ($komponenBase['scheme'] ?? 'https') : 'https';
+        $hostBase     = is_array($komponenBase) ? ($komponenBase['host'] ?? '') : '';
+        $portBase     = (is_array($komponenBase) && isset($komponenBase['port'])) ? ':' . $komponenBase['port'] : '';
+
+        if ($hostBase === '') {
+            return $this->ambilFotoBawaanMitra('kuliner');
+        }
+
+        return $skemaBase . '://' . $hostBase . $portBase . '/' . ltrim($fotoTeks, '/');
+    }
+
+    /**
+     * Menyeragamkan item restoran dari JSON Kuliner Khas Medan agar siap dipakai komponen View.
+     *
+     * @param array<string, mixed> $restoran
+     * @return array<string, mixed>
+     */
+    private function normalisasiKulinerMedan(
+        array $restoran,
+        string $baseUrlApi,
+        bool $modeTransit = false
+    ): array {
+        $namaRestoran = trim((string) ($restoran['nama'] ?? 'Kuliner Khas Medan'));
+        $kategori     = trim((string) ($restoran['kategori'] ?? ''));
+        $jenisMasakan = trim((string) ($restoran['jenis_masakan'] ?? ''));
+        $kecamatan    = trim((string) ($restoran['kecamatan'] ?? ''));
+        $alamat       = trim((string) ($restoran['alamat'] ?? ($kecamatan !== '' ? $kecamatan . ', Medan' : 'Kota Medan')));
+
+        $ratingWeb    = $restoran['rating_web'] ?? null;
+        $ulasanWeb    = (int) ($restoran['jumlah_ulasan_web'] ?? 0);
+        $ratingMentah = ($ratingWeb !== null && $ulasanWeb > 0)
+            ? (float) $ratingWeb
+            : (float) ($restoran['rating'] ?? 4.6);
+        $rating       = round(max(0.0, min(5.0, $ratingMentah)), 1);
+        $jumlahUlasan = max(0, (int) ($restoran['jumlah_ulasan'] ?? 0));
+
+        $infoHarga = is_array($restoran['harga'] ?? null) ? $restoran['harga'] : [];
+        $hargaMin  = max(0, (int) ($infoHarga['min'] ?? 0));
+        $hargaMax  = max(0, (int) ($infoHarga['max'] ?? 0));
+
+        if ($hargaMin > 0 && $hargaMax > $hargaMin) {
+            $teksHarga = 'Rp ' . number_format($hargaMin, 0, ',', '.')
+                . ' – Rp ' . number_format($hargaMax, 0, ',', '.');
+        } elseif ($hargaMin > 0) {
+            $teksHarga = 'Mulai Rp ' . number_format($hargaMin, 0, ',', '.');
+        } elseif ($hargaMax > 0) {
+            $teksHarga = 'Hingga Rp ' . number_format($hargaMax, 0, ',', '.');
+        } else {
+            $teksHarga = 'Cek Harga di Lokasi';
+        }
+
+        if ($modeTransit) {
+            $subLabel = $kategori !== '' ? $kategori . ' • Medan' : 'Kuliner Medan';
+        } else {
+            $subLabel = $kategori !== '' ? $kategori : 'Kuliner Khas Medan';
+        }
+
+        $jarakRaw   = $restoran['jarak_km'] ?? null;
+        $teksJarak  = ($jarakRaw !== null && is_numeric($jarakRaw))
+            ? number_format((float) $jarakRaw, 1, ',', '.') . ' km dari lokasi wisata'
+            : '';
+
+        $infoHalalRaw = trim((string) ($restoran['info_halal'] ?? ''));
+        $teksHalal    = '';
+        if ($infoHalalRaw !== '' && ! str_contains(strtolower($infoHalalRaw), 'belum dicek')) {
+            $teksHalal = $infoHalalRaw;
+        }
+
+        $bagianInfo = array_values(array_filter([$teksJarak, $teksHalal], static fn (string $v): bool => $v !== ''));
+        if ($bagianInfo !== []) {
+            $kontakTeks = implode(' • ', $bagianInfo);
+        } elseif ($jenisMasakan !== '') {
+            $kontakTeks = $jenisMasakan;
+        } else {
+            $kontakTeks = 'Kuliner Khas Medan';
+        }
+
+        $bagianDeskripsi = [];
+        if ($jenisMasakan !== '') {
+            $bagianDeskripsi[] = 'Sajian ' . $jenisMasakan;
+        }
+        if ($kategori !== '' && strtolower($kategori) !== strtolower($jenisMasakan)) {
+            $bagianDeskripsi[] = 'kategori ' . $kategori;
+        }
+        if ($kecamatan !== '') {
+            $bagianDeskripsi[] = 'di kawasan ' . $kecamatan . ', Medan';
+        }
+
+        $deskripsi = $bagianDeskripsi !== []
+            ? implode(' ', $bagianDeskripsi) . '.'
+            : 'Pilihan kuliner khas Medan dari mitra Kuliner Khas Medan.';
+
+        return [
+            'nama'              => $namaRestoran,
+            'sub_label'         => $subLabel,
+            'kota'              => $kecamatan !== '' ? $kecamatan . ', Medan' : 'Medan',
+            'alamat'            => $alamat,
+            'harga'             => $hargaMin,
+            'satuan_harga'      => '/ porsi',
+            'label_tarif'       => 'Kisaran Harga',
+            'teks_harga_khusus' => $teksHarga,
+            'rating'            => $rating,
+            'jumlah_ulasan'     => $jumlahUlasan,
+            'kontak'            => $kontakTeks,
+            'deskripsi'         => $deskripsi,
+            'foto'              => $this->bangunUrlFotoKuliner($baseUrlApi, $restoran['foto'] ?? null),
+            'url_eksternal'     => null,
+        ];
+    }
+
+    // =========================================================================
     // HELPER HTTP ADAPTER & NORMALISASI JSON MITRA
     // =========================================================================
 
@@ -1623,6 +1957,20 @@ class LayananApiMitra
     }
 
     /**
+     * Memeriksa apakah suatu kode mitra masih memiliki data simulasi cadangan.
+     */
+    private function punyaDataSimulasi(string $kodeMitra): bool
+    {
+        foreach ($this->daftarDataSimulasiPerKlaster() as $dataKlaster) {
+            if (! empty($dataKlaster[$kodeMitra])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Menyediakan data simulasi Sumatera Utara yang realistis saat API mitra belum aktif.
      *
      * @return list<array<string, mixed>>
@@ -1661,7 +2009,9 @@ class LayananApiMitra
     }
 
     /**
-     * Kumpulan katalog simulasi realistis untuk 6 klaster wilayah Sumatera Utara.
+     * Kumpulan katalog simulasi untuk mitra yang belum terhubung Live API (tur_guide)
+     * pada 6 klaster wilayah Sumatera Utara. Mitra transportasi, kuliner, dan penginapan
+     * sudah murni menggunakan data Live REST API resmi masing-masing kelompok.
      *
      * @return array<string, array<string, list<array<string, mixed>>>>
      */
@@ -1708,120 +2058,6 @@ class LayananApiMitra
                         'foto'          => 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=900&q=80',
                     ],
                 ],
-                'kuliner' => [
-                    [
-                        'nama'          => 'RM Khas Batak Tuktuk Siadong (Naniura & Arsik)',
-                        'sub_label'     => 'Masakan Khas Toba',
-                        'kota'          => 'Samosir',
-                        'alamat'        => 'Semenanjung Tuk-tuk No. 14, Simanindo',
-                        'harga'         => 48000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 312,
-                        'kontak'        => '0812-6388-1904',
-                        'deskripsi'     => 'Menyajikan ikan mas arsik andaliman, naniura segar, dan sambal tuk-tuk rumahan.',
-                        'foto'          => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kedai Kopi & Bika Toba Dermaga Tiga Raja',
-                        'sub_label'     => 'Kopi Lintong & Camilan',
-                        'kota'          => 'Simalungun',
-                        'alamat'        => 'Jl. Sisingamangaraja, Parapat, Simalungun',
-                        'harga'         => 28000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 185,
-                        'kontak'        => '0821-6014-8822',
-                        'deskripsi'     => 'Seduhan manual kopi arabika Lintong & Samosir lengkap dengan pemandangan tepi danau.',
-                        'foto'          => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Pondok Bakar Ikan Mujaer & Sambal Andaliman Halal',
-                        'sub_label'     => 'Hidangan Keluarga Halal',
-                        'kota'          => 'Toba',
-                        'alamat'        => 'Pantai Lumban Bul-bul, Balige',
-                        'harga'         => 42000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 240,
-                        'kontak'        => '0813-9655-2210',
-                        'deskripsi'     => 'Ikan nila dan mujair tangkapan Danau Toba dibakar dengan bumbu kemiri dan perasan jeruk.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'penginapan' => [
-                    [
-                        'nama'          => 'Rumah Bolon View Homestay Tuk-tuk',
-                        'sub_label'     => 'Homestay Tepi Danau',
-                        'kota'          => 'Samosir',
-                        'alamat'        => 'Jl. Lingkar Tuk-tuk, Simanindo, Samosir',
-                        'harga'         => 340000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 205,
-                        'kontak'        => '0811-6340-771',
-                        'deskripsi'     => 'Kamar beranda menghadap langsung perairan Danau Toba lengkap dengan sarapan pagi.',
-                        'foto'          => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Samosir Cottage & Dermaga Kayu',
-                        'sub_label'     => 'Cottage Keluarga',
-                        'kota'          => 'Samosir',
-                        'alamat'        => 'Desa Unok, Tuk-tuk Siadong, Samosir',
-                        'harga'         => 475000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 176,
-                        'kontak'        => '0812-6911-5502',
-                        'deskripsi'     => 'Penginapan arsitektur Batak modern dengan akses dermaga langsung untuk berenang.',
-                        'foto'          => 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Parapat Hills Boutique Inn',
-                        'sub_label'     => 'Hotel Panorama Bukit',
-                        'kota'          => 'Simalungun',
-                        'alamat'        => 'Jl. Kol. TPR Sinaga, Parapat',
-                        'harga'         => 410000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 132,
-                        'kontak'        => '(0625) 41289',
-                        'deskripsi'     => 'Lokasi 5 menit dari Pelabuhan Ajibata dan Tiga Raja dengan area parkir luas.',
-                        'foto'          => 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'transportasi' => [
-                    [
-                        'nama'          => 'Feri & Kapal Penyeberangan Ajibata – Ambarita',
-                        'sub_label'     => 'Penyeberangan Danau',
-                        'kota'          => 'Samosir',
-                        'alamat'        => 'Pelabuhan Ajibata (Toba) ↔ Pelabuhan Ambarita (Samosir)',
-                        'harga'         => 25000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 410,
-                        'kontak'        => '0812-6077-8811',
-                        'deskripsi'     => 'Jadwal penyeberangan reguler setiap 1 jam mulai 07.00 – 19.00 WIB.',
-                        'foto'          => 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Travel Eksekutif Medan / Kualanamu – Parapat',
-                        'sub_label'     => 'Shuttle Tol Sinaksak',
-                        'kota'          => 'Simalungun',
-                        'alamat'        => 'Koridor Tol Medan – Tebing Tinggi – Sinaksak – Parapat',
-                        'harga'         => 140000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 268,
-                        'kontak'        => '0811-6180-990',
-                        'deskripsi'     => 'Armada HiAce ber-AC dengan estimasi tempuh 3 jam via Tol Sinaksak.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Rental Skuter & Mobil Keliling Pulau Samosir',
-                        'sub_label'     => 'Sewa Kendaraan Harian',
-                        'kota'          => 'Samosir',
-                        'alamat'        => 'Pelabuhan Tomok & Tuk-tuk, Samosir',
-                        'harga'         => 110000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 159,
-                        'kontak'        => '0853-7022-4490',
-                        'deskripsi'     => 'Tersedia motor matik terawat dan city car lepas kunci atau dengan pengemudi lokal.',
-                        'foto'          => 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
             ],
 
             // 2. Klaster Dataran Tinggi Karo (Berastagi, Kabanjahe, Sipiso-piso)
@@ -1862,120 +2098,6 @@ class LayananApiMitra
                         'kontak'        => '0852-7533-8012',
                         'deskripsi'     => 'Paket petik buah langsung bersama petani dataran tinggi Karo dan tur Taman Alam Lumbini.',
                         'foto'          => 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'kuliner' => [
-                    [
-                        'nama'          => 'Kuliner Malam Pasar Buah Berastagi (Jagung & Bandrek)',
-                        'sub_label'     => 'Jajanan Hangat Dataran Tinggi',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Jl. Veteran, Berastagi, Kabupaten Karo',
-                        'harga'         => 25000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 380,
-                        'kontak'        => '0812-6445-7701',
-                        'deskripsi'     => 'Susu jahe hangat, bandrek Karo, dan jagung bakar manis di tengah udara sejuk 17°C.',
-                        'foto'          => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Rumah Makan Tasak Telu & Cipera Khas Karo',
-                        'sub_label'     => 'Kuliner Tradisional Karo',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Jl. Jamin Ginting Km 65, Berastagi',
-                        'harga'         => 55000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 195,
-                        'kontak'        => '0813-7088-5120',
-                        'deskripsi'     => 'Ayam kampung cipera kuah jagung tumbuk khas Karo yang cocok menghangatkan tubuh.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kafe Kebun Kopi Sinabung & Teh Markisa',
-                        'sub_label'     => 'Kedai Kopi Panorama',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Jalan menuju Bukit Kubu, Berastagi',
-                        'harga'         => 32000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 142,
-                        'kontak'        => '0822-7744-9088',
-                        'deskripsi'     => 'Arabika single origin lereng Gunung Sinabung serta sirup markisa asli Berastagi.',
-                        'foto'          => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'penginapan' => [
-                    [
-                        'nama'          => 'Gundaling Pine Cabin & Villa Berastagi',
-                        'sub_label'     => 'Kabin Hutan Pinus',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Jl. Letjen Jamin Ginting, Bukit Gundaling, Berastagi',
-                        'harga'         => 485000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 190,
-                        'kontak'        => '0811-6290-334',
-                        'deskripsi'     => 'Penginapan bernuansa kayu pinus dengan pemandangan Gunung Sibayak dan perapian.',
-                        'foto'          => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Mikie Highland Resort Area Homestay',
-                        'sub_label'     => 'Penginapan Keluarga',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Jl. Jamin Ginting Km 60, Sempajaya, Berastagi',
-                        'harga'         => 390000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 144,
-                        'kontak'        => '(0628) 91550',
-                        'deskripsi'     => 'Dekat wahana wisata keluarga Berastagi dan memiliki halaman taman yang luas.',
-                        'foto'          => 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Tongging Kaldera Eco Lodge',
-                        'sub_label'     => 'Lodge Tepi Tebing Sipiso-piso',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Desa Tongging, Kec. Merek, Karo',
-                        'harga'         => 350000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 112,
-                        'kontak'        => '0813-7599-4412',
-                        'deskripsi'     => 'Akses langsung ke lembah Tongging dan jalur trekking menuju dasar Air Terjun Sipiso-piso.',
-                        'foto'          => 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'transportasi' => [
-                    [
-                        'nama'          => 'Angkutan & Travel Medan (Padang Bulan) – Berastagi',
-                        'sub_label'     => 'Rute Pegunungan Reguler',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Simpang Pos Padang Bulan ↔ Terminal Berastagi',
-                        'harga'         => 35000,
-                        'rating'        => 4.6,
-                        'jumlah_ulasan' => 320,
-                        'kontak'        => '0812-6554-1109',
-                        'deskripsi'     => 'Keberangkatan setiap 20 menit melewati jalan berkelok Sibolangit menuju Berastagi.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Sewa Jeep & HiAce Wisata Berastagi – Tongging',
-                        'sub_label'     => 'Carter Rute Sipiso-piso',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Tugu Kol Berastagi, Kabupaten Karo',
-                        'harga'         => 450000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 87,
-                        'kontak'        => '0852-6211-8890',
-                        'deskripsi'     => 'Paket perjalanan pulang pergi Berastagi – Taman Lumbini – Air Terjun Sipiso-piso.',
-                        'foto'          => 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Shuttle Bandara Kualanamu – Berastagi',
-                        'sub_label'     => 'Airport Transfer Langsung',
-                        'kota'          => 'Karo',
-                        'alamat'        => 'Bandara Kualanamu – Simpang Amplas – Berastagi',
-                        'harga'         => 130000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 118,
-                        'kontak'        => '0811-6092-773',
-                        'deskripsi'     => 'Penjemputan langsung dari pintu kedatangan Kualanamu dengan bagasi luas.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
                     ],
                 ],
             ],
@@ -2020,120 +2142,6 @@ class LayananApiMitra
                         'foto'          => 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=80',
                     ],
                 ],
-                'kuliner' => [
-                    [
-                        'nama'          => 'Warung Tepi Sungai Bohorok (Ikan Jurung & Gado-gado)',
-                        'sub_label'     => 'Masakan Tepi Sungai',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Jembatan Gantung Bukit Lawang, Langkat',
-                        'harga'         => 45000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 230,
-                        'kontak'        => '0812-6709-2145',
-                        'deskripsi'     => 'Hidangan ikan sungai segar, nasi goreng rempah, dan jus buah tropis di teras bambu tepi sungai.',
-                        'foto'          => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kedai Anyang Pakis & Gulai Masam Khas Melayu Langkat',
-                        'sub_label'     => 'Kuliner Melayu Deli-Langkat',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Jl. Proklamasi, Stabat, Kabupaten Langkat',
-                        'harga'         => 35000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 164,
-                        'kontak'        => '0813-6120-9940',
-                        'deskripsi'     => 'Olah pucuk pakis tumbuk kelapa sangrai serta gulai asam manis khas Melayu pesisir Langkat.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Pondok Kopi Rimba Tangkahan',
-                        'sub_label'     => 'Kafe Hutan Hujan',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Kawasan Jembatan Gantung Tangkahan, Langkat',
-                        'harga'         => 26000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 98,
-                        'kontak'        => '0821-6790-3321',
-                        'deskripsi'     => 'Kopi tubruk organik petani Langkat dan pisang goreng gula aren setelah aktivitas river tubing.',
-                        'foto'          => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'penginapan' => [
-                    [
-                        'nama'          => 'Bohorok Bamboo Ecolodge',
-                        'sub_label'     => 'Ecolodge Ramah Alam',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Tepi Sungai Bohorok, Bukit Lawang, Langkat',
-                        'harga'         => 375000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 255,
-                        'kontak'        => '0811-6520-118',
-                        'deskripsi'     => 'Kamar bambu ramah lingkungan dengan suara aliran sungai langsung di depan teras kamar.',
-                        'foto'          => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Tangkahan Jungle Riverside Inn',
-                        'sub_label'     => 'Penginapan Tepi Hutan',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Desa Namo Sialang, Tangkahan, Langkat',
-                        'harga'         => 340000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 137,
-                        'kontak'        => '0812-6301-8840',
-                        'deskripsi'     => 'Berjarak 100 meter dari gerbang ekowisata Tangkahan dengan area bersantai semi-terbuka.',
-                        'foto'          => 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Bahorok Canopy Guest House',
-                        'sub_label'     => 'Guest House Wisatawan',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Jl. Besar Bukit Lawang No. 27, Langkat',
-                        'harga'         => 265000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 104,
-                        'kontak'        => '0853-6011-7790',
-                        'deskripsi'     => 'Akomodasi bersih dengan Wi-Fi stabil dan layanan penitipan barang selama trekking.',
-                        'foto'          => 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'transportasi' => [
-                    [
-                        'nama'          => 'Shuttle Wisata Medan (Pinang Baris) – Bukit Lawang',
-                        'sub_label'     => 'Travel Langkat',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Terminal Pinang Baris – Binjai – Bukit Lawang',
-                        'harga'         => 110000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 192,
-                        'kontak'        => '0812-6091-2240',
-                        'deskripsi'     => 'Perjalanan 2,5 jam dari Kota Medan dengan armada AC berkapasitas 7 penumpang.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Jeep Lintas Perkebunan Bukit Lawang – Tangkahan',
-                        'sub_label'     => 'Transportasi 4x4',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Koridor Bahorok – Perkebunan Sawit – Tangkahan',
-                        'harga'         => 550000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 84,
-                        'kontak'        => '0813-9701-5521',
-                        'deskripsi'     => 'Penghubung jalur off-road antar dua kawasan utama Taman Nasional Gunung Leuser.',
-                        'foto'          => 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Ojek & Angkutan Lokal Stabat – Tangkahan',
-                        'sub_label'     => 'Transportasi Lokal',
-                        'kota'          => 'Langkat',
-                        'alamat'        => 'Simpang Tanjung Beringin – Batang Serangan',
-                        'harga'         => 60000,
-                        'rating'        => 4.6,
-                        'jumlah_ulasan' => 65,
-                        'kontak'        => '0852-9600-1123',
-                        'deskripsi'     => 'Akses cepat dari jalan lintas Sumatera Stabat langsung menuju lokasi wisata Tangkahan.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
             ],
 
             // 4. Klaster Kepulauan Nias (Nias Selatan, Gunungsitoli, Sorake, Bawomataluo)
@@ -2174,120 +2182,6 @@ class LayananApiMitra
                         'kontak'        => '0852-6044-2281',
                         'deskripsi'     => 'Menelusuri koleksi batu megalitik Ono Niha dan kawasan pesisir Pantai Tureloto yang jernih.',
                         'foto'          => 'https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'kuliner' => [
-                    [
-                        'nama'          => 'Pondok Seafood Teluk Dalam & Lobster Bakar Sorake',
-                        'sub_label'     => 'Hidangan Laut Segar',
-                        'kota'          => 'Nias Selatan',
-                        'alamat'        => 'Jl. Pantai Lagundri – Sorake, Nias Selatan',
-                        'harga'         => 65000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 173,
-                        'kontak'        => '0812-6377-1180',
-                        'deskripsi'     => 'Tangkapan langsung nelayan Teluk Dalam: ikan kerapu bakar, cumi saus tiram, dan es kelapa muda.',
-                        'foto'          => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Rumah Makan Khas Ono Niha (Harinake & Gowi Nifufu)',
-                        'sub_label'     => 'Kuliner Tradisional Nias',
-                        'kota'          => 'Gunungsitoli',
-                        'alamat'        => 'Jl. Diponegoro, Gunungsitoli, Kepulauan Nias',
-                        'harga'         => 40000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 92,
-                        'kontak'        => '0813-6209-4418',
-                        'deskripsi'     => 'Cicipi hidangan otentik masyarakat Nias beserta varian menu ikan laut sambal kecombrang.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kafe Senja Pantai Tureloto',
-                        'sub_label'     => 'Kafe Pesisir & Minuman',
-                        'kota'          => 'Nias Utara',
-                        'alamat'        => 'Desa Balefadorotuho, Lahewa, Nias Utara',
-                        'harga'         => 25000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 86,
-                        'kontak'        => '0822-7631-5509',
-                        'deskripsi'     => 'Tempat singgah santai menikmati matahari terbenam di perairan Laut Mati versi Kepulauan Nias.',
-                        'foto'          => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'penginapan' => [
-                    [
-                        'nama'          => 'Sorake Point Surf Camp & Losmen',
-                        'sub_label'     => 'Penginapan Tepi Pantai',
-                        'kota'          => 'Nias Selatan',
-                        'alamat'        => 'Kawasan The Point Pantai Sorake, Nias Selatan',
-                        'harga'         => 360000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 198,
-                        'kontak'        => '0811-6204-882',
-                        'deskripsi'     => 'Menghadap langsung ke ombak ikonik Pantai Sorake lengkap dengan rak papan selancar.',
-                        'foto'          => 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Lagundri Bay Ocean Cottages',
-                        'sub_label'     => 'Cottage Keluarga',
-                        'kota'          => 'Nias Selatan',
-                        'alamat'        => 'Teluk Lagundri, Luahagundre Maniamolo',
-                        'harga'         => 420000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 115,
-                        'kontak'        => '0812-6900-3142',
-                        'deskripsi'     => 'Suasana tenang di teluk berpasir putih, aman untuk anak-anak berenang di pantai.',
-                        'foto'          => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kaliki Boutique Hotel Gunungsitoli',
-                        'sub_label'     => 'Hotel Kota & Bandara',
-                        'kota'          => 'Gunungsitoli',
-                        'alamat'        => 'Jl. Sirao No. 18, Pasar Gunungsitoli',
-                        'harga'         => 385000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 128,
-                        'kontak'        => '(0639) 21988',
-                        'deskripsi'     => 'Akses mudah 20 menit menuju Bandara Binaka dan dermaga penyeberangan Gunungsitoli.',
-                        'foto'          => 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'transportasi' => [
-                    [
-                        'nama'          => 'Travel Antar Pulau Bandara Binaka – Teluk Dalam (Sorake)',
-                        'sub_label'     => 'Shuttle Lintas Nias',
-                        'kota'          => 'Nias Selatan',
-                        'alamat'        => 'Bandara Binaka Gunungsitoli ↔ Teluk Dalam',
-                        'harga'         => 150000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 164,
-                        'kontak'        => '0812-6422-9100',
-                        'deskripsi'     => 'Menghubungkan Bandara Binaka dengan kawasan wisata Sorake & Bawomataluo (2,5 jam).',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Feri Penyeberangan Pelabuhan Sibolga – Gunungsitoli',
-                        'sub_label'     => 'KMP Penyeberangan Laut',
-                        'kota'          => 'Gunungsitoli',
-                        'alamat'        => 'Pelabuhan Sambas Sibolga ↔ Pelabuhan Angin Gunungsitoli',
-                        'harga'         => 125000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 290,
-                        'kontak'        => '0813-7520-6631',
-                        'deskripsi'     => 'Layanan penyeberangan malam reguler jalur laut utama menuju Kepulauan Nias.',
-                        'foto'          => 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Rental Motor Pesisir Sorake & Teluk Dalam',
-                        'sub_label'     => 'Sewa Motor Harian',
-                        'kota'          => 'Nias Selatan',
-                        'alamat'        => 'Jl. Raya Sorake No. 5, Nias Selatan',
-                        'harga'         => 95000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 88,
-                        'kontak'        => '0852-7708-3349',
-                        'deskripsi'     => 'Motor siap pakai lengkap dengan penyangga samping papan selancar atau helm ganda.',
-                        'foto'          => 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80',
                     ],
                 ],
             ],
@@ -2332,120 +2226,6 @@ class LayananApiMitra
                         'foto'          => 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=900&q=80',
                     ],
                 ],
-                'kuliner' => [
-                    [
-                        'nama'          => 'Pusat Kuliner Panggang Geleng & Ikan Bakar Sibolga',
-                        'sub_label'     => 'Khas Pesisir Barat Sumut',
-                        'kota'          => 'Sibolga',
-                        'alamat'        => 'Kawasan Pelabuhan Lama, Kota Sibolga',
-                        'harga'         => 45000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 274,
-                        'kontak'        => '0812-6309-8844',
-                        'deskripsi'     => 'Ikan kakap segar bakar rempah pesisir, ikan panggang geleng khas Sibolga, dan sambal kecap.',
-                        'foto'          => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Warung Kopi Mandailing & Gulai Ikan Sale Asahan',
-                        'sub_label'     => 'Kuliner Daerah Selatan',
-                        'kota'          => 'Mandailing Natal',
-                        'alamat'        => 'Jl. Willem Iskandar, Panyabungan / Lintas Kisaran',
-                        'harga'         => 38000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 145,
-                        'kontak'        => '0813-7780-1129',
-                        'deskripsi'     => 'Gulai daun ubi tumbuk dipadu ikan salai asap serta seduhan kopi Arabika Mandailing.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kedai Mie Sop & Kerang Rebus Tanjungbalai',
-                        'sub_label'     => 'Kuliner Pesisir Timur',
-                        'kota'          => 'Tanjungbalai',
-                        'alamat'        => 'Jl. Sudirman, Kota Tanjungbalai / Kisaran',
-                        'harga'         => 28000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 160,
-                        'kontak'        => '0821-6544-2201',
-                        'deskripsi'     => 'Kerang batu rebus hangat dicocol kuah kacang nanas pedas manis khas pantai timur.',
-                        'foto'          => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'penginapan' => [
-                    [
-                        'nama'          => 'Pandan Beach Resort & Ocean Terrace',
-                        'sub_label'     => 'Resor Pesisir Pandan',
-                        'kota'          => 'Tapanuli Tengah',
-                        'alamat'        => 'Jl. Padangsidimpuan Km 10, Pantai Pandan',
-                        'harga'         => 460000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 210,
-                        'kontak'        => '(0631) 371880',
-                        'deskripsi'     => 'Penginapan tepi pantai pasir putih dengan dermaga titik kumpul kapal ke Pulau Mursala.',
-                        'foto'          => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Aek Songsongan Valley Homestay',
-                        'sub_label'     => 'Homestay Dekat Air Terjun',
-                        'kota'          => 'Asahan',
-                        'alamat'        => 'Kec. Aek Songsongan, Kabupaten Asahan',
-                        'harga'         => 250000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 82,
-                        'kontak'        => '0852-6310-7745',
-                        'deskripsi'     => 'Tempat istirahat nyaman bagi wisatawan menuju Air Terjun Ponot maupun Sigura-gura.',
-                        'foto'          => 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Hotel Prima Kisaran & Padangsidimpuan Inn',
-                        'sub_label'     => 'Hotel Pusat Kota',
-                        'kota'          => 'Asahan',
-                        'alamat'        => 'Jl. Jend. Ahmad Yani, Kisaran / Padangsidimpuan',
-                        'harga'         => 340000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 139,
-                        'kontak'        => '0811-6302-991',
-                        'deskripsi'     => 'Kamar AC berfasilitas lengkap dekat stasiun kereta api dan jalur lintas utama.',
-                        'foto'          => 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'transportasi' => [
-                    [
-                        'nama'          => 'Speedboat Wisata Pantai Pandan – Pulau Mursala',
-                        'sub_label'     => 'Charter Kapal Wisata',
-                        'kota'          => 'Tapanuli Tengah',
-                        'alamat'        => 'Pantai Bosur & Pantai Pandan, Tapanuli Tengah',
-                        'harga'         => 180000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 205,
-                        'kontak'        => '0812-6509-7721',
-                        'deskripsi'     => 'Perjalanan laut 45 menit lengkap dengan pelampung keselamatan dan peralatan snorkeling.',
-                        'foto'          => 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kereta Api Putri Deli (Medan – Kisaran – Tanjungbalai)',
-                        'sub_label'     => 'Kereta Api Reguler',
-                        'kota'          => 'Asahan',
-                        'alamat'        => 'Stasiun Medan ↔ Stasiun Kisaran ↔ Tanjungbalai',
-                        'harga'         => 27000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 540,
-                        'kontak'        => 'KAI Access 121',
-                        'deskripsi'     => 'Pilihan transportasi rel paling ekonomis dan tepat waktu menjangkau wilayah pantai timur Sumut.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Travel Eksekutif Medan – Sibolga – Panyabungan',
-                        'sub_label'     => 'Shuttle Lintas Barat',
-                        'kota'          => 'Sibolga',
-                        'alamat'        => 'Pool Medan – Tarutung – Sibolga – Padangsidimpuan',
-                        'harga'         => 190000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 176,
-                        'kontak'        => '0813-6102-8833',
-                        'deskripsi'     => 'Keberangkatan pagi dan malam dengan kursi reclining dan fasilitas pengisian daya.',
-                        'foto'          => 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
             ],
 
             // 6. Klaster Medan, Deli Serdang, Binjai, Serdang Bedagai & Wilayah Timur (Default)
@@ -2486,120 +2266,6 @@ class LayananApiMitra
                         'kontak'        => '0852-6180-4402',
                         'deskripsi'     => 'Susur jembatan kayu hutan bakau, pengamatan burung pesisir, dan penanaman bibit mangrove.',
                         'foto'          => 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'kuliner' => [
-                    [
-                        'nama'          => 'Soto Medan Kesawan & Lontong Malam Legendaris',
-                        'sub_label'     => 'Kuliner Ikonik Medan',
-                        'kota'          => 'Medan',
-                        'alamat'        => 'Jl. Ahmad Yani (Kesawan), Medan Barat',
-                        'harga'         => 38000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 520,
-                        'kontak'        => '(061) 4518-290',
-                        'deskripsi'     => 'Soto bersantan rempah kapulaga dengan daging sapi empuk atau udang galah sejak 1970-an.',
-                        'foto'          => 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Kedai Bika Ambon, Bolu Meranti & Durian Medan',
-                        'sub_label'     => 'Pusat Oleh-Oleh Khas',
-                        'kota'          => 'Medan',
-                        'alamat'        => 'Jl. Majapahit & Jl. K.H. Wahid Hasyim, Medan',
-                        'harga'         => 65000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 465,
-                        'kontak'        => '0811-6120-445',
-                        'deskripsi'     => 'Pusat kudapan sarang lebah panggang daun jeruk, pancake durian, dan kopi sidikalang.',
-                        'foto'          => 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Warung Tahu Sumedang & Rambutan Binjai Jalan Soekarno-Hatta',
-                        'sub_label'     => 'Kuliner Lintas Binjai',
-                        'kota'          => 'Binjai',
-                        'alamat'        => 'Jl. Soekarno-Hatta, Kota Binjai',
-                        'harga'         => 25000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 182,
-                        'kontak'        => '0812-6988-3310',
-                        'deskripsi'     => 'Persinggahan favorit pelancong antara Medan dan Langkat dengan menu mie balap dan sate kerang.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'penginapan' => [
-                    [
-                        'nama'          => 'Kesawan Heritage Boutique Stay Medan',
-                        'sub_label'     => 'Hotel Pusat Sejarah',
-                        'kota'          => 'Medan',
-                        'alamat'        => 'Jl. Balai Kota, Medan Barat, Kota Medan',
-                        'harga'         => 450000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 340,
-                        'kontak'        => '(061) 4530-910',
-                        'deskripsi'     => 'Berjarak jalan kaki dari Stasiun Medan (Railink Bandara) dan Lapangan Merdeka.',
-                        'foto'          => 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Maimun Courtyard Guest House',
-                        'sub_label'     => 'Guest House Keluarga',
-                        'kota'          => 'Medan',
-                        'alamat'        => 'Jl. Brigjen Katamso No. 45, Medan Maimun',
-                        'harga'         => 310000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 176,
-                        'kontak'        => '0812-6211-8890',
-                        'deskripsi'     => 'Akomodasi nyaman 5 menit dari Istana Maimun dan Masjid Raya Al-Mashun.',
-                        'foto'          => 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Pantai Cermin Coastal Homestay',
-                        'sub_label'     => 'Penginapan Pesisir Timur',
-                        'kota'          => 'Serdang Bedagai',
-                        'alamat'        => 'Jl. Pantai Cermin, Kab. Serdang Bedagai',
-                        'harga'         => 360000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 118,
-                        'kontak'        => '0813-7055-6620',
-                        'deskripsi'     => 'Cocok untuk akhir pekan keluarga dekat kawasan bahari Pantai Cermin & Bali Lestari.',
-                        'foto'          => 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=900&q=80',
-                    ],
-                ],
-                'transportasi' => [
-                    [
-                        'nama'          => 'Kereta Api Bandara Railink (Kualanamu ↔ Stasiun Medan)',
-                        'sub_label'     => 'Airport Railink Express',
-                        'kota'          => 'Medan',
-                        'alamat'        => 'Stasiun Bandara Kualanamu ↔ Stasiun Besar Medan',
-                        'harga'         => 70000,
-                        'rating'        => 4.9,
-                        'jumlah_ulasan' => 680,
-                        'kontak'        => 'Railink Call 1500-xxx',
-                        'deskripsi'     => 'Waktu tempuh pasti 30 menit bebas macet dari Bandara Kualanamu tepat ke pusat Kota Medan.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Bus Listrik & Trans Metro Deli Kota Medan',
-                        'sub_label'     => 'Angkutan Publik Terpadu',
-                        'kota'          => 'Medan',
-                        'alamat'        => 'Koridor Lapangan Merdeka – Pinang Baris – Amplas',
-                        'harga'         => 5000,
-                        'rating'        => 4.7,
-                        'jumlah_ulasan' => 412,
-                        'kontak'        => 'Dishub Kota Medan',
-                        'deskripsi'     => 'Transportasi ramah lingkungan menjangkau kawasan wisata sejarah dan kuliner Kota Medan.',
-                        'foto'          => 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=80',
-                    ],
-                    [
-                        'nama'          => 'Sewa Mobil & Pengemudi Wisata Harian Sumut',
-                        'sub_label'     => 'Rental Mobil Lintas Kota',
-                        'kota'          => 'Medan',
-                        'alamat'        => 'Jl. Ring Road Gagak Hitam, Medan Sunggal',
-                        'harga'         => 420000,
-                        'rating'        => 4.8,
-                        'jumlah_ulasan' => 235,
-                        'kontak'        => '0811-6420-551',
-                        'deskripsi'     => 'Armada MPV 7-penumpang dengan sopir berpengalaman rute Medan, Karo, Langkat, dan Toba.',
-                        'foto'          => 'https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=900&q=80',
                     ],
                 ],
             ],
