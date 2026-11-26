@@ -24,15 +24,17 @@ $berandaAktif      = $menuAktif === 'beranda';
         </a>
 
         <!-- Navigasi & Tombol Aksi Kanan -->
-        <nav class="flex items-center gap-2 sm:gap-3 shrink-0" aria-label="Navigasi utama">
+        <nav class="flex items-center gap-1.5 sm:gap-3 shrink-0" aria-label="Navigasi utama">
             <a
                 href="<?= base_url('/') ?>"
+                title="Beranda"
+                aria-label="Beranda"
                 class="<?= $berandaAktif
-                    ? 'hidden sm:inline-flex items-center justify-center px-3.5 py-2 bg-primary-container text-on-primary font-label-md text-label-md rounded-lg transition-all'
-                    : 'hidden sm:inline-flex items-center justify-center px-3.5 py-2 font-label-md text-label-md rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all' ?>"
+                    ? 'inline-flex items-center justify-center p-2 bg-primary-container text-on-primary rounded-lg transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+                    : 'inline-flex items-center justify-center p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary' ?>"
                 <?= $berandaAktif ? 'aria-current="page"' : '' ?>
             >
-                Beranda
+                <span class="material-symbols-outlined text-xl" aria-hidden="true">home</span>
             </a>
 
             <?php if (! empty($idPenggunaAktif)) : ?>
@@ -73,22 +75,16 @@ $berandaAktif      = $menuAktif === 'beranda';
                     </a>
                 </div>
             <?php else : ?>
-                <!-- Menu Pengunjung Publik (Guest) -->
+                <!-- Menu Pengunjung Publik (Guest): satu tombol Masuk -->
                 <a
                     href="<?= base_url('masuk') ?>"
-                    class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-primary text-primary hover:bg-primary-container hover:text-on-primary font-label-md text-label-md transition-all"
+                    class="inline-flex items-center justify-center px-3 sm:px-4 py-2 rounded-lg border border-primary text-primary hover:bg-primary-container hover:text-on-primary font-label-md text-label-md transition-all"
                 >
                     Masuk
                 </a>
                 <a
-                    href="<?= base_url('daftar') ?>"
-                    class="hidden sm:inline-flex items-center justify-center px-3.5 py-2 rounded-lg border border-outline-variant/60 text-on-surface-variant hover:text-on-surface hover:bg-surface-container font-label-md text-label-md transition-all"
-                >
-                    Daftar
-                </a>
-                <a
                     href="<?= base_url('destinasi') ?>"
-                    class="inline-flex items-center justify-center px-4 sm:px-5 py-2.5 rounded-full bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors shadow-sm"
+                    class="inline-flex items-center justify-center px-3.5 sm:px-5 py-2.5 rounded-full bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors shadow-sm"
                 >
                     Jelajahi Wisata
                 </a>
