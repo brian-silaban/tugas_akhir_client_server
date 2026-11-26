@@ -31,7 +31,7 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
 
 <section class="max-w-7xl mx-auto px-4 sm:px-6 py-10">
     <!-- Header Katalog -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-8 border-b border-surface-variant/50">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-8 border-b border-surface-variant/50" data-animasi="naik">
         <div>
             <span class="font-label-caps text-label-caps uppercase text-primary tracking-wider">
                 DIREKTORI WISATA SUMATERA UTARA
@@ -39,6 +39,9 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
             <h1 class="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface mt-1">
                 Katalog Eksplorasi Destinasi
             </h1>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-2xl">
+                Temukan beragam destinasi alam, bahari, budaya, hingga desa wisata di seluruh penjuru Sumatera Utara sesuai minat dan rencana perjalanan Anda.
+            </p>
         </div>
 
         <a href="<?= base_url('/') ?>" class="text-primary hover:underline font-label-md text-label-md inline-flex items-center gap-1 self-start md:self-auto">
@@ -55,7 +58,7 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
     <?php endif; ?>
 
     <!-- Form Filter Multi-Kriteria -->
-    <form action="<?= base_url('destinasi') ?>" method="get" class="mt-6 bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-variant/50 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+    <form action="<?= base_url('destinasi') ?>" method="get" data-animasi="naik" data-animasi-jeda="80" class="mt-6 bg-surface-container-lowest rounded-2xl p-4 sm:p-5 border border-surface-variant/50 shadow-sm grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
         <div class="lg:col-span-3">
             <label for="filter-q" class="block font-label-caps text-label-caps text-outline uppercase mb-1.5">Kata Kunci</label>
             <input
@@ -161,7 +164,7 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
             </a>
         </div>
     <?php else : ?>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-8" data-animasi-berjenjang>
             <?php foreach ($daftarDestinasi as $destinasi) : ?>
                 <?= view('components/kartu_destinasi', ['destinasi' => $destinasi]) ?>
             <?php endforeach; ?>

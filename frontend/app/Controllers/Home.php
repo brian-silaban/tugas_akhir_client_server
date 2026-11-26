@@ -16,37 +16,62 @@ class Home extends BaseController
     {
         $layananApi = new LayananApiBackend();
 
-        // Ambil data wilayah kabupaten/kota dan sorotan utama (Danau Toba)
+        // Ambil daftar kabupaten/kota dan 6 destinasi populer untuk slide utama Hero
         $daftarKabupatenKota = $layananApi->ambilDaftarKabupatenKota();
-        $hasilHero           = $layananApi->ambilDetailDestinasi('danau-toba');
-        $terhubungBackend    = $hasilHero['terhubung'];
-        $pesanErrorApi       = $hasilHero['pesan_error'];
+        $slugPopulerHero     = [
+            'danau-toba',
+            'pulau-samosir',
+            'air-terjun-ponot',
+            'istana-maimun',
+            'bukit-lawang',
+            'lembah-bakkara',
+        ];
 
-        // Ambil 3 destinasi unggulan untuk Bento Grid
-        $daftarSorotanBento = [];
-        foreach (['air-terjun-ponot', 'pulau-samosir', 'istana-maimun'] as $slugSorotan) {
-            $detailSorotan = $layananApi->ambilDetailDestinasi($slugSorotan);
-            if (! empty($detailSorotan['data'])) {
-                $daftarSorotanBento[] = $detailSorotan['data'];
+        $petaDetailSlug   = [];
+        $daftarSlideHero  = [];
+        $terhubungBackend = false;
+        $pesanErrorApi    = null;
+
+        foreach ($slugPopulerHero as $slugItem) {
+            $hasilDetail = $layananApi->ambilDetailDestinasi($slugItem);
+            if (! empty($hasilDetail['terhubung'])) {
+                $terhubungBackend = true;
+            }
+            if ($pesanErrorApi === null && ! empty($hasilDetail['pesan_error'])) {
+                $pesanErrorApi = $hasilDetail['pesan_error'];
+            }
+            if (! empty($hasilDetail['data']) && is_array($hasilDetail['data'])) {
+                $petaDetailSlug[$slugItem] = $hasilDetail['data'];
+                $daftarSlideHero[]         = $hasilDetail['data'];
             }
         }
 
-        // Fallback ringan hanya bila data hero atau sorotan bento belum lengkap
-        $destinasiHero = $hasilHero['data'] ?? null;
-        if ($destinasiHero === null || count($daftarSorotanBento) < 3) {
-            $hasilCadangan    = $layananApi->ambilDaftarDestinasi(['batas' => 3, 'halaman' => 1]);
-            $terhubungBackend = $terhubungBackend || $hasilCadangan['terhubung'];
-            if ($pesanErrorApi === null) {
+        // Gunakan ulang hasil fetch di atas untuk 3 destinasi unggulan Bento Grid
+        $daftarSorotanBento = [];
+        foreach (['air-terjun-ponot', 'pulau-samosir', 'istana-maimun'] as $slugSorotan) {
+            if (! empty($petaDetailSlug[$slugSorotan])) {
+                $daftarSorotanBento[] = $petaDetailSlug[$slugSorotan];
+            }
+        }
+
+        // Fallback bila daftar slide hero atau sorotan bento belum lengkap
+        if ($daftarSlideHero === [] || count($daftarSorotanBento) < 3) {
+            $hasilCadangan    = $layananApi->ambilDaftarDestinasi(['batas' => 6, 'halaman' => 1]);
+            $terhubungBackend = $terhubungBackend || ! empty($hasilCadangan['terhubung']);
+            if ($pesanErrorApi === null && ! empty($hasilCadangan['pesan_error'])) {
                 $pesanErrorApi = $hasilCadangan['pesan_error'];
             }
 
-            if ($destinasiHero === null) {
-                $destinasiHero = $hasilCadangan['data'][0] ?? null;
+            $dataCadangan = is_array($hasilCadangan['data'] ?? null) ? $hasilCadangan['data'] : [];
+            if ($daftarSlideHero === [] && $dataCadangan !== []) {
+                $daftarSlideHero = $dataCadangan;
             }
-            if (count($daftarSorotanBento) < 3 && ! empty($hasilCadangan['data'])) {
-                $daftarSorotanBento = array_slice($hasilCadangan['data'], 0, 3);
+            if (count($daftarSorotanBento) < 3 && $dataCadangan !== []) {
+                $daftarSorotanBento = array_slice($dataCadangan, 0, 3);
             }
         }
+
+        $destinasiHero = $daftarSlideHero[0] ?? null;
 
         return view('welcome_message', [
             'judulHalaman'        => 'JejakSumut — Jelajahi Pesona Sumatera Utara',
@@ -55,6 +80,7 @@ class Home extends BaseController
             'pesanErrorApi'       => $pesanErrorApi,
             'daftarKabupatenKota' => $daftarKabupatenKota,
             'destinasiHero'       => $destinasiHero,
+            'daftarSlideHero'     => $daftarSlideHero,
             'daftarSorotanBento'  => $daftarSorotanBento,
         ]);
     }

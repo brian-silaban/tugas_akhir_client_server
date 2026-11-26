@@ -45,12 +45,9 @@ if (! isset($hasilMitra) || ! is_array($hasilMitra)) {
     }
 }
 
-$kotaTampil        = (string) ($hasilMitra['kota_asli'] ?? $kotaAktif);
-$kotaPencarian     = (string) ($hasilMitra['kota_pencarian'] ?? $kotaAktif);
-$ringkasanMitra    = is_array($hasilMitra['ringkasan'] ?? null) ? $hasilMitra['ringkasan'] : [];
-$daftarLayanan     = is_array($hasilMitra['layanan'] ?? null) ? $hasilMitra['layanan'] : [];
-$totalMitra        = (int) ($ringkasanMitra['total_mitra'] ?? count($daftarLayanan));
-$jumlahApiLangsung = (int) ($ringkasanMitra['jumlah_api_langsung'] ?? 0);
+$kotaTampil    = (string) ($hasilMitra['kota_asli'] ?? $kotaAktif);
+$kotaPencarian = (string) ($hasilMitra['kota_pencarian'] ?? $kotaAktif);
+$daftarLayanan = is_array($hasilMitra['layanan'] ?? null) ? $hasilMitra['layanan'] : [];
 
 // Tentukan kode tab yang aktif saat halaman pertama kali dibuka
 $daftarKodeMitra = array_keys($daftarLayanan);
@@ -59,36 +56,22 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'penginapan';
 
 <section
     id="bagian-rekomendasi-mitra"
+    data-animasi="naik"
     class="mt-12 pt-8 border-t border-surface-variant/50"
     aria-label="Rekomendasi Layanan Mitra Sumatera Utara"
 >
     <!-- Header Seksi Layanan Pendukung Perjalanan -->
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-            <span class="font-label-caps text-label-caps text-primary uppercase inline-flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-sm" aria-hidden="true">hub</span>
-                Layanan Pendukung Perjalanan
-            </span>
-            <h2 class="font-headline-md text-headline-md text-on-surface mt-1.5">
-                Layanan Mitra Sekitar <?= esc($kotaTampil) ?>
-            </h2>
-            <p class="font-body-md text-body-md text-on-surface-variant mt-1">
-                Rekomendasi penginapan, transportasi, pemandu wisata, dan kuliner yang berkaitan dengan lokasi <?= esc($kotaTampil) ?>.
-            </p>
-        </div>
-
-        <!-- Ringkasan Status Integrasi -->
-        <?php if ($jumlahApiLangsung > 0) : ?>
-            <span class="inline-flex items-center gap-1.5 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-md text-label-md shrink-0 tabular-nums">
-                <span class="material-symbols-outlined text-base" aria-hidden="true">cloud_done</span>
-                <?= esc((string) $jumlahApiLangsung) ?>/<?= esc((string) $totalMitra) ?> Live Mitra
-            </span>
-        <?php else : ?>
-            <span class="inline-flex items-center gap-1.5 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant border border-surface-variant/70 font-label-md text-label-md shrink-0">
-                <span class="material-symbols-outlined text-base text-amber-600" aria-hidden="true">cloud_sync</span>
-                Data Simulasi
-            </span>
-        <?php endif; ?>
+    <div>
+        <span class="font-label-caps text-label-caps text-primary uppercase inline-flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm" aria-hidden="true">hub</span>
+            Layanan Pendukung Perjalanan
+        </span>
+        <h2 class="font-headline-md text-headline-md text-on-surface mt-1.5">
+            Layanan Mitra Sekitar <?= esc($kotaTampil) ?>
+        </h2>
+        <p class="font-body-md text-body-md text-on-surface-variant mt-1">
+            Rekomendasi penginapan, transportasi, pemandu wisata, dan kuliner yang berkaitan dengan lokasi <?= esc($kotaTampil) ?>.
+        </p>
     </div>
 
     <?php if ($daftarLayanan === []) : ?>
@@ -149,8 +132,6 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'penginapan';
             $daftarItemPanel  = is_array($layanan['daftar_item'] ?? null) ? $layanan['daftar_item'] : [];
             $sumberPanel      = (string) ($layanan['sumber_data'] ?? 'simulasi_fallback');
             $apakahLivePanel  = ($sumberPanel === 'api_mitra');
-            $waktuResponPanel = (int) ($layanan['waktu_respon_ms'] ?? 0);
-            $alasanFallback   = trim((string) ($layanan['alasan_fallback'] ?? ''));
             $kelasHiddenPanel = $apakahPanelAktif ? '' : 'hidden';
             ?>
             <div
@@ -160,36 +141,11 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'penginapan';
                 data-panel-mitra="<?= esc((string) $kodeMitra) ?>"
                 class="mt-5 <?= esc($kelasHiddenPanel) ?>"
             >
-                <!-- Baris Informasi Layanan, Tautan Halaman Penuh & Status Sumber Data -->
+                <!-- Baris Informasi Layanan -->
                 <div class="pb-3 mb-5 border-b border-surface-variant/40">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                        <p class="font-body-sm text-body-sm text-on-surface-variant">
-                            <?= esc((string) ($layanan['deskripsi_singkat'] ?? '')) ?>
-                            <?php if ($kodeMitra === 'penginapan') : ?>
-                                <a href="<?= base_url('penginapan') ?>" class="ml-1.5 font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
-                                    <span>Lihat Semua Penginapan</span>
-                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">arrow_forward</span>
-                                </a>
-                            <?php elseif ($kodeMitra === 'transportasi') : ?>
-                                <a href="<?= base_url('transportasi') ?>" class="ml-1.5 font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
-                                    <span>Buka Halaman Transportasi</span>
-                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">arrow_forward</span>
-                                </a>
-                            <?php endif; ?>
-                        </p>
-
-                        <?php if ($apakahLivePanel) : ?>
-                            <span class="inline-flex items-center gap-1 self-start sm:self-auto px-2.5 py-1 rounded-lg bg-secondary-container text-on-secondary-fixed-variant font-label-caps text-label-caps shrink-0 tabular-nums">
-                                <span class="material-symbols-outlined text-xs" aria-hidden="true">cloud_done</span>
-                                Live Mitra • <?= esc((string) $waktuResponPanel) ?> ms
-                            </span>
-                        <?php else : ?>
-                            <span class="inline-flex items-center gap-1 self-start sm:self-auto px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant font-label-caps text-label-caps shrink-0">
-                                <span class="material-symbols-outlined text-xs text-amber-600" aria-hidden="true">cloud_sync</span>
-                                Data Simulasi
-                            </span>
-                        <?php endif; ?>
-                    </div>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant">
+                        <?= esc((string) ($layanan['deskripsi_singkat'] ?? '')) ?>
+                    </p>
                 </div>
 
                 <?php if ($kodeMitra === 'transportasi' && $apakahLivePanel && ! empty($layanan['data_transportasi']['daftar_lokasi'])) : ?>

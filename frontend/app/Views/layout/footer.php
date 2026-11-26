@@ -16,7 +16,7 @@ $daftarKategoriFooter = [
 ];
 ?>
 <footer class="w-full bg-surface-container-low border-t border-surface-variant/40">
-    <div class="max-w-7xl mx-auto px-6 py-10">
+    <div class="max-w-7xl mx-auto px-6 py-10" data-animasi="naik">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
             <!-- Kolom 1: Tentang JejakSumut -->
             <div class="lg:col-span-4 flex flex-col gap-4">
@@ -71,14 +71,14 @@ $daftarKategoriFooter = [
                     Navigasi Cepat
                 </h3>
                 <ul class="flex flex-col gap-2 font-body-md text-body-md text-on-surface-variant">
-                    <li><a href="<?= base_url('/destinasi') ?>" class="hover:text-on-surface transition-colors">Destinasi</a></li>
-                    <li><a href="<?= base_url('/penginapan') ?>" class="hover:text-on-surface transition-colors">Penginapan</a></li>
-                    <li><a href="<?= base_url('/transportasi') ?>" class="hover:text-on-surface transition-colors">Transportasi</a></li>
-                    <li><a href="<?= base_url('/mitra-lainnya') ?>" class="hover:text-on-surface transition-colors">Kuliner &amp; Tur Guide</a></li>
-                    <li><a href="<?= base_url('/tentang') ?>" class="hover:text-on-surface transition-colors">Tentang Kami</a></li>
+                    <li><a href="<?= base_url('/destinasi') ?>" class="hover:text-on-surface transition-colors">Katalog Destinasi</a></li>
+                    <li><a href="<?= base_url('/pemesanan') ?>" class="hover:text-on-surface transition-colors">Tiket Saya</a></li>
                     <?php if (! empty(session('id_pengguna'))) : ?>
-                        <li><a href="<?= base_url('/pemesanan') ?>" class="hover:text-on-surface transition-colors">Tiket Saya</a></li>
                         <li><a href="<?= base_url('/favorit-saya') ?>" class="hover:text-on-surface transition-colors">Favorit Saya</a></li>
+                        <li><a href="<?= base_url('/keluar') ?>" class="text-error hover:underline transition-colors">Keluar Akun</a></li>
+                    <?php else : ?>
+                        <li><a href="<?= base_url('/masuk') ?>" class="hover:text-on-surface transition-colors">Masuk Akun</a></li>
+                        <li><a href="<?= base_url('/daftar') ?>" class="hover:text-on-surface transition-colors">Daftar Akun Baru</a></li>
                     <?php endif; ?>
                 </ul>
             </div>

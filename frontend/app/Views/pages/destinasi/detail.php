@@ -56,7 +56,7 @@
         <?php endif; ?>
 
         <!-- Galeri Foto Utama & Pendukung -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-8" data-animasi="skala">
             <div class="<?= $galeriFoto !== [] ? 'lg:col-span-8' : 'lg:col-span-12' ?> relative h-72 sm:h-[420px] rounded-3xl overflow-hidden bg-surface-container shadow-sm">
                 <img
                     src="<?= esc($destinasi['foto_utama'] ?? '') ?>"
@@ -95,7 +95,7 @@
 
             <!-- Kolom Kiri: Informasi Lengkap Destinasi -->
             <div class="lg:col-span-8 space-y-8">
-                <header>
+                <header data-animasi="naik">
                     <div class="flex flex-wrap items-center gap-3 text-sm text-on-surface-variant mb-2">
                         <span class="inline-flex items-center gap-1 font-medium text-primary">
                             <span class="material-symbols-outlined text-base" aria-hidden="true">pin_drop</span>
@@ -129,7 +129,7 @@
                 </header>
 
                 <!-- Deskripsi Naratif -->
-                <section class="pt-6 border-t border-surface-variant/50">
+                <section class="pt-6 border-t border-surface-variant/50" data-animasi="naik">
                     <h2 class="font-headline-md text-headline-md text-on-surface mb-3">Tentang Destinasi</h2>
                     <p class="font-body-lg text-body-lg text-on-surface-variant leading-relaxed whitespace-pre-line">
                         <?= esc($destinasi['deskripsi'] ?? '') ?>
@@ -137,7 +137,7 @@
                 </section>
 
                 <!-- Informasi Operasional, Pengelola & Kontak -->
-                <section class="pt-6 border-t border-surface-variant/50">
+                <section class="pt-6 border-t border-surface-variant/50" data-animasi="naik">
                     <h2 class="font-headline-md text-headline-md text-on-surface mb-4">Informasi Operasional &amp; Pengelola</h2>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-surface-container-lowest rounded-2xl p-5 border border-surface-variant/50">
                         <div class="flex items-start gap-3">
@@ -217,7 +217,7 @@
                 </section>
 
                 <!-- Fasilitas Lapangan -->
-                <section class="pt-6 border-t border-surface-variant/50">
+                <section class="pt-6 border-t border-surface-variant/50" data-animasi="naik">
                     <h2 class="font-headline-md text-headline-md text-on-surface mb-4">Fasilitas Tersedia</h2>
                     <?php if ($daftarFasilitas === []) : ?>
                         <p class="font-body-md text-body-md text-on-surface-variant">
@@ -260,7 +260,7 @@
             </div>
 
             <!-- Kolom Kanan (4 Kolom): Sticky Card Harga & Pemesanan Tiket (Anggota 4) -->
-            <aside class="lg:col-span-4 lg:sticky lg:top-24 space-y-4">
+            <aside class="lg:col-span-4 lg:sticky lg:top-24 space-y-4" data-animasi="naik" data-animasi-jeda="100">
                 <div class="bg-surface-container-lowest rounded-3xl p-6 border border-surface-variant/60 shadow-sm">
                     <div class="flex items-start justify-between gap-3 pb-4 border-b border-surface-variant/40">
                         <div>
