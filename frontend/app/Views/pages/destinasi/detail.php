@@ -293,7 +293,12 @@
 
                     <!-- Form Pemesanan Tiket (Anggota 4: POST /pemesanan/buat) -->
                     <?php if (! empty($idPenggunaLogin)) : ?>
-                        <form action="<?= base_url('pemesanan/buat') ?>" method="post" class="mt-5 space-y-4">
+                        <form
+                            action="<?= base_url('pemesanan/buat') ?>"
+                            method="post"
+                            data-form-pemesanan
+                            class="mt-5 space-y-4"
+                        >
                             <?= csrf_field() ?>
                             <input type="hidden" name="id_destinasi" value="<?= esc((string) $idDestinasi) ?>" />
 
@@ -330,7 +335,8 @@
 
                             <button
                                 type="submit"
-                                class="w-full py-3 px-5 rounded-xl bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md transition-colors shadow-sm"
+                                data-tombol-pesan
+                                class="w-full py-3 px-5 rounded-xl bg-tertiary-container hover:bg-tertiary disabled:opacity-60 disabled:cursor-not-allowed text-on-tertiary font-label-md text-label-md transition-colors shadow-sm"
                             >
                                 Pesan Tiket Kunjungan
                             </button>
@@ -360,4 +366,23 @@
         </div>
     </article>
 <?php endif; ?>
+
+<script>
+    (function () {
+        var formulirPesan = document.querySelector('[data-form-pemesanan]');
+        if (!formulirPesan) {
+            return;
+        }
+
+        var tombolPesan = formulirPesan.querySelector('[data-tombol-pesan]');
+
+        // Cegah pengiriman ganda ketika tombol Pesan Tiket Kunjungan diklik
+        formulirPesan.addEventListener('submit', function () {
+            if (tombolPesan) {
+                tombolPesan.disabled = true;
+                tombolPesan.textContent = 'Memproses pesanan...';
+            }
+        });
+    })();
+</script>
 <?= $this->endSection() ?>
