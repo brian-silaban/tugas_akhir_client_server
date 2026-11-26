@@ -180,18 +180,30 @@
                         <label for="kata_sandi" class="block text-sm font-medium text-on-surface mb-1.5">
                             Kata Sandi
                         </label>
-                        <input
-                            type="password"
-                            id="kata_sandi"
-                            name="kata_sandi"
-                            required
-                            autocomplete="new-password"
-                            placeholder="Minimal 6 karakter"
-                            class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-on-surface text-sm
-                                   placeholder:text-outline
-                                   focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
-                                   transition-colors duration-200"
-                        />
+                        <div class="relative">
+                            <input
+                                type="password"
+                                id="kata_sandi"
+                                name="kata_sandi"
+                                required
+                                autocomplete="new-password"
+                                placeholder="Minimal 6 karakter"
+                                class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest pl-4 pr-11 py-2.5 text-on-surface text-sm
+                                       placeholder:text-outline
+                                       focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
+                                       transition-colors duration-200"
+                            />
+                            <button
+                                type="button"
+                                data-tombol-sandi="kata_sandi"
+                                aria-label="Tampilkan kata sandi"
+                                aria-pressed="false"
+                                title="Tampilkan kata sandi"
+                                class="absolute inset-y-0 right-0 flex items-center px-3 text-outline hover:text-on-surface focus-visible:outline-none focus-visible:text-primary transition-colors"
+                            >
+                                <span class="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Input Konfirmasi Kata Sandi -->
@@ -199,18 +211,30 @@
                         <label for="konfirmasi_kata_sandi" class="block text-sm font-medium text-on-surface mb-1.5">
                             Konfirmasi Kata Sandi
                         </label>
-                        <input
-                            type="password"
-                            id="konfirmasi_kata_sandi"
-                            name="konfirmasi_kata_sandi"
-                            required
-                            autocomplete="new-password"
-                            placeholder="Ulangi kata sandi yang sama"
-                            class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-on-surface text-sm
-                                   placeholder:text-outline
-                                   focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
-                                   transition-colors duration-200"
-                        />
+                        <div class="relative">
+                            <input
+                                type="password"
+                                id="konfirmasi_kata_sandi"
+                                name="konfirmasi_kata_sandi"
+                                required
+                                autocomplete="new-password"
+                                placeholder="Ulangi kata sandi yang sama"
+                                class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest pl-4 pr-11 py-2.5 text-on-surface text-sm
+                                       placeholder:text-outline
+                                       focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
+                                       transition-colors duration-200"
+                            />
+                            <button
+                                type="button"
+                                data-tombol-sandi="konfirmasi_kata_sandi"
+                                aria-label="Tampilkan konfirmasi kata sandi"
+                                aria-pressed="false"
+                                title="Tampilkan kata sandi"
+                                class="absolute inset-y-0 right-0 flex items-center px-3 text-outline hover:text-on-surface focus-visible:outline-none focus-visible:text-primary transition-colors"
+                            >
+                                <span class="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Tombol Daftar (Primary CTA — Terracotta Container) -->
@@ -252,6 +276,34 @@
         </div>
 
     </div>
+
+    <script>
+        // Mengubah visibilitas kata sandi saat tombol ikon mata diklik
+        document.querySelectorAll('[data-tombol-sandi]').forEach(function (tombol) {
+            tombol.addEventListener('click', function () {
+                const idInput    = tombol.getAttribute('data-tombol-sandi');
+                const inputSandi = document.getElementById(idInput);
+                const ikonMata   = tombol.querySelector('.material-symbols-outlined');
+                if (!inputSandi || !ikonMata) {
+                    return;
+                }
+
+                if (inputSandi.type === 'password') {
+                    inputSandi.type      = 'text';
+                    ikonMata.textContent = 'visibility_off';
+                    tombol.setAttribute('aria-label', 'Sembunyikan kata sandi');
+                    tombol.setAttribute('title', 'Sembunyikan kata sandi');
+                    tombol.setAttribute('aria-pressed', 'true');
+                } else {
+                    inputSandi.type      = 'password';
+                    ikonMata.textContent = 'visibility';
+                    tombol.setAttribute('aria-label', 'Tampilkan kata sandi');
+                    tombol.setAttribute('title', 'Tampilkan kata sandi');
+                    tombol.setAttribute('aria-pressed', 'false');
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
