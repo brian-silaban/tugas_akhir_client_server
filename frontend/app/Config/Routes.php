@@ -11,6 +11,8 @@ $modeClient = env('JEJAKSUMUT_MODE_CLIENT', 'gabungan');
 
 $routes->get('masuk', 'AutentikasiController::masuk');
 $routes->post('masuk', 'AutentikasiController::prosesMasuk', ['filter' => 'csrf']);
+$routes->get('ganti-sandi', 'AutentikasiController::gantiSandi');
+$routes->post('ganti-sandi', 'AutentikasiController::prosesGantiSandi', ['filter' => 'csrf']);
 
 if ($modeClient === 'admin') {
     $routes->get('/', static fn () => redirect()->to(site_url('admin')));

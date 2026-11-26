@@ -170,6 +170,10 @@
                             <label for="kata_sandi" class="block text-sm font-medium text-on-surface">
                                 Kata Sandi
                             </label>
+                            <a href="<?= base_url('/ganti-sandi') ?>"
+                               class="text-xs font-semibold text-primary-container hover:text-primary transition-colors underline underline-offset-2">
+                                Ganti Kata Sandi?
+                            </a>
                         </div>
                         <div class="relative">
                             <input

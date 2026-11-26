@@ -303,4 +303,102 @@ class AutentikasiApiController extends ResourceController
             'data'   => $penggunaBaru,
         ], ResponseInterface::HTTP_CREATED);
     }
+
+    /**
+     * POST /api/v1/auth/ganti-sandi dan POST /api/v1/autentikasi/ganti-sandi
+     * Mengubah kata sandi akun member maupun admin setelah memverifikasi kata sandi lama.
+     */
+    public function gantiSandi(): ResponseInterface
+    {
+        $inputJson = $this->request->getJSON(true);
+        $inputData = ! empty($inputJson) ? $inputJson : $this->request->getPost();
+
+        $email                  = trim((string) ($inputData['email'] ?? ''));
+        $kataSandiLama          = (string) ($inputData['kata_sandi_lama'] ?? '');
+        $kataSandiBaru          = (string) ($inputData['kata_sandi_baru'] ?? '');
+        $konfirmasiKataSandi    = (string) ($inputData['konfirmasi_kata_sandi_baru'] ?? '');
+
+        if ($kataSandiLama === '' || $kataSandiBaru === '' || $konfirmasiKataSandi === '') {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Kata sandi lama, kata sandi baru, dan konfirmasi wajib diisi.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if (strlen($kataSandiBaru) < 6) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Kata sandi baru minimal 6 karakter.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($kataSandiBaru !== $konfirmasiKataSandi) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Konfirmasi kata sandi baru tidak cocok.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if ($kataSandiBaru === $kataSandiLama) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Kata sandi baru harus berbeda dari kata sandi lama.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $modelPengguna = new PenggunaModel();
+        $dataToken     = self::verifikasiHeaderOtorisasi($this->request->getHeaderLine('Authorization'));
+
+        if ($dataToken !== null) {
+            $pengguna = $modelPengguna->find((int) $dataToken['id_pengguna']);
+        } else {
+            if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                return $this->respond([
+                    'status' => 'gagal',
+                    'pesan'  => 'Alamat email yang valid wajib diisi.',
+                    'data'   => null,
+                ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $pengguna = $modelPengguna->where('email', $email)->first();
+        }
+
+        if ($pengguna === null || ! password_verify($kataSandiLama, $pengguna['kata_sandi'])) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Email atau kata sandi lama salah.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_UNAUTHORIZED);
+        }
+
+        $berhasilSimpan = $modelPengguna
+            ->skipValidation(true)
+            ->update((int) $pengguna['id'], [
+                'kata_sandi'      => password_hash($kataSandiBaru, PASSWORD_DEFAULT),
+                'diperbarui_pada' => date('Y-m-d H:i:s'),
+            ]);
+
+        if (! $berhasilSimpan) {
+            return $this->respond([
+                'status' => 'gagal',
+                'pesan'  => 'Gagal memperbarui kata sandi. Silakan coba lagi.',
+                'data'   => null,
+            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        $this->response->setHeader('Cache-Control', 'no-store');
+
+        return $this->respond([
+            'status' => 'berhasil',
+            'pesan'  => 'Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru Anda.',
+            'data'   => [
+                'email' => $pengguna['email'],
+                'peran' => $pengguna['peran'],
+            ],
+        ], ResponseInterface::HTTP_OK);
+    }
 }

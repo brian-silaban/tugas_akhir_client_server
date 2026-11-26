@@ -38,6 +38,10 @@
                 Laman wisatawan
                 <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
             </a>
+            <a class="tautan-wisatawan" href="<?= esc(site_url('ganti-sandi'), 'attr') ?>">
+                <span class="material-symbols-outlined" aria-hidden="true">key</span>
+                Ganti kata sandi
+            </a>
             <form method="post" action="<?= esc(site_url('admin/keluar'), 'attr') ?>">
                 <?= csrf_field() ?>
                 <button class="tombol tombol-ghost" type="submit">

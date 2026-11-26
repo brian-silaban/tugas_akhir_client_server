@@ -179,6 +179,99 @@ class AutentikasiController extends BaseController
     }
 
     // ---------------------------------------------------------------
+    // Halaman & Proses GANTI KATA SANDI (Member & Admin)
+    // ---------------------------------------------------------------
+
+    /**
+     * Tampilkan formulir ganti kata sandi.
+     * Dapat diakses dari halaman login maupun saat sudah login.
+     */
+    public function gantiSandi(): string
+    {
+        $sudahMasuk = (bool) session()->get('sudah_masuk');
+
+        return view('pages/autentikasi/ganti_sandi', [
+            'mode_admin'  => env('JEJAKSUMUT_MODE_CLIENT') === 'admin',
+            'sudah_masuk' => $sudahMasuk,
+            'email_sesi'  => $sudahMasuk ? (string) session()->get('email') : '',
+            'peran_sesi'  => $sudahMasuk ? (string) session()->get('peran') : '',
+        ]);
+    }
+
+    /**
+     * Memproses pergantian kata sandi melalui REST API Backend.
+     */
+    public function prosesGantiSandi(): RedirectResponse
+    {
+        $sudahMasuk = (bool) session()->get('sudah_masuk');
+        $email      = $sudahMasuk
+            ? (string) session()->get('email')
+            : trim((string) $this->request->getPost('email'));
+
+        $aturanValidasi = [
+            'kata_sandi_lama'            => 'required',
+            'kata_sandi_baru'            => 'required|min_length[6]',
+            'konfirmasi_kata_sandi_baru' => 'required|matches[kata_sandi_baru]',
+        ];
+        if (! $sudahMasuk) {
+            $aturanValidasi['email'] = 'required|valid_email|max_length[150]';
+        }
+
+        $pesanValidasi = [
+            'email' => [
+                'required'    => 'Alamat email wajib diisi.',
+                'valid_email' => 'Format email tidak valid.',
+            ],
+            'kata_sandi_lama' => [
+                'required' => 'Kata sandi lama wajib diisi.',
+            ],
+            'kata_sandi_baru' => [
+                'required'   => 'Kata sandi baru wajib diisi.',
+                'min_length' => 'Kata sandi baru minimal 6 karakter.',
+            ],
+            'konfirmasi_kata_sandi_baru' => [
+                'required' => 'Konfirmasi kata sandi baru wajib diisi.',
+                'matches'  => 'Konfirmasi kata sandi baru tidak cocok.',
+            ],
+        ];
+
+        if (! $this->validate($aturanValidasi, $pesanValidasi)) {
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        $tokenApi = $sudahMasuk ? (string) session()->get('token_api') : null;
+        $hasil    = $this->layananApiBackend->kirimPost('/auth/ganti-sandi', [
+            'email'                      => $email,
+            'kata_sandi_lama'            => (string) $this->request->getPost('kata_sandi_lama'),
+            'kata_sandi_baru'            => (string) $this->request->getPost('kata_sandi_baru'),
+            'konfirmasi_kata_sandi_baru' => (string) $this->request->getPost('konfirmasi_kata_sandi_baru'),
+        ], $tokenApi);
+
+        if (! $hasil['terhubung']) {
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
+        }
+
+        if (! $hasil['berhasil']) {
+            $pesanError = $hasil['pesan_error'] ?? 'Gagal memperbarui kata sandi. Silakan periksa kembali data Anda.';
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('error', $pesanError);
+        }
+
+        if ($sudahMasuk) {
+            session()->destroy();
+        }
+
+        return redirect()->to(site_url('masuk'))
+            ->withCookies()
+            ->with('success', 'Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.');
+    }
+
+    // ---------------------------------------------------------------
     // KELUAR (Logout)
     // ---------------------------------------------------------------
 

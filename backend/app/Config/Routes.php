@@ -23,10 +23,12 @@ $routes->group('api/v1', ['namespace' => 'App\Controllers\Api'], function ($rout
     $routes->get('kabupaten-kota', 'KategoriApiController::kabupatenKota');
 
     // --- Autentikasi & Akun (Anggota 3) ---
-    $routes->post('auth/masuk',         'AutentikasiApiController::masuk');
-    $routes->post('auth/daftar',        'AutentikasiApiController::daftar');
-    $routes->post('autentikasi/masuk',  'AutentikasiApiController::masuk');
-    $routes->post('autentikasi/daftar', 'AutentikasiApiController::daftar');
+    $routes->post('auth/masuk',               'AutentikasiApiController::masuk');
+    $routes->post('auth/daftar',              'AutentikasiApiController::daftar');
+    $routes->post('auth/ganti-sandi',         'AutentikasiApiController::gantiSandi');
+    $routes->post('autentikasi/masuk',        'AutentikasiApiController::masuk');
+    $routes->post('autentikasi/daftar',       'AutentikasiApiController::daftar');
+    $routes->post('autentikasi/ganti-sandi',  'AutentikasiApiController::gantiSandi');
 
     // --- Favorit (Anggota 3) – dilindungi filter autentikasiToken ---
     $routes->get('favorit/(:num)',  'FavoritApiController::show/$1',  ['filter' => 'autentikasiToken']);
