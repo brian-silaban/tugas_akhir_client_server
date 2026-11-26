@@ -462,14 +462,14 @@ $daftarWilayahUnggulan             = array_slice($daftarKabupatenKota ?? [], 0, 
         <!-- Pill Kategori Menuju Katalog -->
         <div class="flex items-center gap-2 overflow-x-auto pb-2">
             <a href="<?= base_url('destinasi') ?>" class="px-4 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm">
-                Semua Destinasi (<?= esc(number_format($totalDestinasiTampil, 0, ',', '.')) ?>)
+                Semua Destinasi
             </a>
             <?php foreach ($daftarKategori ?? [] as $kategoriItem) : ?>
                 <a
                     href="<?= base_url('destinasi?kategori=' . urlencode($kategoriItem['slug'])) ?>"
                     class="px-4 py-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface font-label-md text-label-md whitespace-nowrap transition-colors"
                 >
-                    <?= esc($kategoriItem['nama']) ?> (<?= esc((string) $kategoriItem['jumlah_destinasi']) ?>)
+                    <?= esc($kategoriItem['nama']) ?>
                 </a>
             <?php endforeach; ?>
         </div>

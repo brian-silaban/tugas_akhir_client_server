@@ -133,7 +133,7 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
                             ? 'px-3 py-1.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md'
                             : 'px-3 py-1.5 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-label-md text-label-md transition-colors' ?>"
                     >
-                        <?= esc($kat['nama']) ?> (<?= esc((string) ($kat['jumlah_destinasi'] ?? 0)) ?>)
+                        <?= esc($kat['nama']) ?>
                     </a>
                 <?php endforeach; ?>
             </div>
