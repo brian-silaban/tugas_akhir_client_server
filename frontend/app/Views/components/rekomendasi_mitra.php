@@ -54,7 +54,7 @@ $jumlahApiLangsung = (int) ($ringkasanMitra['jumlah_api_langsung'] ?? 0);
 
 // Tentukan kode tab yang aktif saat halaman pertama kali dibuka
 $daftarKodeMitra = array_keys($daftarLayanan);
-$kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
+$kodeTabAwal     = $daftarKodeMitra[0] ?? 'penginapan';
 ?>
 
 <section
@@ -62,31 +62,31 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
     class="mt-12 pt-8 border-t border-surface-variant/50"
     aria-label="Rekomendasi Layanan Mitra Sumatera Utara"
 >
-    <!-- Header Seksi Integrasi 4 Kelompok Mitra -->
+    <!-- Header Seksi Layanan Pendukung Perjalanan -->
     <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
             <span class="font-label-caps text-label-caps text-primary uppercase inline-flex items-center gap-1.5">
-                <span class="material-symbols-outlined text-sm">hub</span>
-                Ekosistem Client-Server Sumatera Utara
+                <span class="material-symbols-outlined text-sm" aria-hidden="true">hub</span>
+                Layanan Pendukung Perjalanan
             </span>
             <h2 class="font-headline-md text-headline-md text-on-surface mt-1.5">
                 Layanan Mitra Sekitar <?= esc($kotaTampil) ?>
             </h2>
             <p class="font-body-md text-body-md text-on-surface-variant mt-1">
-                Rekomendasi terintegrasi melalui REST API 4 kelompok mitra (Tur Guide, Kuliner, Penginapan, dan Transportasi) untuk wilayah <?= esc($kotaPencarian) ?>.
+                Rekomendasi penginapan, transportasi, pemandu wisata, dan kuliner yang berkaitan dengan lokasi <?= esc($kotaTampil) ?>.
             </p>
         </div>
 
         <!-- Ringkasan Status Integrasi -->
         <?php if ($jumlahApiLangsung > 0) : ?>
             <span class="inline-flex items-center gap-1.5 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-secondary-container text-on-secondary-fixed-variant font-label-md text-label-md shrink-0 tabular-nums">
-                <span class="material-symbols-outlined text-base">cloud_done</span>
-                <?= esc((string) $jumlahApiLangsung) ?>/<?= esc((string) $totalMitra) ?> Live API Mitra
+                <span class="material-symbols-outlined text-base" aria-hidden="true">cloud_done</span>
+                <?= esc((string) $jumlahApiLangsung) ?>/<?= esc((string) $totalMitra) ?> Live Mitra
             </span>
         <?php else : ?>
             <span class="inline-flex items-center gap-1.5 self-start sm:self-auto px-3.5 py-1.5 rounded-full bg-surface-container text-on-surface-variant border border-surface-variant/70 font-label-md text-label-md shrink-0">
-                <span class="material-symbols-outlined text-base text-amber-600">cloud_sync</span>
-                Mode Simulasi Fallback
+                <span class="material-symbols-outlined text-base text-amber-600" aria-hidden="true">cloud_sync</span>
+                Data Simulasi
             </span>
         <?php endif; ?>
     </div>
@@ -160,33 +160,36 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
                 data-panel-mitra="<?= esc((string) $kodeMitra) ?>"
                 class="mt-5 <?= esc($kelasHiddenPanel) ?>"
             >
-                <!-- Baris Informasi Sumber Data & Query Kota -->
+                <!-- Baris Informasi Layanan, Tautan Halaman Penuh & Status Sumber Data -->
                 <div class="pb-3 mb-5 border-b border-surface-variant/40">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <p class="font-body-sm text-body-sm text-on-surface-variant">
                             <?= esc((string) ($layanan['deskripsi_singkat'] ?? '')) ?>
-                            <?php $labelEndpoint = trim((string) ($layanan['endpoint_label'] ?? '')); ?>
-                            <span class="text-outline">• Query: <code><?= esc($labelEndpoint !== '' ? $labelEndpoint : ('GET ?kota=' . $kotaPencarian)) ?></code></span>
+                            <?php if ($kodeMitra === 'penginapan') : ?>
+                                <a href="<?= base_url('penginapan') ?>" class="ml-1.5 font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
+                                    <span>Lihat Semua Penginapan</span>
+                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">arrow_forward</span>
+                                </a>
+                            <?php elseif ($kodeMitra === 'transportasi') : ?>
+                                <a href="<?= base_url('transportasi') ?>" class="ml-1.5 font-semibold text-primary hover:underline inline-flex items-center gap-0.5">
+                                    <span>Buka Halaman Transportasi</span>
+                                    <span class="material-symbols-outlined text-xs" aria-hidden="true">arrow_forward</span>
+                                </a>
+                            <?php endif; ?>
                         </p>
 
                         <?php if ($apakahLivePanel) : ?>
                             <span class="inline-flex items-center gap-1 self-start sm:self-auto px-2.5 py-1 rounded-lg bg-secondary-container text-on-secondary-fixed-variant font-label-caps text-label-caps shrink-0 tabular-nums">
-                                <span class="material-symbols-outlined text-xs">cloud_done</span>
-                                Live API Mitra • <?= esc((string) $waktuResponPanel) ?> ms
+                                <span class="material-symbols-outlined text-xs" aria-hidden="true">cloud_done</span>
+                                Live Mitra • <?= esc((string) $waktuResponPanel) ?> ms
                             </span>
                         <?php else : ?>
                             <span class="inline-flex items-center gap-1 self-start sm:self-auto px-2.5 py-1 rounded-lg bg-surface-container text-on-surface-variant font-label-caps text-label-caps shrink-0">
-                                <span class="material-symbols-outlined text-xs text-amber-600">cloud_sync</span>
-                                <?= esc((string) ($layanan['label_sumber'] ?? 'Simulasi Fallback')) ?>
+                                <span class="material-symbols-outlined text-xs text-amber-600" aria-hidden="true">cloud_sync</span>
+                                Data Simulasi
                             </span>
                         <?php endif; ?>
                     </div>
-
-                    <?php if (! $apakahLivePanel && $alasanFallback !== '') : ?>
-                        <p class="font-body-sm text-body-sm text-outline mt-1">
-                            Catatan koneksi: <?= esc($alasanFallback) ?>
-                        </p>
-                    <?php endif; ?>
                 </div>
 
                 <?php if ($kodeMitra === 'transportasi' && $apakahLivePanel && ! empty($layanan['data_transportasi']['daftar_lokasi'])) : ?>
@@ -384,13 +387,22 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
 
                                         <div class="pt-3 border-t border-surface-variant/40 flex flex-wrap items-center justify-between gap-3">
                                             <div>
-                                                <span class="font-label-caps text-label-caps text-outline uppercase block">Estimasi Tarif</span>
-                                                <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
-                                                    <?= esc(formatHargaRupiah($hargaItem)) ?>
-                                                    <?php if ($hargaItem > 0 && $satuanItem !== '') : ?>
-                                                        <span class="font-body-sm text-body-sm text-outline font-normal"><?= esc($satuanItem) ?></span>
-                                                    <?php endif; ?>
-                                                </span>
+                                                <?php if (! empty($itemMitra['teks_harga_khusus'])) : ?>
+                                                    <span class="font-label-caps text-label-caps text-outline uppercase block">
+                                                        <?= esc((string) ($itemMitra['label_tarif'] ?? 'Info Layanan')) ?>
+                                                    </span>
+                                                    <span class="font-metric-price text-metric-price text-on-surface">
+                                                        <?= esc((string) $itemMitra['teks_harga_khusus']) ?>
+                                                    </span>
+                                                <?php else : ?>
+                                                    <span class="font-label-caps text-label-caps text-outline uppercase block">Estimasi Tarif</span>
+                                                    <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
+                                                        <?= esc(formatHargaRupiah($hargaItem)) ?>
+                                                        <?php if ($hargaItem > 0 && $satuanItem !== '') : ?>
+                                                            <span class="font-body-sm text-body-sm text-outline font-normal"><?= esc($satuanItem) ?></span>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                <?php endif; ?>
                                             </div>
 
                                             <?php if ($urlValidAman) : ?>
@@ -464,13 +476,22 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
 
                                     <div class="px-5 pb-5 pt-3 border-t border-surface-variant/40 flex items-center justify-between gap-2">
                                         <div class="min-w-0">
-                                            <span class="font-label-caps text-label-caps text-outline uppercase block truncate">Estimasi Tarif</span>
-                                            <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
-                                                <?= esc(formatHargaRupiah($hargaItem)) ?>
-                                                <?php if ($hargaItem > 0 && $satuanItem !== '') : ?>
-                                                    <span class="font-body-sm text-body-sm text-outline font-normal"><?= esc($satuanItem) ?></span>
-                                                <?php endif; ?>
-                                            </span>
+                                            <?php if (! empty($itemMitra['teks_harga_khusus'])) : ?>
+                                                <span class="font-label-caps text-label-caps text-outline uppercase block truncate">
+                                                    <?= esc((string) ($itemMitra['label_tarif'] ?? 'Info Layanan')) ?>
+                                                </span>
+                                                <span class="font-metric-price text-metric-price text-on-surface truncate block">
+                                                    <?= esc((string) $itemMitra['teks_harga_khusus']) ?>
+                                                </span>
+                                            <?php else : ?>
+                                                <span class="font-label-caps text-label-caps text-outline uppercase block truncate">Estimasi Tarif</span>
+                                                <span class="font-metric-price text-metric-price text-on-surface tabular-nums">
+                                                    <?= esc(formatHargaRupiah($hargaItem)) ?>
+                                                    <?php if ($hargaItem > 0 && $satuanItem !== '') : ?>
+                                                        <span class="font-body-sm text-body-sm text-outline font-normal"><?= esc($satuanItem) ?></span>
+                                                    <?php endif; ?>
+                                                </span>
+                                            <?php endif; ?>
                                         </div>
 
                                         <?php if ($urlValidAman) : ?>
@@ -656,7 +677,7 @@ $kodeTabAwal     = $daftarKodeMitra[0] ?? 'tur_guide';
             }
 
             tombolSubmit.disabled = true;
-            tampilkanPesanStatus('Menghubungi REST API mitra transportasi...', false);
+            tampilkanPesanStatus('Memuat estimasi tarif dan jadwal perjalanan...', false);
 
             try {
                 const parameter = new URLSearchParams({

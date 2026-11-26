@@ -47,9 +47,19 @@ if ($modeClient === 'admin') {
     // POST /ulasan/kirim            → Kirim ulasan baru dari form di halaman detail (Member)
     $routes->post('ulasan/kirim', 'UlasanController::kirim', ['filter' => ['autentikasi', 'csrf']]);
 
-    // --- Proxy API Mitra Transportasi (Anggota 2) ---
+    // --- Halaman Layanan Mitra & Informasi Tim (Navigasi Utama) ---
+    $routes->get('penginapan', 'PenginapanController::index');
+    $routes->get('transportasi', 'TransportasiController::index');
+    $routes->get('mitra-lainnya', 'HalamanInformasiController::mitraLainnya');
+    $routes->get('tentang', 'HalamanInformasiController::tentang');
+
+    // --- Proxy API Mitra Transportasi & Penginapan (Anggota 2) ---
     $routes->get('mitra/transportasi/lokasi', 'MitraTransportController::lokasi');
     $routes->get('mitra/transportasi/tarif', 'MitraTransportController::tarif');
+    $routes->get('mitra/transportasi/rekomendasi', 'MitraTransportController::rekomendasi');
+    $routes->get('mitra/penginapan/ulasan', 'MitraPenginapanController::daftarUlasan');
+    $routes->post('mitra/penginapan/ulasan', 'MitraPenginapanController::kirimUlasan', ['filter' => 'csrf']);
+    $routes->post('mitra/penginapan/ulasan/(:num)/hapus', 'MitraPenginapanController::hapusUlasan/$1', ['filter' => 'csrf']);
 }
 
 if ($modeClient !== 'wisatawan') {

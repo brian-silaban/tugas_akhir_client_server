@@ -31,8 +31,24 @@ class LayananApiMitra
         ?int $batasWaktuDetik = null,
         ?bool $modeCadanganMock = null
     ) {
-        // Daftar 4 kelompok mitra resmi sesuai PRD.md
+        // Daftar 4 kelompok mitra resmi sesuai PRD.md (prioritaskan mitra Live API di tab awal)
         $definisiMitra = [
+            'penginapan' => [
+                'nama_layanan'      => 'Penginapan & Hotel',
+                'env_key'           => 'PARTNER_HOTEL_API_URL',
+                'env_api_key'       => 'PARTNER_HOTEL_API_KEY',
+                'ikon'              => 'hotel',
+                'satuan_harga'      => '/ malam',
+                'deskripsi_singkat' => 'Pilihan hotel, homestay, dan penginapan nyaman di Sumatera Utara.',
+            ],
+            'transportasi' => [
+                'nama_layanan'      => 'Layanan Transportasi',
+                'env_key'           => 'PARTNER_TRANSPORT_API_URL',
+                'env_api_key'       => 'PARTNER_TRANSPORT_API_KEY',
+                'ikon'              => 'directions_bus',
+                'satuan_harga'      => '/ perjalanan',
+                'deskripsi_singkat' => 'Akses shuttle, travel, kereta bandara, dan penerbangan menuju destinasi.',
+            ],
             'tur_guide' => [
                 'nama_layanan'      => 'Penyedia Tur Guide',
                 'env_key'           => 'PARTNER_TUR_GUIDE_API_URL',
@@ -48,22 +64,6 @@ class LayananApiMitra
                 'ikon'              => 'restaurant',
                 'satuan_harga'      => '/ porsi',
                 'deskripsi_singkat' => 'Rekomendasi hidangan khas dan rumah makan di sekitar destinasi.',
-            ],
-            'penginapan' => [
-                'nama_layanan'      => 'Penginapan & Homestay',
-                'env_key'           => 'PARTNER_HOTEL_API_URL',
-                'env_api_key'       => 'PARTNER_HOTEL_API_KEY',
-                'ikon'              => 'hotel',
-                'satuan_harga'      => '/ malam',
-                'deskripsi_singkat' => 'Pilihan homestay, cottage, dan hotel nyaman dekat lokasi wisata.',
-            ],
-            'transportasi' => [
-                'nama_layanan'      => 'Layanan Transportasi',
-                'env_key'           => 'PARTNER_TRANSPORT_API_URL',
-                'env_api_key'       => 'PARTNER_TRANSPORT_API_KEY',
-                'ikon'              => 'directions_bus',
-                'satuan_harga'      => '/ perjalanan',
-                'deskripsi_singkat' => 'Akses shuttle, travel, sewa kendaraan, dan kapal penyeberangan.',
             ],
         ];
 
@@ -238,12 +238,32 @@ class LayananApiMitra
         $waktuResponMs  = 0;
         $alasanFallback = null;
 
+        // Jalur khusus API kelompok Penginapan Singgah Medan (/api/hotels, /kecamatan, /reviews)
+        $apakahAdapterPenginapan = $kodeMitra === 'penginapan'
+            && $this->apakahAdapterPenginapanSinggahMedan($urlDasar);
+
         // Jalur khusus API kelompok Transportasi (/api/transport/lokasi, /tarif, /rekomendasi-wisata)
         $apakahAdapterTransportasi = $kodeMitra === 'transportasi'
             && $urlDasar !== ''
             && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'));
 
-        if ($apakahAdapterTransportasi) {
+        if ($apakahAdapterPenginapan) {
+            $hasilPenginapan = $this->ambilRekomendasiPenginapanMitra(
+                $infoMitra,
+                $kotaPencarian,
+                $batasAman,
+                $konteksDestinasi
+            );
+
+            if ($hasilPenginapan['berhasil']) {
+                return $hasilPenginapan['data'];
+            }
+
+            $urlTujuan      = $hasilPenginapan['url_tujuan'];
+            $statusKode     = $hasilPenginapan['status_kode'];
+            $waktuResponMs  = $hasilPenginapan['waktu_respon_ms'];
+            $alasanFallback = $hasilPenginapan['alasan_fallback'];
+        } elseif ($apakahAdapterTransportasi) {
             $hasilTransport = $this->ambilRekomendasiTransportasiMitra(
                 $infoMitra,
                 $kotaPencarian,
@@ -377,14 +397,18 @@ class LayananApiMitra
                 continue;
             }
 
-            if ($kodeMitra === 'transportasi' && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'))) {
+            $batasUjiDetik = null;
+            if ($kodeMitra === 'penginapan' && $this->apakahAdapterPenginapanSinggahMedan($urlDasar)) {
+                $urlUji        = $this->ambilBaseUrlPenginapan($urlDasar) . '/kecamatan';
+                $batasUjiDetik = max($this->batasWaktuDetik, 8);
+            } elseif ($kodeMitra === 'transportasi' && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'))) {
                 $urlUji = $this->ambilBaseUrlTransportasi($urlDasar) . '/transport/lokasi';
             } else {
                 $pemisahQuery = str_contains($urlDasar, '?') ? '&' : '?';
                 $urlUji       = $urlDasar . $pemisahQuery . 'kota=' . urlencode($kotaPencarian);
             }
 
-            $hasilPanggil = $this->panggilEndpointMitra($urlUji, $apiKey);
+            $hasilPanggil = $this->panggilEndpointMitra($urlUji, $apiKey, $batasUjiDetik);
 
             if ($hasilPanggil['berhasil']) {
                 $daftarStatus[] = [
@@ -848,8 +872,11 @@ class LayananApiMitra
         string $kotaPencarian
     ): array {
         if (is_array($konteksDestinasi)) {
-            $lintang = (float) ($konteksDestinasi['garis_lintang'] ?? 0);
-            $bujur   = (float) ($konteksDestinasi['garis_bujur'] ?? 0);
+            $koordinatBersarang = is_array($konteksDestinasi['koordinat'] ?? null)
+                ? $konteksDestinasi['koordinat']
+                : [];
+            $lintang = (float) ($koordinatBersarang['garis_lintang'] ?? ($konteksDestinasi['garis_lintang'] ?? 0));
+            $bujur   = (float) ($koordinatBersarang['garis_bujur'] ?? ($konteksDestinasi['garis_bujur'] ?? 0));
 
             if ($lintang !== 0.0 && $bujur !== 0.0) {
                 return [$lintang, $bujur];
@@ -928,6 +955,816 @@ class LayananApiMitra
     }
 
     // =========================================================================
+    // ADAPTER KHUSUS REST API MITRA PENGINAPAN SINGGAH MEDAN (/api/hotels, /reviews)
+    // =========================================================================
+
+    /**
+     * Mengambil daftar kecamatan dan jumlah hotel dari endpoint GET /api/kecamatan.
+     *
+     * @return array<string, mixed>
+     */
+    public function ambilDaftarKecamatanPenginapan(): array
+    {
+        $infoPenginapan = $this->konfigurasiMitra['penginapan'] ?? [];
+        $urlDasar       = trim((string) ($infoPenginapan['url_api'] ?? ''));
+
+        if (! $this->apakahAdapterPenginapanSinggahMedan($urlDasar)) {
+            return [
+                'berhasil'        => false,
+                'terhubung'       => false,
+                'status_kode'     => 0,
+                'waktu_respon_ms' => 0,
+                'data'            => [],
+                'pesan_error'     => 'URL API mitra penginapan belum mengarah ke layanan Singgah Medan.',
+            ];
+        }
+
+        $kunciCache = 'jejaksumut_singgah_medan_kecamatan_v1';
+        $dataCache  = $this->ambilDariCacheSingkat($kunciCache);
+        if (is_array($dataCache) && $dataCache !== []) {
+            return [
+                'berhasil'        => true,
+                'terhubung'       => true,
+                'status_kode'     => 200,
+                'waktu_respon_ms' => 1,
+                'data'            => $dataCache,
+                'pesan_error'     => null,
+            ];
+        }
+
+        $baseUrl      = $this->ambilBaseUrlPenginapan($urlDasar);
+        $urlTujuan    = $baseUrl . '/kecamatan';
+        $batasTimeout = max($this->batasWaktuDetik, 8);
+        $hasilPanggil = $this->panggilEndpointMitra($urlTujuan, $infoPenginapan['api_key'] ?? '', $batasTimeout);
+
+        if (! $hasilPanggil['berhasil']) {
+            return [
+                'berhasil'        => false,
+                'terhubung'       => false,
+                'status_kode'     => $hasilPanggil['status_kode'],
+                'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+                'data'            => [],
+                'pesan_error'     => $hasilPanggil['pesan_error'],
+            ];
+        }
+
+        $daftarMentah    = $this->ekstrakDaftarItemApi($hasilPanggil['isi']);
+        $daftarKecamatan = [];
+
+        foreach ($daftarMentah as $baris) {
+            if (! is_array($baris)) {
+                continue;
+            }
+            $namaKecamatan = trim((string) ($baris['kecamatan'] ?? ''));
+            if ($namaKecamatan === '') {
+                continue;
+            }
+            $daftarKecamatan[] = [
+                'kecamatan' => $namaKecamatan,
+                'jumlah'    => (int) ($baris['jumlah'] ?? 0),
+            ];
+        }
+
+        if ($daftarKecamatan !== []) {
+            $this->simpanKeCacheSingkat($kunciCache, $daftarKecamatan, 300);
+        }
+
+        return [
+            'berhasil'        => $daftarKecamatan !== [],
+            'terhubung'       => true,
+            'status_kode'     => $hasilPanggil['status_kode'],
+            'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+            'data'            => $daftarKecamatan,
+            'pesan_error'     => $daftarKecamatan === [] ? 'Daftar kecamatan penginapan kosong.' : null,
+        ];
+    }
+
+    /**
+     * Mengambil katalog hotel dari API Singgah Medan dengan filter & paginasi,
+     * serta fallback ke data simulasi Medan jika server mitra tidak aktif.
+     *
+     * @param array<string, mixed> $filter
+     * @return array<string, mixed>
+     */
+    public function ambilKatalogPenginapan(array $filter = []): array
+    {
+        $infoPenginapan = $this->konfigurasiMitra['penginapan'] ?? [];
+        $urlDasar       = trim((string) ($infoPenginapan['url_api'] ?? ''));
+        $halaman        = max(1, (int) ($filter['halaman'] ?? 1));
+        $batas          = max(1, min(24, (int) ($filter['batas'] ?? 12)));
+        $kataKunci      = trim((string) ($filter['q'] ?? ''));
+        $kecamatan      = trim((string) ($filter['kecamatan'] ?? ''));
+        $sarapan        = strtolower(trim((string) ($filter['sarapan'] ?? '')));
+        $ratingMin      = trim((string) ($filter['rating_min'] ?? ''));
+
+        $parameterQuery = [
+            'page'  => $halaman,
+            'limit' => $batas,
+        ];
+        if ($kataKunci !== '') {
+            $parameterQuery['q'] = $kataKunci;
+        }
+        if ($kecamatan !== '') {
+            $parameterQuery['kecamatan'] = $kecamatan;
+        }
+        if ($sarapan === 'ya') {
+            $parameterQuery['sarapan'] = 'ya';
+        }
+        if ($ratingMin !== '' && is_numeric($ratingMin)) {
+            $parameterQuery['rating_min'] = (float) $ratingMin;
+        }
+
+        if ($this->apakahAdapterPenginapanSinggahMedan($urlDasar)) {
+            $baseUrl      = $this->ambilBaseUrlPenginapan($urlDasar);
+            $urlTujuan    = $baseUrl . '/hotels?' . http_build_query($parameterQuery);
+            $batasTimeout = max($this->batasWaktuDetik, 8);
+            $apakahDefault = ($kataKunci === '' && $kecamatan === '' && $sarapan === '' && $ratingMin === '' && $halaman === 1 && $batas === 12);
+
+            if ($apakahDefault) {
+                $cacheKatalog = $this->ambilDariCacheSingkat('jejaksumut_singgah_medan_katalog_p1_v1');
+                if (is_array($cacheKatalog) && ! empty($cacheKatalog['daftar_hotel'])) {
+                    return $cacheKatalog;
+                }
+            }
+
+            $hasilPanggil = $this->panggilEndpointMitra($urlTujuan, $infoPenginapan['api_key'] ?? '', $batasTimeout);
+
+            if ($hasilPanggil['berhasil']) {
+                $isiJson      = $hasilPanggil['isi'];
+                $daftarMentah = $this->ekstrakDaftarItemApi($isiJson);
+                $daftarHotel  = [];
+
+                foreach ($daftarMentah as $itemHotel) {
+                    if (is_array($itemHotel)) {
+                        $daftarHotel[] = $this->normalisasiHotelSinggahMedan($itemHotel, $baseUrl);
+                    }
+                }
+
+                $metaMentah = is_array($isiJson['meta'] ?? null) ? $isiJson['meta'] : [];
+                $meta = [
+                    'page'        => max(1, (int) ($metaMentah['page'] ?? $halaman)),
+                    'limit'       => max(1, (int) ($metaMentah['limit'] ?? $batas)),
+                    'total'       => max(count($daftarHotel), (int) ($metaMentah['total'] ?? count($daftarHotel))),
+                    'total_pages' => max(1, (int) ($metaMentah['total_pages'] ?? 1)),
+                ];
+
+                $hasilResmi = [
+                    'berhasil'        => true,
+                    'terhubung'       => true,
+                    'sumber_data'     => 'api_mitra',
+                    'status_kode'     => $hasilPanggil['status_kode'],
+                    'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+                    'meta'            => $meta,
+                    'daftar_hotel'    => $daftarHotel,
+                    'pesan_error'     => null,
+                ];
+
+                if ($apakahDefault && $daftarHotel !== []) {
+                    $this->simpanKeCacheSingkat('jejaksumut_singgah_medan_katalog_p1_v1', $hasilResmi, 180);
+                }
+
+                return $hasilResmi;
+            }
+
+            $pesanErrorApi = $hasilPanggil['pesan_error'] ?? 'Gagal menghubungi layanan penginapan.';
+        } else {
+            $pesanErrorApi = 'URL API penginapan belum dikonfigurasi ke layanan mitra.';
+        }
+
+        // Fallback data simulasi jika API Singgah Medan tidak terjangkau
+        if ($this->modeCadanganMock) {
+            $dataSimulasi = $this->ambilDataSimulasiSumut('penginapan', 'Medan', 'Kota Medan', 12);
+            $daftarHotelFallback = [];
+            foreach ($dataSimulasi as $indeks => $itemMock) {
+                $daftarHotelFallback[] = [
+                    'id'                => $indeks + 1,
+                    'nama'              => $itemMock['nama'],
+                    'sub_label'         => $itemMock['sub_label'],
+                    'kota'              => $itemMock['kota'],
+                    'kecamatan'         => $itemMock['kota'],
+                    'alamat'            => $itemMock['alamat'],
+                    'latitude'          => 3.5952,
+                    'longitude'         => 98.6722,
+                    'jarak_km'          => null,
+                    'rating'            => $itemMock['rating'],
+                    'jumlah_ulasan'     => $itemMock['jumlah_ulasan'],
+                    'ada_sarapan'       => true,
+                    'teks_sarapan'      => 'Termasuk Sarapan',
+                    'harga'             => $itemMock['harga'],
+                    'satuan_harga'      => '/ malam',
+                    'label_tarif'       => 'Estimasi Tarif',
+                    'teks_harga_khusus' => '',
+                    'kontak'            => $itemMock['kontak'],
+                    'deskripsi'         => $itemMock['deskripsi'],
+                    'foto'              => $itemMock['foto'],
+                    'url_eksternal'     => null,
+                    'tripadvisor_url'   => null,
+                    'ulasan_unggulan'   => null,
+                    'hotel_transit'     => false,
+                ];
+            }
+
+            return [
+                'berhasil'        => true,
+                'terhubung'       => false,
+                'sumber_data'     => 'simulasi_fallback',
+                'status_kode'     => 0,
+                'waktu_respon_ms' => 0,
+                'meta'            => [
+                    'page'        => 1,
+                    'limit'       => 12,
+                    'total'       => count($daftarHotelFallback),
+                    'total_pages' => 1,
+                ],
+                'daftar_hotel'    => $daftarHotelFallback,
+                'pesan_error'     => $pesanErrorApi,
+            ];
+        }
+
+        return [
+            'berhasil'        => false,
+            'terhubung'       => false,
+            'sumber_data'     => 'tidak_tersedia',
+            'status_kode'     => 0,
+            'waktu_respon_ms' => 0,
+            'meta'            => ['page' => 1, 'limit' => $batas, 'total' => 0, 'total_pages' => 1],
+            'daftar_hotel'    => [],
+            'pesan_error'     => $pesanErrorApi,
+        ];
+    }
+
+    /**
+     * Mengambil daftar ulasan hotel langsung dari endpoint GET /api/reviews?hotel_id=...
+     * (tanpa cache agar perubahan ulasan terlihat real-time).
+     *
+     * @return array<string, mixed>
+     */
+    public function ambilUlasanPenginapan(int $idHotel): array
+    {
+        $infoPenginapan = $this->konfigurasiMitra['penginapan'] ?? [];
+        $urlDasar       = trim((string) ($infoPenginapan['url_api'] ?? ''));
+
+        if (! $this->apakahAdapterPenginapanSinggahMedan($urlDasar)) {
+            return [
+                'berhasil'        => false,
+                'status_kode'     => 503,
+                'waktu_respon_ms' => 0,
+                'data'            => [],
+                'pesan_error'     => 'Layanan penginapan Singgah Medan belum dikonfigurasi.',
+            ];
+        }
+
+        $urlTujuan    = $this->ambilBaseUrlPenginapan($urlDasar) . '/reviews?hotel_id=' . $idHotel;
+        $hasilPanggil = $this->panggilEndpointMitra($urlTujuan, $infoPenginapan['api_key'] ?? '', 8);
+
+        if (! $hasilPanggil['berhasil']) {
+            return [
+                'berhasil'        => false,
+                'status_kode'     => $hasilPanggil['status_kode'],
+                'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+                'data'            => [],
+                'pesan_error'     => $hasilPanggil['pesan_error'],
+            ];
+        }
+
+        $daftarUlasan = $this->ekstrakDaftarItemApi($hasilPanggil['isi']);
+
+        return [
+            'berhasil'        => true,
+            'status_kode'     => $hasilPanggil['status_kode'],
+            'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+            'total'           => (int) ($hasilPanggil['isi']['total'] ?? count($daftarUlasan)),
+            'data'            => $daftarUlasan,
+            'pesan_error'     => null,
+        ];
+    }
+
+    /**
+     * Mengirim ulasan hotel baru ke endpoint POST /api/reviews milik Singgah Medan.
+     *
+     * @return array<string, mixed>
+     */
+    public function kirimUlasanPenginapan(int $idHotel, int $rating, string $judul, string $isi): array
+    {
+        $infoPenginapan = $this->konfigurasiMitra['penginapan'] ?? [];
+        $urlDasar       = trim((string) ($infoPenginapan['url_api'] ?? ''));
+
+        if (! $this->apakahAdapterPenginapanSinggahMedan($urlDasar)) {
+            return [
+                'berhasil'        => false,
+                'status_kode'     => 503,
+                'waktu_respon_ms' => 0,
+                'data'            => null,
+                'pesan_error'     => 'Layanan penginapan Singgah Medan belum dikonfigurasi.',
+            ];
+        }
+
+        $urlTujuan = $this->ambilBaseUrlPenginapan($urlDasar) . '/reviews';
+        $payload   = [
+            'hotel_id' => $idHotel,
+            'user_id'  => max(1, (int) env('PARTNER_HOTEL_DEFAULT_USER_ID', 2)),
+            'rating'   => max(1, min(5, $rating)),
+            'judul'    => trim($judul),
+            'isi'      => trim($isi),
+        ];
+
+        $hasil = $this->kirimPermintaanJsonMitra('POST', $urlTujuan, $payload, $infoPenginapan['api_key'] ?? '', 8);
+
+        return [
+            'berhasil'        => $hasil['berhasil'],
+            'status_kode'     => $hasil['status_kode'],
+            'waktu_respon_ms' => $hasil['waktu_respon_ms'],
+            'data'            => is_array($hasil['isi']['data'] ?? null) ? $hasil['isi']['data'] : null,
+            'pesan'           => (string) ($hasil['isi']['message'] ?? $hasil['pesan_error'] ?? ''),
+            'pesan_error'     => $hasil['pesan_error'],
+        ];
+    }
+
+    /**
+     * Menghapus ulasan hotel berdasarkan ID lewat endpoint DELETE /api/reviews/{id}.
+     *
+     * @return array<string, mixed>
+     */
+    public function hapusUlasanPenginapan(int $idUlasan): array
+    {
+        $infoPenginapan = $this->konfigurasiMitra['penginapan'] ?? [];
+        $urlDasar       = trim((string) ($infoPenginapan['url_api'] ?? ''));
+
+        if (! $this->apakahAdapterPenginapanSinggahMedan($urlDasar)) {
+            return [
+                'berhasil'        => false,
+                'status_kode'     => 503,
+                'waktu_respon_ms' => 0,
+                'pesan_error'     => 'Layanan penginapan Singgah Medan belum dikonfigurasi.',
+            ];
+        }
+
+        $urlTujuan = $this->ambilBaseUrlPenginapan($urlDasar) . '/reviews/' . $idUlasan;
+        $hasil     = $this->kirimPermintaanJsonMitra('DELETE', $urlTujuan, [], $infoPenginapan['api_key'] ?? '', 8);
+
+        return [
+            'berhasil'        => $hasil['berhasil'],
+            'status_kode'     => $hasil['status_kode'],
+            'waktu_respon_ms' => $hasil['waktu_respon_ms'],
+            'pesan'           => (string) ($hasil['isi']['message'] ?? $hasil['pesan_error'] ?? ''),
+            'pesan_error'     => $hasil['pesan_error'],
+        ];
+    }
+
+    /**
+     * Memilih hotel terdekat (atau hotel transit Medan) dari API Singgah Medan
+     * untuk ditampilkan pada tab Penginapan di halaman detail destinasi.
+     *
+     * @param array<string, string>     $infoMitra
+     * @param array<string, mixed>|null $konteksDestinasi
+     * @return array<string, mixed>
+     */
+    private function ambilRekomendasiPenginapanMitra(
+        array $infoMitra,
+        string $kotaPencarian,
+        int $batasItem,
+        ?array $konteksDestinasi
+    ): array {
+        $baseUrl      = $this->ambilBaseUrlPenginapan($infoMitra['url_api']);
+        $apiKey       = $infoMitra['api_key'] ?? '';
+        $batasTimeout = max($this->batasWaktuDetik, 8);
+        $urlTujuan    = $baseUrl . '/hotels?limit=30&page=1';
+
+        [$wisataLat, $wisataLng] = $this->tentukanKoordinatWisata($konteksDestinasi, [], $kotaPencarian);
+
+        // Jika destinasi berada di kecamatan Medan yang dikenal Singgah Medan, utamakan filter kecamatan
+        $daftarHotelMentah = [];
+        $waktuResponMs     = 0;
+        $alamatGabungan    = strtolower(
+            trim((string) ($konteksDestinasi['alamat'] ?? '')) . ' ' . $kotaPencarian
+        );
+        $kecamatanCocok    = $this->deteksiKecamatanMedan($alamatGabungan);
+
+        if ($kecamatanCocok !== null) {
+            $urlKecamatan  = $baseUrl . '/hotels?' . http_build_query([
+                'kecamatan' => $kecamatanCocok,
+                'limit'     => 12,
+                'page'      => 1,
+            ]);
+            $hasilKec      = $this->panggilEndpointMitra($urlKecamatan, $apiKey, $batasTimeout);
+            $waktuResponMs = max($waktuResponMs, (int) $hasilKec['waktu_respon_ms']);
+
+            if ($hasilKec['berhasil']) {
+                $daftarHotelMentah = $this->ekstrakDaftarItemApi($hasilKec['isi']);
+                $urlTujuan         = $urlKecamatan;
+            }
+        }
+
+        // Ambil daftar 30 hotel dari cache singkat atau API bila filter kecamatan belum menghasilkan data
+        if ($daftarHotelMentah === []) {
+            $kunciCache   = 'jejaksumut_singgah_medan_hotels_30_v1';
+            $cacheHotels  = $this->ambilDariCacheSingkat($kunciCache);
+
+            if (is_array($cacheHotels) && $cacheHotels !== []) {
+                $daftarHotelMentah = $cacheHotels;
+                $waktuResponMs     = max($waktuResponMs, 1);
+            } else {
+                $hasilHotels   = $this->panggilEndpointMitra($urlTujuan, $apiKey, $batasTimeout);
+                $waktuResponMs = max($waktuResponMs, (int) $hasilHotels['waktu_respon_ms']);
+
+                if (! $hasilHotels['berhasil']) {
+                    return [
+                        'berhasil'        => false,
+                        'url_tujuan'      => $urlTujuan,
+                        'status_kode'     => $hasilHotels['status_kode'],
+                        'waktu_respon_ms' => $waktuResponMs,
+                        'alasan_fallback' => $hasilHotels['pesan_error'] ?? 'Gagal mengambil data hotel dari Singgah Medan.',
+                    ];
+                }
+
+                $daftarHotelMentah = $this->ekstrakDaftarItemApi($hasilHotels['isi']);
+                if ($daftarHotelMentah !== []) {
+                    $this->simpanKeCacheSingkat($kunciCache, $daftarHotelMentah, 300);
+                }
+            }
+        }
+
+        if ($daftarHotelMentah === []) {
+            return [
+                'berhasil'        => false,
+                'url_tujuan'      => $urlTujuan,
+                'status_kode'     => 200,
+                'waktu_respon_ms' => $waktuResponMs,
+                'alasan_fallback' => 'Data penginapan dari mitra Singgah Medan kosong.',
+            ];
+        }
+
+        // Hitung jarak dari koordinat destinasi ke masing-masing hotel lalu urutkan dari yang terdekat
+        $daftarDenganJarak = [];
+        foreach ($daftarHotelMentah as $itemHotel) {
+            if (! is_array($itemHotel)) {
+                continue;
+            }
+            $latHotel = (float) ($itemHotel['latitude'] ?? 0);
+            $lngHotel = (float) ($itemHotel['longitude'] ?? 0);
+            $jarakKm  = null;
+
+            if ($latHotel !== 0.0 && $lngHotel !== 0.0) {
+                $jarakKm = $this->hitungJarakKm($wisataLat, $wisataLng, $latHotel, $lngHotel);
+            }
+
+            $daftarDenganJarak[] = [
+                'hotel'    => $itemHotel,
+                'jarak_km' => $jarakKm ?? 9999.0,
+                'jarak_asli' => $jarakKm,
+            ];
+        }
+
+        usort($daftarDenganJarak, static function (array $barisA, array $barisB): int {
+            return $barisA['jarak_km'] <=> $barisB['jarak_km'];
+        });
+
+        $jarakTerdekatKm = (float) ($daftarDenganJarak[0]['jarak_km'] ?? 9999.0);
+        // Opsi A: Untuk wisata di luar radius 35 km dari Medan, tampilkan dengan keterangan Hotel Transit Medan
+        $apakahTransit   = $jarakTerdekatKm > 35.0;
+
+        $daftarKartu = [];
+        foreach (array_slice($daftarDenganJarak, 0, $batasItem) as $entri) {
+            $daftarKartu[] = $this->normalisasiHotelSinggahMedan(
+                $entri['hotel'],
+                $baseUrl,
+                $entri['jarak_asli'],
+                $apakahTransit
+            );
+        }
+
+        return [
+            'berhasil' => true,
+            'data'     => [
+                'kode_mitra'        => 'penginapan',
+                'nama_layanan'      => $infoMitra['nama_layanan'],
+                'ikon'              => $infoMitra['ikon'],
+                'deskripsi_singkat' => $apakahTransit
+                    ? 'Pilihan hotel transit di Kota Medan dari mitra Singgah Medan sebelum melanjutkan perjalanan ke ' . $kotaPencarian . '.'
+                    : 'Pilihan hotel terdekat di sekitar lokasi ' . $kotaPencarian . ' dari mitra Singgah Medan.',
+                'url_tujuan'        => $urlTujuan,
+                'terhubung'         => true,
+                'status_kode'       => 200,
+                'sumber_data'       => 'api_mitra',
+                'label_sumber'      => 'Live Mitra',
+                'alasan_fallback'   => null,
+                'waktu_respon_ms'   => $waktuResponMs,
+                'daftar_item'       => $daftarKartu,
+                'info_penginapan'   => [
+                    'mode_transit'      => $apakahTransit,
+                    'jarak_terdekat_km' => $jarakTerdekatKm < 9999.0 ? $jarakTerdekatKm : null,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Memeriksa apakah konfigurasi URL mengarah ke API Singgah Medan.
+     */
+    private function apakahAdapterPenginapanSinggahMedan(string $urlDasar): bool
+    {
+        if ($urlDasar === '') {
+            return false;
+        }
+
+        $urlRapi = rtrim($urlDasar, '/');
+
+        return str_ends_with($urlRapi, '/api')
+            || str_contains($urlRapi, '/api/hotels')
+            || str_contains($urlRapi, 'ngrok');
+    }
+
+    /**
+     * Menormalkan URL dasar API Singgah Medan agar berakhiran /api.
+     */
+    private function ambilBaseUrlPenginapan(string $urlMentah): string
+    {
+        $urlBersih   = rtrim(trim($urlMentah), '/');
+        $polaAkhiran = '#/(hotels|kecamatan|reviews)$#i';
+        $urlBersih   = (string) preg_replace($polaAkhiran, '', $urlBersih);
+
+        return rtrim($urlBersih, '/');
+    }
+
+    /**
+     * Menulis ulang URL penginapan agar tidak memakai localhost:8080 jika server diakses publik.
+     */
+    private function bangunUrlPublikPenginapan(string $baseUrlApi, ?string $urlMentah, ?string $slug): ?string
+    {
+        $komponenBase = parse_url($baseUrlApi);
+        $skemaBase    = is_array($komponenBase) ? ($komponenBase['scheme'] ?? 'https') : 'https';
+        $hostBase     = is_array($komponenBase) ? ($komponenBase['host'] ?? '') : '';
+        $portBase     = (is_array($komponenBase) && isset($komponenBase['port'])) ? ':' . $komponenBase['port'] : '';
+        $asalPublik   = $hostBase !== '' ? ($skemaBase . '://' . $hostBase . $portBase) : '';
+
+        $urlTeks   = trim((string) $urlMentah);
+        $slugTeks  = trim((string) $slug);
+
+        if ($urlTeks !== '') {
+            $komponenUrl = parse_url($urlTeks);
+            $hostUrl     = is_array($komponenUrl) ? strtolower((string) ($komponenUrl['host'] ?? '')) : '';
+            $apakahLokal = ($hostUrl === 'localhost' || $hostUrl === '127.0.0.1');
+
+            if ($apakahLokal && $asalPublik !== '') {
+                $jalur = is_array($komponenUrl) ? ($komponenUrl['path'] ?? '') : '';
+                if ($jalur !== '') {
+                    return $asalPublik . $jalur;
+                }
+            }
+
+            if (! $apakahLokal && preg_match('/^https?:\/\//i', $urlTeks) === 1) {
+                return $urlTeks;
+            }
+        }
+
+        if ($asalPublik !== '' && $slugTeks !== '') {
+            return $asalPublik . '/penginapan/' . rawurlencode($slugTeks);
+        }
+
+        return null;
+    }
+
+    /**
+     * Menyeragamkan item hotel dari JSON Singgah Medan agar siap dipakai di Kartu & Katalog.
+     *
+     * @param array<string, mixed> $hotel
+     * @return array<string, mixed>
+     */
+    private function normalisasiHotelSinggahMedan(
+        array $hotel,
+        string $baseUrlApi,
+        ?float $jarakKm = null,
+        bool $hotelTransit = false
+    ): array {
+        $idHotel     = (int) ($hotel['id'] ?? 0);
+        $namaHotel   = trim((string) ($hotel['nama'] ?? 'Hotel Mitra Medan'));
+        $slugHotel   = trim((string) ($hotel['slug'] ?? ''));
+        $kota        = trim((string) ($hotel['kota'] ?? 'Medan'));
+        $kecamatan   = trim((string) ($hotel['kecamatan'] ?? ''));
+        $alamat      = trim((string) ($hotel['alamat'] ?? ($kecamatan !== '' ? $kecamatan . ', ' . $kota : $kota)));
+        $rating      = round(max(0.0, min(5.0, (float) ($hotel['rating'] ?? 4.5))), 1);
+        $ulasan      = max(0, (int) ($hotel['jumlah_ulasan'] ?? 0));
+        $sarapanRaw  = strtolower(trim((string) ($hotel['sarapan'] ?? '')));
+        $adaSarapan  = ($sarapanRaw === 'ya');
+        $fotoMentah  = trim((string) ($hotel['foto'] ?? ''));
+        $fotoAman    = (preg_match('/^https?:\/\//i', $fotoMentah) === 1) ? $fotoMentah : $this->ambilFotoBawaanMitra('penginapan');
+        $urlPublik   = $this->bangunUrlPublikPenginapan($baseUrlApi, $hotel['url'] ?? null, $slugHotel);
+
+        $tripadvisorRaw  = trim((string) ($hotel['tripadvisor_url'] ?? ''));
+        $tripadvisorUrl  = (preg_match('/^https?:\/\//i', $tripadvisorRaw) === 1) ? $tripadvisorRaw : null;
+        $ulasanUnggulan  = is_array($hotel['ulasan_unggulan'] ?? null) ? $hotel['ulasan_unggulan'] : null;
+
+        if ($hotelTransit) {
+            $subLabel = 'Hotel Transit Medan';
+        } elseif ($kecamatan !== '') {
+            $subLabel = $kecamatan;
+        } else {
+            $subLabel = 'Penginapan Medan';
+        }
+
+        $labelJarak = '';
+        if ($jarakKm !== null) {
+            $angkaJarak = number_format($jarakKm, 1, ',', '.');
+            $labelJarak = $hotelTransit
+                ? 'Sekitar ' . $angkaJarak . ' km (Transit Medan)'
+                : $angkaJarak . ' km dari lokasi wisata';
+        }
+
+        $teksSarapan = $adaSarapan ? 'Sarapan tersedia' : 'Tanpa info sarapan';
+        $kontakTeks  = $labelJarak !== '' ? ($labelJarak . ' • ' . $teksSarapan) : $teksSarapan;
+
+        $deskripsi = $kecamatan !== ''
+            ? 'Akomodasi di kawasan ' . $kecamatan . ', ' . $kota . ($adaSarapan ? ' dengan pilihan layanan sarapan.' : '.')
+            : 'Pilihan penginapan nyaman di ' . $kota . ' dari mitra Singgah Medan.';
+
+        if ($ulasanUnggulan !== null && ! empty($ulasanUnggulan['judul'])) {
+            $deskripsi .= ' Ulasan pilihan: "' . trim((string) $ulasanUnggulan['judul']) . '".';
+        }
+
+        return [
+            'id'                => $idHotel,
+            'nama'              => $namaHotel,
+            'slug'              => $slugHotel,
+            'sub_label'         => $subLabel,
+            'kota'              => $kecamatan !== '' ? $kecamatan . ', ' . $kota : $kota,
+            'kecamatan'         => $kecamatan,
+            'alamat'            => $alamat,
+            'latitude'          => (float) ($hotel['latitude'] ?? 0),
+            'longitude'         => (float) ($hotel['longitude'] ?? 0),
+            'jarak_km'          => $jarakKm,
+            'harga'             => 0,
+            'satuan_harga'      => '',
+            'label_tarif'       => 'Fasilitas & Tarif',
+            'teks_harga_khusus' => $adaSarapan ? 'Termasuk Sarapan' : 'Cek Tarif di Mitra',
+            'ada_sarapan'       => $adaSarapan,
+            'teks_sarapan'      => $teksSarapan,
+            'rating'            => $rating,
+            'jumlah_ulasan'     => $ulasan,
+            'kontak'            => $kontakTeks,
+            'deskripsi'         => $deskripsi,
+            'foto'              => $fotoAman,
+            'url_eksternal'     => $urlPublik,
+            'tripadvisor_url'   => $tripadvisorUrl,
+            'ulasan_unggulan'   => $ulasanUnggulan,
+            'hotel_transit'     => $hotelTransit,
+        ];
+    }
+
+    /**
+     * Mendeteksi nama kecamatan Medan dari alamat atau kota destinasi.
+     */
+    private function deteksiKecamatanMedan(string $teksLokasi): ?string
+    {
+        $daftarKecamatan = [
+            'Medan Petisah', 'Medan Barat', 'Medan Kota', 'Medan Maimun',
+            'Medan Baru', 'Medan Timur', 'Medan Selayang', 'Medan Sunggal',
+            'Medan Helvetia', 'Medan Polonia', 'Medan Area', 'Medan Amplas',
+            'Percut Sei Tuan', 'Beringin', 'Deli Tua', 'Namo Rambe', 'Batang Serangan',
+        ];
+
+        foreach ($daftarKecamatan as $namaKecamatan) {
+            if (str_contains($teksLokasi, strtolower($namaKecamatan))) {
+                return $namaKecamatan;
+            }
+        }
+
+        return null;
+    }
+
+    // =========================================================================
+    // HELPER TAMBAHAN UNTUK HALAMAN MANDIRI TRANSPORTASI & MITRA LAINNYA
+    // =========================================================================
+
+    /**
+     * Mengambil rekomendasi rute multi-moda menuju koordinat wisata tertentu
+     * dari endpoint GET /api/transport/rekomendasi-wisata.
+     *
+     * @return array<string, mixed>
+     */
+    public function ambilRekomendasiRuteTransportasi(
+        float $userLat,
+        float $userLng,
+        float $wisataLat,
+        float $wisataLng,
+        string $namaWisata,
+        string $tripType = 'oneway'
+    ): array {
+        $infoTransport = $this->konfigurasiMitra['transportasi'] ?? [];
+        $urlDasar      = trim((string) ($infoTransport['url_api'] ?? ''));
+        $apiKey        = trim((string) ($infoTransport['api_key'] ?? ''));
+
+        if ($urlDasar === '') {
+            return [
+                'berhasil'        => false,
+                'status_kode'     => 0,
+                'waktu_respon_ms' => 0,
+                'data'            => null,
+                'pesan_error'     => 'URL API mitra transportasi belum dikonfigurasi.',
+            ];
+        }
+
+        $query = http_build_query([
+            'user_lat'    => $userLat,
+            'user_lng'    => $userLng,
+            'wisata_lat'  => $wisataLat,
+            'wisata_lng'  => $wisataLng,
+            'nama_wisata' => $namaWisata,
+            'trip_type'   => $tripType === 'roundtrip' ? 'roundtrip' : 'oneway',
+        ]);
+        $urlTujuan    = $this->ambilBaseUrlTransportasi($urlDasar) . '/transport/rekomendasi-wisata?' . $query;
+        $hasilPanggil = $this->panggilEndpointMitra($urlTujuan, $apiKey, max($this->batasWaktuDetik, 6));
+
+        if (! $hasilPanggil['berhasil']) {
+            return [
+                'berhasil'        => false,
+                'status_kode'     => $hasilPanggil['status_kode'],
+                'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+                'data'            => null,
+                'pesan_error'     => $hasilPanggil['pesan_error'],
+            ];
+        }
+
+        return [
+            'berhasil'        => true,
+            'status_kode'     => $hasilPanggil['status_kode'],
+            'waktu_respon_ms' => $hasilPanggil['waktu_respon_ms'],
+            'data'            => is_array($hasilPanggil['isi']['data'] ?? null) ? $hasilPanggil['isi']['data'] : [],
+            'pesan_error'     => null,
+        ];
+    }
+
+    /**
+     * Mengambil katalog layanan Tur Guide & Kuliner di 6 klaster wilayah Sumut
+     * untuk ditampilkan pada halaman /mitra-lainnya.
+     *
+     * @return array<string, mixed>
+     */
+    public function ambilKatalogMitraLainnya(?string $jenisLayanan = null, ?string $kodeKlaster = null): array
+    {
+        $labelKlaster = [
+            'toba_samosir'    => 'Danau Toba & Samosir',
+            'karo'            => 'Karo & Berastagi',
+            'langkat'         => 'Langkat & Bukit Lawang',
+            'medan_sekitar'   => 'Medan & Sekitar',
+            'nias'            => 'Kepulauan Nias',
+            'pesisir_selatan' => 'Pesisir Selatan & Tapanuli',
+        ];
+
+        $jenisAktif = trim((string) $jenisLayanan);
+        if (! in_array($jenisAktif, ['tur_guide', 'kuliner'], true)) {
+            $jenisAktif = 'semua';
+        }
+
+        $klasterAktif = trim((string) $kodeKlaster);
+        if (! array_key_exists($klasterAktif, $labelKlaster)) {
+            $klasterAktif = 'semua';
+        }
+
+        $semuaKlaster = $this->daftarDataSimulasiPerKlaster();
+        $daftarItem   = [];
+
+        foreach ($semuaKlaster as $kodeWilayah => $dataWilayah) {
+            if ($klasterAktif !== 'semua' && $kodeWilayah !== $klasterAktif) {
+                continue;
+            }
+
+            $daftarKodeTarget = $jenisAktif === 'semua' ? ['tur_guide', 'kuliner'] : [$jenisAktif];
+            foreach ($daftarKodeTarget as $kodeMitra) {
+                $infoMitra = $this->konfigurasiMitra[$kodeMitra] ?? null;
+                $items     = $dataWilayah[$kodeMitra] ?? [];
+                if ($infoMitra === null || ! is_array($items)) {
+                    continue;
+                }
+
+                foreach ($items as $item) {
+                    $daftarItem[] = [
+                        'kode_mitra'    => $kodeMitra,
+                        'nama_layanan'  => $infoMitra['nama_layanan'],
+                        'kode_klaster'  => $kodeWilayah,
+                        'nama_klaster'  => $labelKlaster[$kodeWilayah] ?? 'Sumatera Utara',
+                        'nama'          => $item['nama'],
+                        'sub_label'     => $item['sub_label'],
+                        'kota'          => $item['kota'],
+                        'alamat'        => $item['alamat'],
+                        'harga'         => (int) $item['harga'],
+                        'satuan_harga'  => $infoMitra['satuan_harga'],
+                        'rating'        => (float) $item['rating'],
+                        'jumlah_ulasan' => (int) $item['jumlah_ulasan'],
+                        'kontak'        => $item['kontak'],
+                        'deskripsi'     => $item['deskripsi'],
+                        'foto'          => $item['foto'],
+                    ];
+                }
+            }
+        }
+
+        return [
+            'daftar_klaster' => $labelKlaster,
+            'daftar_item'    => $daftarItem,
+        ];
+    }
+
+    // =========================================================================
     // HELPER HTTP ADAPTER & NORMALISASI JSON MITRA
     // =========================================================================
 
@@ -936,21 +1773,25 @@ class LayananApiMitra
      *
      * @return array<string, mixed>
      */
-    private function panggilEndpointMitra(string $urlTujuan, string $apiKey = ''): array
+    private function panggilEndpointMitra(string $urlTujuan, string $apiKey = '', ?int $batasWaktuKhusus = null): array
     {
-        $waktuMulai = microtime(true);
-
+        $waktuMulai       = microtime(true);
+        $timeoutAktif     = $batasWaktuKhusus !== null ? max(1, min(15, $batasWaktuKhusus)) : $this->batasWaktuDetik;
         $headerPermintaan = ['Accept' => 'application/json'];
+
         if ($apiKey !== '') {
             $headerPermintaan['X-API-KEY'] = $apiKey;
+        }
+        if (str_contains($urlTujuan, 'ngrok')) {
+            $headerPermintaan['ngrok-skip-browser-warning'] = 'true';
         }
 
         try {
             // Gunakan getShared = false agar instance cURL tiap mitra berdiri sendiri
             $klienHttp     = Services::curlrequest([], null, null, false);
             $respon        = $klienHttp->get($urlTujuan, [
-                'timeout'         => $this->batasWaktuDetik,
-                'connect_timeout' => $this->batasWaktuDetik,
+                'timeout'         => $timeoutAktif,
+                'connect_timeout' => $timeoutAktif,
                 'http_errors'     => false,
                 'headers'         => $headerPermintaan,
             ]);
@@ -992,9 +1833,120 @@ class LayananApiMitra
                 'berhasil'        => false,
                 'status_kode'     => 0,
                 'isi'             => [],
-                'pesan_error'     => 'Server mitra tidak aktif atau melewati batas waktu ' . $this->batasWaktuDetik . ' detik.',
+                'pesan_error'     => 'Server mitra tidak aktif atau melewati batas waktu ' . $timeoutAktif . ' detik.',
                 'waktu_respon_ms' => $waktuResponMs,
             ];
+        }
+    }
+
+    /**
+     * Mengirim permintaan HTTP POST atau DELETE berformat JSON ke endpoint kelompok mitra.
+     *
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private function kirimPermintaanJsonMitra(
+        string $metode,
+        string $urlTujuan,
+        array $payload = [],
+        string $apiKey = '',
+        int $batasWaktuKhusus = 8
+    ): array {
+        $waktuMulai       = microtime(true);
+        $metodeBersih     = strtoupper(trim($metode));
+        $timeoutAktif     = max(1, min(15, $batasWaktuKhusus));
+        $headerPermintaan = [
+            'Accept'       => 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+
+        if ($apiKey !== '') {
+            $headerPermintaan['X-API-KEY'] = $apiKey;
+        }
+        if (str_contains($urlTujuan, 'ngrok')) {
+            $headerPermintaan['ngrok-skip-browser-warning'] = 'true';
+        }
+
+        $opsiRequest = [
+            'timeout'         => $timeoutAktif,
+            'connect_timeout' => $timeoutAktif,
+            'http_errors'     => false,
+            'headers'         => $headerPermintaan,
+        ];
+        if ($payload !== []) {
+            $opsiRequest['json'] = $payload;
+        }
+
+        try {
+            $klienHttp     = Services::curlrequest([], null, null, false);
+            $respon        = $klienHttp->request($metodeBersih, $urlTujuan, $opsiRequest);
+            $waktuResponMs = (int) round((microtime(true) - $waktuMulai) * 1000);
+            $statusKode    = $respon->getStatusCode();
+            $isiJson       = json_decode((string) $respon->getBody(), true);
+
+            if (! is_array($isiJson)) {
+                return [
+                    'berhasil'        => false,
+                    'status_kode'     => $statusKode,
+                    'isi'             => [],
+                    'pesan_error'     => 'Server mitra tidak mengembalikan format JSON yang valid.',
+                    'waktu_respon_ms' => $waktuResponMs,
+                ];
+            }
+
+            if ($statusKode < 200 || $statusKode >= 300) {
+                $pesanMitra = trim((string) ($isiJson['message'] ?? $isiJson['pesan'] ?? ''));
+
+                return [
+                    'berhasil'        => false,
+                    'status_kode'     => $statusKode,
+                    'isi'             => $isiJson,
+                    'pesan_error'     => $pesanMitra !== '' ? $pesanMitra : ('Server mitra merespons dengan kode HTTP ' . $statusKode . '.'),
+                    'waktu_respon_ms' => $waktuResponMs,
+                ];
+            }
+
+            return [
+                'berhasil'        => true,
+                'status_kode'     => $statusKode,
+                'isi'             => $isiJson,
+                'pesan_error'     => null,
+                'waktu_respon_ms' => $waktuResponMs,
+            ];
+        } catch (Throwable $kesalahan) {
+            $waktuResponMs = (int) round((microtime(true) - $waktuMulai) * 1000);
+
+            return [
+                'berhasil'        => false,
+                'status_kode'     => 0,
+                'isi'             => [],
+                'pesan_error'     => 'Koneksi ke server mitra terputus atau melewati batas waktu.',
+                'waktu_respon_ms' => $waktuResponMs,
+            ];
+        }
+    }
+
+    /**
+     * Mengambil data cache berumur singkat secara aman tanpa mengganggu alur halaman jika cache error.
+     */
+    private function ambilDariCacheSingkat(string $kunci): mixed
+    {
+        try {
+            return cache($kunci);
+        } catch (Throwable $kesalahan) {
+            return null;
+        }
+    }
+
+    /**
+     * Menyimpan data ke cache berumur singkat (default 5 menit) secara aman.
+     */
+    private function simpanKeCacheSingkat(string $kunci, mixed $nilai, int $ttlDetik = 300): void
+    {
+        try {
+            cache()->save($kunci, $nilai, $ttlDetik);
+        } catch (Throwable $kesalahan) {
+            // Abaikan kegagalan penulisan cache agar permintaan tetap berjalan normal
         }
     }
 

@@ -32,11 +32,8 @@ $hargaTiket      = (int) ($destinasi['harga_tiket'] ?? 0);
         <div class="p-5">
             <div class="flex items-center justify-between text-outline font-body-sm text-body-sm gap-2">
                 <span class="truncate flex items-center gap-1">
-                    <span class="material-symbols-outlined text-xs text-primary">pin_drop</span>
+                    <span class="material-symbols-outlined text-xs text-primary" aria-hidden="true">pin_drop</span>
                     <?= esc($destinasi['kota'] ?? 'Sumatera Utara') ?>
-                    <?php if (! empty($destinasi['kode_kabupaten'])) : ?>
-                        (<?= esc($destinasi['kode_kabupaten']) ?>)
-                    <?php endif; ?>
                 </span>
                 <span class="font-metric-rating text-metric-rating text-on-surface flex items-center gap-0.5 shrink-0 tabular-nums">
                     <span class="material-symbols-outlined text-xs text-amber-600" style="font-variation-settings: 'FILL' 1;">star</span>

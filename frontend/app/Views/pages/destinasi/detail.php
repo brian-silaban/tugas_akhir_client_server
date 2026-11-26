@@ -98,9 +98,8 @@
                 <header>
                     <div class="flex flex-wrap items-center gap-3 text-sm text-on-surface-variant mb-2">
                         <span class="inline-flex items-center gap-1 font-medium text-primary">
-                            <span class="material-symbols-outlined text-base">pin_drop</span>
+                            <span class="material-symbols-outlined text-base" aria-hidden="true">pin_drop</span>
                             <?= esc($destinasi['nama_kabupaten_kota'] ?? $destinasi['kota']) ?>
-                            (Kode <?= esc($destinasi['kode_kabupaten'] ?? '-') ?>)
                         </span>
                         <span>•</span>
                         <span class="inline-flex items-center gap-1 tabular-nums font-semibold text-on-surface">
@@ -222,7 +221,7 @@
                     <h2 class="font-headline-md text-headline-md text-on-surface mb-4">Fasilitas Tersedia</h2>
                     <?php if ($daftarFasilitas === []) : ?>
                         <p class="font-body-md text-body-md text-on-surface-variant">
-                            Informasi fasilitas rinci belum tercatat pada basis data untuk objek wisata ini.
+                            Informasi fasilitas rinci belum tersedia untuk destinasi wisata ini.
                         </p>
                     <?php else : ?>
                         <div class="flex flex-wrap gap-2.5">

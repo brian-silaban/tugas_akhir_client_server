@@ -39,13 +39,10 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
             <h1 class="font-headline-lg text-headline-lg-mobile sm:text-headline-lg text-on-surface mt-1">
                 Katalog Eksplorasi Destinasi
             </h1>
-            <p class="font-body-md text-body-md text-on-surface-variant mt-2 tabular-nums">
-                Menampilkan <strong class="text-on-surface"><?= esc((string) count($daftarDestinasi ?? [])) ?></strong> dari <strong class="text-on-surface"><?= esc(number_format($totalData, 0, ',', '.')) ?></strong> objek wisata terdata.
-            </p>
         </div>
 
         <a href="<?= base_url('/') ?>" class="text-primary hover:underline font-label-md text-label-md inline-flex items-center gap-1 self-start md:self-auto">
-            <span class="material-symbols-outlined text-base">arrow_back</span>
+            <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
             <span>Kembali ke Beranda</span>
         </a>
     </div>
@@ -72,12 +69,12 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
         </div>
 
         <div class="lg:col-span-3">
-            <label for="filter-kabupaten" class="block font-label-caps text-label-caps text-outline uppercase mb-1.5">Kabupaten / Kota (33)</label>
+            <label for="filter-kabupaten" class="block font-label-caps text-label-caps text-outline uppercase mb-1.5">Kabupaten / Kota</label>
             <select id="filter-kabupaten" name="kabupaten" class="w-full px-3.5 py-2.5 rounded-xl bg-surface-container-low border border-outline-variant/50 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary cursor-pointer">
                 <option value="">Semua Kabupaten/Kota</option>
                 <?php foreach ($daftarKabupatenKota ?? [] as $wil) : ?>
                     <option value="<?= esc($wil['kode_kabupaten']) ?>" <?= $kabupatenAktif === $wil['kode_kabupaten'] ? 'selected' : '' ?>>
-                        <?= esc($wil['nama_kabupaten_kota']) ?> (<?= esc((string) ($wil['jumlah_destinasi'] ?? 0)) ?>)
+                        <?= esc($wil['nama_kabupaten_kota']) ?>
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -157,7 +154,7 @@ $bangunUrlHalaman = static function (int $nomorHalaman) use ($filterAktif): stri
                 Belum Ada Destinasi yang Cocok
             </h2>
             <p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-md mx-auto">
-                Belum ada objek wisata terdata untuk filter atau kabupaten/kota yang dipilih. Coba ubah kata kunci pencarian, pilih kabupaten/kota lain, atau reset filter.
+                Belum ada destinasi wisata yang cocok dengan filter atau kabupaten/kota yang dipilih. Coba ubah kata kunci pencarian, pilih kabupaten/kota lain, atau reset filter.
             </p>
             <a href="<?= base_url('destinasi') ?>" class="inline-flex mt-6 px-5 py-2.5 rounded-xl bg-primary text-on-primary hover:bg-primary-container font-label-md text-label-md transition-colors">
                 Tampilkan Semua Destinasi
