@@ -2,11 +2,7 @@
 $menuAktif         = $menuAktif ?? 'beranda';
 $idPenggunaAktif   = session('id_pengguna');
 $namaPenggunaAktif = session('nama_pengguna') ?? session('nama') ?? 'Wisatawan';
-
-$daftarMenuNavigasi = [
-    ['kode' => 'beranda', 'label' => 'Beranda', 'tautan' => base_url('/')],
-    ['kode' => 'katalog', 'label' => 'Katalog Wisata', 'tautan' => base_url('/destinasi')],
-];
+$berandaAktif      = $menuAktif === 'beranda';
 ?>
 <header class="fixed top-0 left-0 right-0 z-50 bg-surface/90 backdrop-blur-md border-b border-surface-variant/40">
     <div class="h-20 max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
@@ -27,24 +23,18 @@ $daftarMenuNavigasi = [
             </div>
         </a>
 
-        <!-- Tautan Navigasi Tengah -->
-        <nav class="hidden lg:flex items-center gap-1" aria-label="Navigasi utama">
-            <?php foreach ($daftarMenuNavigasi as $menuItem) : ?>
-                <?php $sedangAktif = $menuAktif === $menuItem['kode']; ?>
-                <a
-                    href="<?= esc($menuItem['tautan']) ?>"
-                    class="<?= $sedangAktif
-                        ? 'px-3.5 py-2 bg-primary-container text-on-primary font-label-md text-label-md rounded-lg transition-all'
-                        : 'px-3.5 py-2 font-label-md text-label-md rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all' ?>"
-                    <?= $sedangAktif ? 'aria-current="page"' : '' ?>
-                >
-                    <?= esc($menuItem['label']) ?>
-                </a>
-            <?php endforeach; ?>
-        </nav>
+        <!-- Navigasi & Tombol Aksi Kanan -->
+        <nav class="flex items-center gap-2 sm:gap-3 shrink-0" aria-label="Navigasi utama">
+            <a
+                href="<?= base_url('/') ?>"
+                class="<?= $berandaAktif
+                    ? 'hidden sm:inline-flex items-center justify-center px-3.5 py-2 bg-primary-container text-on-primary font-label-md text-label-md rounded-lg transition-all'
+                    : 'hidden sm:inline-flex items-center justify-center px-3.5 py-2 font-label-md text-label-md rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-all' ?>"
+                <?= $berandaAktif ? 'aria-current="page"' : '' ?>
+            >
+                Beranda
+            </a>
 
-        <!-- Tombol Aksi Kanan (1 Secondary/Ghost + 1 Primary Solid sesuai Sloplint) -->
-        <div class="flex items-center gap-2 sm:gap-3 shrink-0">
             <?php if (! empty($idPenggunaAktif)) : ?>
                 <!-- Menu Khusus Member yang Login -->
                 <a
@@ -103,6 +93,6 @@ $daftarMenuNavigasi = [
                     Jelajahi Wisata
                 </a>
             <?php endif; ?>
-        </div>
+        </nav>
     </div>
 </header>
