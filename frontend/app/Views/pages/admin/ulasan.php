@@ -1,4 +1,7 @@
 <?= $this->extend('pages/admin/tata_letak') ?>
+<?= $this->section('pengantar_halaman') ?>
+Tinjau pengalaman wisatawan dan hapus ulasan yang tidak sesuai.
+<?= $this->endSection() ?>
 <?= $this->section('isi') ?>
 <div class="bungkus-tabel" role="region" aria-label="Daftar ulasan" tabindex="0">
     <table>
@@ -13,7 +16,7 @@
                         <small><?= esc($ulasan['nama_pengguna']) ?></small>
                     </th>
                     <td class="sel-ulasan">
-                        <span class="status"><?= esc($ulasan['rating']) ?>/5</span>
+                        <span class="status rating" aria-label="Rating <?= esc($ulasan['rating'], 'attr') ?> dari 5"><?= esc($ulasan['rating']) ?>/5</span>
                         <p><?= esc($ulasan['komentar']) ?></p>
                     </td>
                     <td>

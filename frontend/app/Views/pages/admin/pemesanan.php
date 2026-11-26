@@ -1,4 +1,7 @@
 <?= $this->extend('pages/admin/tata_letak') ?>
+<?= $this->section('pengantar_halaman') ?>
+Periksa detail kunjungan dan verifikasi pembayaran tiket wisatawan.
+<?= $this->endSection() ?>
 <?= $this->section('isi') ?>
 <div class="bilah">
     <form method="get" action="<?= esc(site_url('admin/pemesanan'), 'attr') ?>">
@@ -35,7 +38,7 @@
                         <small><?= esc($pemesanan['nama_destinasi']) ?> · <?= esc($pemesanan['jumlah_pengunjung']) ?> orang</small>
                     </td>
                     <td class="angka">Rp <?= esc(number_format($pemesanan['total_harga'], 0, ',', '.')) ?></td>
-                    <td><span class="status <?= $status === 'lunas' ? 'aktif' : '' ?>"><?= esc(ucfirst($status)) ?></span></td>
+                    <td><span class="status <?= esc($status, 'attr') ?>"><?= esc(ucfirst($status)) ?></span></td>
                     <td>
                         <?php if ($status === 'menunggu'): ?>
                             <div class="aksi">

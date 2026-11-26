@@ -1,4 +1,7 @@
 <?= $this->extend('pages/admin/tata_letak') ?>
+<?= $this->section('pengantar_halaman') ?>
+Lengkapi informasi yang akan ditampilkan kepada wisatawan. Kolom bertanda * wajib diisi.
+<?= $this->endSection() ?>
 <?= $this->section('aksi_halaman') ?>
 <a class="tombol tombol-ghost" href="<?= esc(site_url('admin/destinasi'), 'attr') ?>">
     <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Daftar destinasi
@@ -36,14 +39,14 @@ $konflikEdit = $id !== null && (int) session()->getFlashdata('konflik_destinasi'
     <fieldset>
         <legend>Informasi utama</legend>
         <div class="kisi-formulir">
-            <label>Nama destinasi
+            <label>Nama destinasi *
                 <input name="nama" maxlength="180" required value="<?= esc($nilai('nama'), 'attr') ?>">
             </label>
-            <label>Slug
+            <label>Slug <?= $id !== null ? '*' : '' ?>
                 <input name="slug" maxlength="220" <?= $id === null ? '' : 'required' ?> value="<?= esc($nilai('slug'), 'attr') ?>">
                 <small><?= $id === null ? 'Kosongkan untuk membuat slug dari nama.' : 'Perubahan slug akan mengubah tautan katalog.' ?></small>
             </label>
-            <label>Kategori
+            <label>Kategori *
                 <select name="id_kategori" required>
                     <option value="">Pilih kategori</option>
                     <?php foreach ($daftar_kategori as $kategori): ?>
@@ -56,7 +59,7 @@ $konflikEdit = $id !== null && (int) session()->getFlashdata('konflik_destinasi'
             <label>Subkategori
                 <input name="sub_kategori" maxlength="100" value="<?= esc($nilai('sub_kategori'), 'attr') ?>">
             </label>
-            <label>Kabupaten/kota
+            <label>Kabupaten/kota *
                 <select name="kode_kabupaten" required>
                     <option value="">Pilih wilayah</option>
                     <?php foreach ($daftar_wilayah as $wilayah): ?>
@@ -66,10 +69,10 @@ $konflikEdit = $id !== null && (int) session()->getFlashdata('konflik_destinasi'
                     <?php endforeach ?>
                 </select>
             </label>
-            <label>Harga tiket per orang (Rp)
+            <label>Harga tiket per orang (Rp) *
                 <input name="harga_tiket" type="number" min="0" max="2147483647" required value="<?= esc($nilai('harga_tiket', '0'), 'attr') ?>">
             </label>
-            <label class="lebar-penuh">Deskripsi
+            <label class="lebar-penuh">Deskripsi *
                 <textarea name="deskripsi" rows="5" maxlength="20000" required><?= esc($nilai('deskripsi')) ?></textarea>
             </label>
             <label class="lebar-penuh">URL foto utama

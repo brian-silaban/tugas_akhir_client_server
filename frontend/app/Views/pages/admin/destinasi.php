@@ -1,4 +1,7 @@
 <?= $this->extend('pages/admin/tata_letak') ?>
+<?= $this->section('pengantar_halaman') ?>
+Kelola informasi, harga tiket, dan lokasi destinasi pada katalog wisatawan.
+<?= $this->endSection() ?>
 <?= $this->section('aksi_halaman') ?>
 <a class="tombol tombol-utama" href="<?= esc(site_url('admin/destinasi/tambah'), 'attr') ?>">
     <span class="material-symbols-outlined" aria-hidden="true">add</span> Tambah destinasi
@@ -12,6 +15,9 @@
         <div class="aksi">
             <input id="kata_kunci" type="search" name="kata_kunci" value="<?= esc($kata_kunci, 'attr') ?>">
             <button class="tombol tombol-ghost" type="submit">Cari</button>
+            <?php if ($kata_kunci !== ''): ?>
+                <a class="tombol tombol-ghost" href="<?= esc(site_url('admin/destinasi'), 'attr') ?>">Reset</a>
+            <?php endif ?>
         </div>
     </form>
     <?php if ($paginasi !== []): ?><p><?= esc(number_format($paginasi['total_data'], 0, ',', '.')) ?> destinasi</p><?php endif ?>
