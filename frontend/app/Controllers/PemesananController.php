@@ -95,11 +95,9 @@ class PemesananController extends BaseController
         // Arahkan langsung ke E-Ticket setelah backend mengembalikan status 201 Created.
         $idTiketBaru = (int) ($hasilApi['data']['id'] ?? 0);
         if ($hasilApi['berhasil'] && $idTiketBaru > 0) {
-            $kodeTiket = (string) ($hasilApi['data']['kode_pemesanan'] ?? '');
-
             return redirect()
                 ->to('/pemesanan/etiket/' . $idTiketBaru)
-                ->with('pesan_sukses', 'Tiket berhasil dipesan. Kode tiket: ' . $kodeTiket);
+                ->with('pesan_sukses', 'Tiket berhasil dipesan.');
         }
 
         $pesanError = $hasilApi['pesan_error'] ?? 'Pemesanan gagal, silakan coba lagi.';
