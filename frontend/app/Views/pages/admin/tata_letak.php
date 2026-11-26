@@ -24,6 +24,7 @@
                 'admin/destinasi' => ['Destinasi', 'landscape'],
                 'admin/pemesanan' => ['Pemesanan', 'confirmation_number'],
                 'admin/ulasan' => ['Moderasi ulasan', 'rate_review'],
+                'admin/ganti-sandi' => ['Ganti sandi', 'lock_reset'],
             ] as $rute => [$label, $ikon]): ?>
                 <?php $aktif = $rute === 'admin' ? uri_string() === 'admin' : str_starts_with(uri_string(), $rute); ?>
                 <a href="<?= esc(site_url($rute), 'attr') ?>" <?= $aktif ? 'aria-current="page"' : '' ?>>
@@ -37,10 +38,6 @@
                 <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
                 Laman wisatawan
                 <span class="material-symbols-outlined" aria-hidden="true">arrow_outward</span>
-            </a>
-            <a class="tautan-wisatawan" href="<?= esc(site_url('ganti-sandi'), 'attr') ?>">
-                <span class="material-symbols-outlined" aria-hidden="true">key</span>
-                Ganti kata sandi
             </a>
             <form method="post" action="<?= esc(site_url('admin/keluar'), 'attr') ?>">
                 <?= csrf_field() ?>

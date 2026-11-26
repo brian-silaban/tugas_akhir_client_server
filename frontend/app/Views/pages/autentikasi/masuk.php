@@ -170,9 +170,9 @@
                             <label for="kata_sandi" class="block text-sm font-medium text-on-surface">
                                 Kata Sandi
                             </label>
-                            <a href="<?= base_url('/ganti-sandi') ?>"
+                            <a href="<?= base_url('lupa-sandi') ?>"
                                class="text-xs font-semibold text-primary-container hover:text-primary transition-colors underline underline-offset-2">
-                                Ganti Kata Sandi?
+                                Lupa kata sandi?
                             </a>
                         </div>
                         <div class="relative">
@@ -211,6 +211,15 @@
                         Masuk ke Akun
                     </button>
                 </form>
+
+                <!-- Tautan ganti kata sandi untuk user maupun admin -->
+                <p class="mt-4 text-center text-xs text-on-surface-variant">
+                    Ingin mengganti kata sandi akun Anda?
+                    <a href="<?= base_url('ganti-sandi') ?>"
+                       class="text-primary-container font-semibold hover:text-primary transition-colors underline underline-offset-2">
+                        Ganti kata sandi
+                    </a>
+                </p>
 
                 <!-- Pemisah visual -->
                 <?php if (! ($mode_admin ?? false)): ?>

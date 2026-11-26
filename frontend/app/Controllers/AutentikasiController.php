@@ -179,99 +179,6 @@ class AutentikasiController extends BaseController
     }
 
     // ---------------------------------------------------------------
-    // Halaman & Proses GANTI KATA SANDI (Member & Admin)
-    // ---------------------------------------------------------------
-
-    /**
-     * Tampilkan formulir ganti kata sandi.
-     * Dapat diakses dari halaman login maupun saat sudah login.
-     */
-    public function gantiSandi(): string
-    {
-        $sudahMasuk = (bool) session()->get('sudah_masuk');
-
-        return view('pages/autentikasi/ganti_sandi', [
-            'mode_admin'  => env('JEJAKSUMUT_MODE_CLIENT') === 'admin',
-            'sudah_masuk' => $sudahMasuk,
-            'email_sesi'  => $sudahMasuk ? (string) session()->get('email') : '',
-            'peran_sesi'  => $sudahMasuk ? (string) session()->get('peran') : '',
-        ]);
-    }
-
-    /**
-     * Memproses pergantian kata sandi melalui REST API Backend.
-     */
-    public function prosesGantiSandi(): RedirectResponse
-    {
-        $sudahMasuk = (bool) session()->get('sudah_masuk');
-        $email      = $sudahMasuk
-            ? (string) session()->get('email')
-            : trim((string) $this->request->getPost('email'));
-
-        $aturanValidasi = [
-            'kata_sandi_lama'            => 'required',
-            'kata_sandi_baru'            => 'required|min_length[6]',
-            'konfirmasi_kata_sandi_baru' => 'required|matches[kata_sandi_baru]',
-        ];
-        if (! $sudahMasuk) {
-            $aturanValidasi['email'] = 'required|valid_email|max_length[150]';
-        }
-
-        $pesanValidasi = [
-            'email' => [
-                'required'    => 'Alamat email wajib diisi.',
-                'valid_email' => 'Format email tidak valid.',
-            ],
-            'kata_sandi_lama' => [
-                'required' => 'Kata sandi lama wajib diisi.',
-            ],
-            'kata_sandi_baru' => [
-                'required'   => 'Kata sandi baru wajib diisi.',
-                'min_length' => 'Kata sandi baru minimal 6 karakter.',
-            ],
-            'konfirmasi_kata_sandi_baru' => [
-                'required' => 'Konfirmasi kata sandi baru wajib diisi.',
-                'matches'  => 'Konfirmasi kata sandi baru tidak cocok.',
-            ],
-        ];
-
-        if (! $this->validate($aturanValidasi, $pesanValidasi)) {
-            return redirect()->back()->withCookies()
-                ->withInput()
-                ->with('errors', $this->validator->getErrors());
-        }
-
-        $tokenApi = $sudahMasuk ? (string) session()->get('token_api') : null;
-        $hasil    = $this->layananApiBackend->kirimPost('/auth/ganti-sandi', [
-            'email'                      => $email,
-            'kata_sandi_lama'            => (string) $this->request->getPost('kata_sandi_lama'),
-            'kata_sandi_baru'            => (string) $this->request->getPost('kata_sandi_baru'),
-            'konfirmasi_kata_sandi_baru' => (string) $this->request->getPost('konfirmasi_kata_sandi_baru'),
-        ], $tokenApi);
-
-        if (! $hasil['terhubung']) {
-            return redirect()->back()->withCookies()
-                ->withInput()
-                ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
-        }
-
-        if (! $hasil['berhasil']) {
-            $pesanError = $hasil['pesan_error'] ?? 'Gagal memperbarui kata sandi. Silakan periksa kembali data Anda.';
-            return redirect()->back()->withCookies()
-                ->withInput()
-                ->with('error', $pesanError);
-        }
-
-        if ($sudahMasuk) {
-            session()->destroy();
-        }
-
-        return redirect()->to(site_url('masuk'))
-            ->withCookies()
-            ->with('success', 'Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.');
-    }
-
-    // ---------------------------------------------------------------
     // KELUAR (Logout)
     // ---------------------------------------------------------------
 
@@ -293,8 +200,260 @@ class AutentikasiController extends BaseController
     }
 
     // ---------------------------------------------------------------
+    // GANTI KATA SANDI (Member & Admin, dari dalam sesi maupun halaman masuk)
+    // ---------------------------------------------------------------
+
+    /**
+     * Tampilkan formulir ganti kata sandi.
+     */
+    public function gantiSandi(): string
+    {
+        return view('pages/autentikasi/ganti_sandi', [
+            'sudah_masuk' => (bool) session()->get('sudah_masuk'),
+            'email_sesi'  => (string) (session()->get('email') ?? ''),
+            'nama_sesi'   => (string) (session()->get('nama') ?? ''),
+            'mode_admin'  => env('JEJAKSUMUT_MODE_CLIENT') === 'admin',
+        ]);
+    }
+
+    /**
+     * Memproses ganti kata sandi untuk halaman publik/member.
+     */
+    public function prosesGantiSandi(): RedirectResponse
+    {
+        return $this->kirimPermintaanGantiSandi('/ganti-sandi', false);
+    }
+
+    /**
+     * Tampilkan formulir ganti kata sandi khusus di dalam Panel Admin.
+     */
+    public function gantiSandiAdmin(): string
+    {
+        return view('pages/admin/ganti_sandi', [
+            'judul_halaman' => 'Ganti kata sandi',
+            'email_sesi'    => (string) (session()->get('email') ?? ''),
+            'nama_sesi'     => (string) (session()->get('nama') ?? ''),
+        ]);
+    }
+
+    /**
+     * Memproses ganti kata sandi dari dalam Panel Admin.
+     */
+    public function prosesGantiSandiAdmin(): RedirectResponse
+    {
+        return $this->kirimPermintaanGantiSandi('/admin/ganti-sandi', true);
+    }
+
+    // ---------------------------------------------------------------
+    // LUPA & ATUR ULANG KATA SANDI
+    // ---------------------------------------------------------------
+
+    /**
+     * Tampilkan formulir pengajuan lupa kata sandi.
+     */
+    public function lupaSandi(): string
+    {
+        return view('pages/autentikasi/lupa_sandi', [
+            'mode_admin' => env('JEJAKSUMUT_MODE_CLIENT') === 'admin',
+        ]);
+    }
+
+    /**
+     * Memproses permintaan reset kata sandi lewat REST API Backend.
+     */
+    public function prosesLupaSandi(): RedirectResponse
+    {
+        $aturanValidasi = [
+            'email' => 'required|valid_email|max_length[150]',
+            'nama'  => 'required|min_length[3]|max_length[120]',
+        ];
+        $pesanValidasi = [
+            'email' => [
+                'required'    => 'Alamat email wajib diisi.',
+                'valid_email' => 'Format email tidak valid.',
+            ],
+            'nama' => [
+                'required'   => 'Nama lengkap akun wajib diisi untuk verifikasi.',
+                'min_length' => 'Nama lengkap minimal 3 karakter.',
+            ],
+        ];
+
+        if (! $this->validate($aturanValidasi, $pesanValidasi)) {
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        $hasil = $this->layananApiBackend->kirimPost('/auth/lupa-sandi', [
+            'email' => trim((string) $this->request->getPost('email')),
+            'nama'  => trim((string) $this->request->getPost('nama')),
+        ]);
+
+        if (! $hasil['terhubung']) {
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
+        }
+
+        if (! $hasil['berhasil']) {
+            $pesanError = $hasil['pesan_error'] ?? 'Permintaan reset kata sandi gagal diproses.';
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('error', $pesanError);
+        }
+
+        $tokenSimulasi = (string) ($hasil['data']['token_reset'] ?? '');
+        $pengalihan    = redirect()->to(site_url('lupa-sandi'))->withCookies()
+            ->with('success', $hasil['pesan'] ?: 'Instruksi reset kata sandi telah diproses.');
+
+        if ($tokenSimulasi !== '') {
+            $pengalihan->with('token_reset_simulasi', $tokenSimulasi);
+        }
+
+        return $pengalihan;
+    }
+
+    /**
+     * Tampilkan formulir atur ulang kata sandi menggunakan token reset.
+     */
+    public function resetSandi(): string
+    {
+        $token = trim((string) ($this->request->getGet('token') ?? old('token') ?? ''));
+
+        return view('pages/autentikasi/reset_sandi', [
+            'token_reset' => $token,
+            'mode_admin'  => env('JEJAKSUMUT_MODE_CLIENT') === 'admin',
+        ]);
+    }
+
+    /**
+     * Memproses penyimpanan kata sandi baru berdasarkan token reset.
+     */
+    public function prosesResetSandi(): RedirectResponse
+    {
+        $aturanValidasi = [
+            'token'                 => 'required',
+            'kata_sandi_baru'       => 'required|min_length[6]',
+            'konfirmasi_kata_sandi' => 'required|matches[kata_sandi_baru]',
+        ];
+        $pesanValidasi = [
+            'token' => [
+                'required' => 'Token reset kata sandi tidak ditemukan.',
+            ],
+            'kata_sandi_baru' => [
+                'required'   => 'Kata sandi baru wajib diisi.',
+                'min_length' => 'Kata sandi baru minimal 6 karakter.',
+            ],
+            'konfirmasi_kata_sandi' => [
+                'required' => 'Konfirmasi kata sandi baru wajib diisi.',
+                'matches'  => 'Konfirmasi kata sandi baru tidak cocok.',
+            ],
+        ];
+
+        if (! $this->validate($aturanValidasi, $pesanValidasi)) {
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        $hasil = $this->layananApiBackend->kirimPost('/auth/reset-sandi', [
+            'token'                 => trim((string) $this->request->getPost('token')),
+            'kata_sandi_baru'       => (string) $this->request->getPost('kata_sandi_baru'),
+            'konfirmasi_kata_sandi' => (string) $this->request->getPost('konfirmasi_kata_sandi'),
+        ]);
+
+        if (! $hasil['terhubung']) {
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
+        }
+
+        if (! $hasil['berhasil']) {
+            $pesanError = $hasil['pesan_error'] ?? 'Reset kata sandi gagal. Token mungkin sudah tidak berlaku.';
+            return redirect()->back()->withCookies()
+                ->withInput()
+                ->with('error', $pesanError);
+        }
+
+        return redirect()->to(site_url('masuk'))->withCookies()
+            ->with('success', $hasil['pesan'] ?: 'Kata sandi berhasil diatur ulang. Silakan masuk.');
+    }
+
+    // ---------------------------------------------------------------
     // Helper Internal
     // ---------------------------------------------------------------
+
+    private function kirimPermintaanGantiSandi(string $ruteFormulir, bool $modePanelAdmin): RedirectResponse
+    {
+        $sudahMasuk = (bool) session()->get('sudah_masuk');
+        $aturanValidasi = [
+            'kata_sandi_lama'       => 'required',
+            'kata_sandi_baru'       => 'required|min_length[6]',
+            'konfirmasi_kata_sandi' => 'required|matches[kata_sandi_baru]',
+        ];
+        if (! $sudahMasuk) {
+            $aturanValidasi['email'] = 'required|valid_email|max_length[150]';
+        }
+
+        $pesanValidasi = [
+            'email' => [
+                'required'    => 'Alamat email wajib diisi.',
+                'valid_email' => 'Format email tidak valid.',
+            ],
+            'kata_sandi_lama' => [
+                'required' => 'Kata sandi saat ini wajib diisi.',
+            ],
+            'kata_sandi_baru' => [
+                'required'   => 'Kata sandi baru wajib diisi.',
+                'min_length' => 'Kata sandi baru minimal 6 karakter.',
+            ],
+            'konfirmasi_kata_sandi' => [
+                'required' => 'Konfirmasi kata sandi baru wajib diisi.',
+                'matches'  => 'Konfirmasi kata sandi baru tidak cocok.',
+            ],
+        ];
+
+        if (! $this->validate($aturanValidasi, $pesanValidasi)) {
+            return redirect()->to(site_url(ltrim($ruteFormulir, '/')))->withCookies()
+                ->withInput()
+                ->with('errors', $this->validator->getErrors());
+        }
+
+        $payload = [
+            'kata_sandi_lama'       => (string) $this->request->getPost('kata_sandi_lama'),
+            'kata_sandi_baru'       => (string) $this->request->getPost('kata_sandi_baru'),
+            'konfirmasi_kata_sandi' => (string) $this->request->getPost('konfirmasi_kata_sandi'),
+        ];
+        if (! $sudahMasuk) {
+            $payload['email'] = trim((string) $this->request->getPost('email'));
+        }
+
+        $token = $sudahMasuk ? (string) (session()->get('token_api') ?? '') : null;
+        $hasil = $this->layananApiBackend->kirimPost('/auth/ganti-sandi', $payload, $token);
+
+        if (! $hasil['terhubung']) {
+            return redirect()->to(site_url(ltrim($ruteFormulir, '/')))->withCookies()
+                ->withInput()
+                ->with('error', 'Tidak dapat terhubung ke server Backend API. Pastikan server backend sedang aktif.');
+        }
+
+        if (! $hasil['berhasil']) {
+            $pesanError = $hasil['pesan_error'] ?? 'Gagal memperbarui kata sandi.';
+            return redirect()->to(site_url(ltrim($ruteFormulir, '/')))->withCookies()
+                ->withInput()
+                ->with('error', $pesanError);
+        }
+
+        $pesanSukses = $hasil['pesan'] ?: 'Kata sandi berhasil diperbarui.';
+        if ($modePanelAdmin) {
+            return redirect()->to(site_url('admin/ganti-sandi'))->withCookies()->with('success', $pesanSukses);
+        }
+        if ($sudahMasuk) {
+            return redirect()->to(site_url('ganti-sandi'))->withCookies()->with('success', $pesanSukses);
+        }
+
+        return redirect()->to(site_url('masuk'))->withCookies()->with('success', $pesanSukses);
+    }
 
     private function arahkanSesuaiPeran(string $peran): RedirectResponse
     {

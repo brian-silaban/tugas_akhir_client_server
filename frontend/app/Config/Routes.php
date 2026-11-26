@@ -13,6 +13,10 @@ $routes->get('masuk', 'AutentikasiController::masuk');
 $routes->post('masuk', 'AutentikasiController::prosesMasuk', ['filter' => 'csrf']);
 $routes->get('ganti-sandi', 'AutentikasiController::gantiSandi');
 $routes->post('ganti-sandi', 'AutentikasiController::prosesGantiSandi', ['filter' => 'csrf']);
+$routes->get('lupa-sandi', 'AutentikasiController::lupaSandi');
+$routes->post('lupa-sandi', 'AutentikasiController::prosesLupaSandi', ['filter' => 'csrf']);
+$routes->get('reset-sandi', 'AutentikasiController::resetSandi');
+$routes->post('reset-sandi', 'AutentikasiController::prosesResetSandi', ['filter' => 'csrf']);
 
 if ($modeClient === 'admin') {
     $routes->get('/', static fn () => redirect()->to(site_url('admin')));
@@ -69,6 +73,8 @@ if ($modeClient !== 'wisatawan') {
         $routes->post('pemesanan/(:num)/status', 'PemesananAdminController::ubahStatus/$1', ['filter' => 'csrf']);
         $routes->post('ulasan/(:num)/hapus', 'PemesananAdminController::hapusUlasan/$1', ['filter' => 'csrf']);
 
+        $routes->get('ganti-sandi', '\App\Controllers\AutentikasiController::gantiSandiAdmin');
+        $routes->post('ganti-sandi', '\App\Controllers\AutentikasiController::prosesGantiSandiAdmin', ['filter' => 'csrf']);
         $routes->post('keluar', '\App\Controllers\AutentikasiController::keluarAdmin', ['filter' => 'csrf']);
     });
 }

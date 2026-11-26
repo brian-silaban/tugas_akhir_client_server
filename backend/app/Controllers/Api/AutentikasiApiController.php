@@ -129,6 +129,77 @@ class AutentikasiApiController extends ResourceController
     }
 
     /**
+     * Membuat token reset kata sandi berdurasi 15 menit yang terikat pada sidik hash sandi saat ini
+     * sehingga token otomatis tidak berlaku lagi setelah sandi berhasil diubah (single-use).
+     *
+     * @param array<string, mixed> $pengguna
+     */
+    public static function buatTokenResetSandi(array $pengguna): ?string
+    {
+        $kunciRahasia = self::ambilKunciRahasia();
+        if ($kunciRahasia === null) {
+            return null;
+        }
+
+        $waktuKedaluwarsa = time() + (60 * 15);
+        $sidikHashSandi   = substr(hash_hmac('sha256', (string) ($pengguna['kata_sandi'] ?? ''), $kunciRahasia), 0, 16);
+        $payload          = 'reset-sandi|' . (int) $pengguna['id'] . '|' . $waktuKedaluwarsa . '|' . $sidikHashSandi;
+        $tandaTangan      = hash_hmac('sha256', $payload, $kunciRahasia);
+        $tokenMentah      = $payload . '.' . $tandaTangan;
+
+        return rtrim(strtr(base64_encode($tokenMentah), '+/', '-_'), '=');
+    }
+
+    /**
+     * Memverifikasi token reset kata sandi HMAC-SHA256.
+     * Mengembalikan array ['id_pengguna', 'sidik_sandi', 'exp'] bila sah, atau null jika tidak valid.
+     *
+     * @return array<string, mixed>|null
+     */
+    public static function verifikasiTokenResetSandi(string $token): ?array
+    {
+        $kunciRahasia = self::ambilKunciRahasia();
+        if ($kunciRahasia === null || trim($token) === '') {
+            return null;
+        }
+
+        $tokenBersih = trim($token);
+        $tokenMentah = base64_decode(strtr($tokenBersih, '-_', '+/') . str_repeat('=', (4 - strlen($tokenBersih) % 4) % 4));
+        if ($tokenMentah === false) {
+            return null;
+        }
+
+        $posisiTitik = strrpos($tokenMentah, '.');
+        if ($posisiTitik === false) {
+            return null;
+        }
+
+        $payload               = substr($tokenMentah, 0, $posisiTitik);
+        $tandaTangan           = substr($tokenMentah, $posisiTitik + 1);
+        $tandaTanganDiharapkan = hash_hmac('sha256', $payload, $kunciRahasia);
+
+        if (! hash_equals($tandaTanganDiharapkan, $tandaTangan)) {
+            return null;
+        }
+
+        $bagian = explode('|', $payload);
+        if (count($bagian) !== 4 || $bagian[0] !== 'reset-sandi') {
+            return null;
+        }
+
+        [$tujuan, $idPengguna, $exp, $sidikSandi] = $bagian;
+        if ((int) $exp < time()) {
+            return null;
+        }
+
+        return [
+            'id_pengguna' => (int) $idPengguna,
+            'sidik_sandi' => $sidikSandi,
+            'exp'         => (int) $exp,
+        ];
+    }
+
+    /**
      * Memverifikasi header Authorization bertipe Bearer dan mengembalikan payload token.
      *
      * @return array<string, mixed>|null
@@ -306,48 +377,50 @@ class AutentikasiApiController extends ResourceController
 
     /**
      * POST /api/v1/auth/ganti-sandi dan POST /api/v1/autentikasi/ganti-sandi
-     * Mengubah kata sandi akun member maupun admin setelah memverifikasi kata sandi lama.
+     * Mengubah kata sandi akun (member atau admin) setelah memverifikasi kata sandi lama.
      */
     public function gantiSandi(): ResponseInterface
     {
-        $inputJson = $this->request->getJSON(true);
-        $inputData = ! empty($inputJson) ? $inputJson : $this->request->getPost();
-
-        $email                  = trim((string) ($inputData['email'] ?? ''));
-        $kataSandiLama          = (string) ($inputData['kata_sandi_lama'] ?? '');
-        $kataSandiBaru          = (string) ($inputData['kata_sandi_baru'] ?? '');
-        $konfirmasiKataSandi    = (string) ($inputData['konfirmasi_kata_sandi_baru'] ?? '');
+        $inputData           = $this->ambilInputPermintaan();
+        $emailInput          = trim((string) ($inputData['email'] ?? ''));
+        $kataSandiLama       = (string) ($inputData['kata_sandi_lama'] ?? '');
+        $kataSandiBaru       = (string) ($inputData['kata_sandi_baru'] ?? '');
+        $konfirmasiKataSandi = (string) ($inputData['konfirmasi_kata_sandi'] ?? '');
 
         if ($kataSandiLama === '' || $kataSandiBaru === '' || $konfirmasiKataSandi === '') {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Kata sandi lama, kata sandi baru, dan konfirmasi wajib diisi.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Kata sandi lama, kata sandi baru, dan konfirmasi kata sandi wajib diisi.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
         if (strlen($kataSandiBaru) < 6) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Kata sandi baru minimal 6 karakter.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Kata sandi baru minimal 6 karakter.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
         if ($kataSandiBaru !== $konfirmasiKataSandi) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Konfirmasi kata sandi baru tidak cocok.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Konfirmasi kata sandi baru tidak cocok.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
         if ($kataSandiBaru === $kataSandiLama) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Kata sandi baru harus berbeda dari kata sandi lama.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Kata sandi baru harus berbeda dari kata sandi saat ini.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
 
         $modelPengguna = new PenggunaModel();
@@ -356,49 +429,281 @@ class AutentikasiApiController extends ResourceController
         if ($dataToken !== null) {
             $pengguna = $modelPengguna->find((int) $dataToken['id_pengguna']);
         } else {
-            if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                return $this->respond([
-                    'status' => 'gagal',
-                    'pesan'  => 'Alamat email yang valid wajib diisi.',
-                    'data'   => null,
-                ], ResponseInterface::HTTP_UNPROCESSABLE_ENTITY);
+            // Batasi percobaan ganti sandi tanpa sesi agar terhindar dari brute-force
+            $throttler = \Config\Services::throttler();
+            $kunciIp   = md5($this->request->getIPAddress() . '_ganti_sandi');
+            if (! $throttler->check($kunciIp, 10, MINUTE)) {
+                return $this->kirimResponsAutentikasi(
+                    'gagal',
+                    'Terlalu banyak percobaan. Silakan coba lagi dalam 1 menit.',
+                    null,
+                    ResponseInterface::HTTP_TOO_MANY_REQUESTS
+                );
             }
 
-            $pengguna = $modelPengguna->where('email', $email)->first();
+            if ($emailInput === '' || ! filter_var($emailInput, FILTER_VALIDATE_EMAIL)) {
+                return $this->kirimResponsAutentikasi(
+                    'gagal',
+                    'Alamat email akun wajib diisi dengan format yang valid.',
+                    null,
+                    ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+                );
+            }
+
+            $pengguna = $modelPengguna->cariDenganEmail($emailInput);
         }
 
-        if ($pengguna === null || ! password_verify($kataSandiLama, $pengguna['kata_sandi'])) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Email atau kata sandi lama salah.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_UNAUTHORIZED);
+        if ($pengguna === null || ! password_verify($kataSandiLama, (string) $pengguna['kata_sandi'])) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Email atau kata sandi lama tidak sesuai.',
+                null,
+                ResponseInterface::HTTP_UNAUTHORIZED
+            );
         }
 
-        $berhasilSimpan = $modelPengguna
-            ->skipValidation(true)
-            ->update((int) $pengguna['id'], [
-                'kata_sandi'      => password_hash($kataSandiBaru, PASSWORD_DEFAULT),
-                'diperbarui_pada' => date('Y-m-d H:i:s'),
-            ]);
+        $berhasilSimpan = $modelPengguna->update((int) $pengguna['id'], [
+            'kata_sandi'      => password_hash($kataSandiBaru, PASSWORD_DEFAULT),
+            'diperbarui_pada' => date('Y-m-d H:i:s'),
+        ]);
 
         if (! $berhasilSimpan) {
-            return $this->respond([
-                'status' => 'gagal',
-                'pesan'  => 'Gagal memperbarui kata sandi. Silakan coba lagi.',
-                'data'   => null,
-            ], ResponseInterface::HTTP_INTERNAL_SERVER_ERROR);
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Gagal memperbarui kata sandi. Silakan coba lagi.',
+                null,
+                ResponseInterface::HTTP_INTERNAL_SERVER_ERROR
+            );
         }
 
+        return $this->kirimResponsAutentikasi(
+            'berhasil',
+            'Kata sandi berhasil diperbarui. Gunakan kata sandi baru saat masuk.',
+            ['peran' => $pengguna['peran']],
+            ResponseInterface::HTTP_OK
+        );
+    }
+
+    /**
+     * POST /api/v1/auth/lupa-sandi dan POST /api/v1/autentikasi/lupa-sandi
+     * Membuat token reset sandi HMAC berdurasi 15 menit setelah memverifikasi email & nama akun.
+     */
+    public function lupaSandi(): ResponseInterface
+    {
+        $throttler = \Config\Services::throttler();
+        $kunciIp   = md5($this->request->getIPAddress() . '_lupa_sandi');
+        if (! $throttler->check($kunciIp, 5, MINUTE)) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Terlalu banyak permintaan reset sandi. Silakan tunggu 1 menit.',
+                null,
+                ResponseInterface::HTTP_TOO_MANY_REQUESTS
+            );
+        }
+
+        $inputData = $this->ambilInputPermintaan();
+        $email     = trim((string) ($inputData['email'] ?? ''));
+        $nama      = trim((string) ($inputData['nama'] ?? ''));
+
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL) || $nama === '') {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Alamat email yang valid dan nama lengkap akun wajib diisi.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $modelPengguna = new PenggunaModel();
+        $pengguna      = $modelPengguna->cariDenganEmail($email);
+
+        $namaCocok = $pengguna !== null
+            && mb_strtolower(trim((string) $pengguna['nama'])) === mb_strtolower($nama);
+
+        if (! $namaCocok) {
+            return $this->kirimResponsAutentikasi(
+                'berhasil',
+                'Jika email dan nama lengkap sesuai dengan akun terdaftar, instruksi reset kata sandi telah diproses.',
+                ['mode_simulasi' => false, 'token_reset' => null],
+                ResponseInterface::HTTP_OK
+            );
+        }
+
+        $tokenReset = self::buatTokenResetSandi($pengguna);
+        if ($tokenReset === null) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Layanan reset sandi belum dikonfigurasi pada server.',
+                null,
+                ResponseInterface::HTTP_SERVICE_UNAVAILABLE
+            );
+        }
+
+        $konfigEmail   = config('Email');
+        $smtpTersedia  = trim((string) ($konfigEmail->SMTPHost ?? '')) !== ''
+            && trim((string) ($konfigEmail->fromEmail ?? '')) !== '';
+        $modeSimulasi  = ! $smtpTersedia && (
+            ENVIRONMENT !== 'production'
+            || filter_var(env('JEJAKSUMUT_SIMULASI_RESET_SANDI', false), FILTER_VALIDATE_BOOLEAN)
+        );
+
+        if ($smtpTersedia) {
+            $emailService = \Config\Services::email();
+            $emailService->setTo($email);
+            $emailService->setSubject('Reset Kata Sandi JejakSumut');
+            $emailService->setMessage(
+                "Halo {$pengguna['nama']},\n\nGunakan token berikut (berlaku 15 menit) untuk mengatur ulang kata sandi Anda:\n{$tokenReset}\n"
+            );
+            $emailService->send();
+        }
+
+        return $this->kirimResponsAutentikasi(
+            'berhasil',
+            $modeSimulasi
+                ? 'Verifikasi akun berhasil. Gunakan tautan atur ulang sandi di bawah (berlaku 15 menit).'
+                : 'Jika email dan nama lengkap sesuai dengan akun terdaftar, instruksi reset kata sandi telah dikirim.',
+            [
+                'mode_simulasi' => $modeSimulasi,
+                'token_reset'   => $modeSimulasi ? $tokenReset : null,
+                'peran'         => $modeSimulasi ? $pengguna['peran'] : null,
+            ],
+            ResponseInterface::HTTP_OK
+        );
+    }
+
+    /**
+     * POST /api/v1/auth/reset-sandi dan POST /api/v1/autentikasi/reset-sandi
+     * Mengatur ulang kata sandi menggunakan token reset HMAC-SHA256 yang valid.
+     */
+    public function resetSandi(): ResponseInterface
+    {
+        $throttler = \Config\Services::throttler();
+        $kunciIp   = md5($this->request->getIPAddress() . '_reset_sandi');
+        if (! $throttler->check($kunciIp, 10, MINUTE)) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Terlalu banyak percobaan reset sandi. Silakan tunggu 1 menit.',
+                null,
+                ResponseInterface::HTTP_TOO_MANY_REQUESTS
+            );
+        }
+
+        $inputData           = $this->ambilInputPermintaan();
+        $token               = trim((string) ($inputData['token'] ?? ''));
+        $kataSandiBaru       = (string) ($inputData['kata_sandi_baru'] ?? '');
+        $konfirmasiKataSandi = (string) ($inputData['konfirmasi_kata_sandi'] ?? '');
+
+        if ($token === '' || $kataSandiBaru === '' || $konfirmasiKataSandi === '') {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Token reset, kata sandi baru, dan konfirmasi kata sandi wajib diisi.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        if (strlen($kataSandiBaru) < 6) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Kata sandi baru minimal 6 karakter.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        if ($kataSandiBaru !== $konfirmasiKataSandi) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Konfirmasi kata sandi baru tidak cocok.',
+                null,
+                ResponseInterface::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $dataToken = self::verifikasiTokenResetSandi($token);
+        if ($dataToken === null) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Token reset sandi tidak valid atau sudah kedaluwarsa. Silakan ajukan ulang.',
+                null,
+                ResponseInterface::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $modelPengguna = new PenggunaModel();
+        $pengguna      = $modelPengguna->find((int) $dataToken['id_pengguna']);
+        $kunciRahasia  = self::ambilKunciRahasia();
+
+        if ($pengguna === null || $kunciRahasia === null) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Akun pengguna tidak ditemukan.',
+                null,
+                ResponseInterface::HTTP_NOT_FOUND
+            );
+        }
+
+        // Cocokkan sidik hash sandi saat ini agar token hanya bisa dipakai 1 kali
+        $sidikSaatIni = substr(hash_hmac('sha256', (string) $pengguna['kata_sandi'], $kunciRahasia), 0, 16);
+        if (! hash_equals($sidikSaatIni, (string) $dataToken['sidik_sandi'])) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Token reset sandi ini sudah pernah digunakan. Silakan ajukan ulang bila masih diperlukan.',
+                null,
+                ResponseInterface::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $berhasilSimpan = $modelPengguna->update((int) $pengguna['id'], [
+            'kata_sandi'      => password_hash($kataSandiBaru, PASSWORD_DEFAULT),
+            'diperbarui_pada' => date('Y-m-d H:i:s'),
+        ]);
+
+        if (! $berhasilSimpan) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Gagal menyimpan kata sandi baru. Silakan coba lagi.',
+                null,
+                ResponseInterface::HTTP_INTERNAL_SERVER_ERROR
+            );
+        }
+
+        return $this->kirimResponsAutentikasi(
+            'berhasil',
+            'Kata sandi berhasil diatur ulang. Silakan masuk dengan kata sandi baru Anda.',
+            ['peran' => $pengguna['peran']],
+            ResponseInterface::HTTP_OK
+        );
+    }
+
+    /**
+     * Mengambil payload masukan dari JSON body atau form POST.
+     *
+     * @return array<string, mixed>
+     */
+    private function ambilInputPermintaan(): array
+    {
+        $inputJson = $this->request->getJSON(true);
+        if (! empty($inputJson) && is_array($inputJson)) {
+            return $inputJson;
+        }
+
+        $inputPost = $this->request->getPost();
+
+        return is_array($inputPost) ? $inputPost : [];
+    }
+
+    /**
+     * Menyusun respons JSON autentikasi seragam tanpa cache.
+     */
+    private function kirimResponsAutentikasi(string $status, string $pesan, mixed $data, int $kodeStatus): ResponseInterface
+    {
         $this->response->setHeader('Cache-Control', 'no-store');
 
         return $this->respond([
-            'status' => 'berhasil',
-            'pesan'  => 'Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru Anda.',
-            'data'   => [
-                'email' => $pengguna['email'],
-                'peran' => $pengguna['peran'],
-            ],
-        ], ResponseInterface::HTTP_OK);
+            'status' => $status,
+            'pesan'  => $pesan,
+            'data'   => $data,
+        ], $kodeStatus);
     }
 }

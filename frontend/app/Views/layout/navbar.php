@@ -91,6 +91,14 @@ $apakahKatalogAktif = ($menuAktif === 'katalog' || $menuAktif === 'destinasi');
                             <span class="material-symbols-outlined text-base text-primary" aria-hidden="true">confirmation_number</span>
                             <span>Tiket Saya</span>
                         </a>
+                        <a
+                            href="<?= base_url('ganti-sandi') ?>"
+                            role="menuitem"
+                            class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-on-surface hover:bg-surface-container transition-colors"
+                        >
+                            <span class="material-symbols-outlined text-base text-on-surface-variant" aria-hidden="true">lock_reset</span>
+                            <span>Ganti Kata Sandi</span>
+                        </a>
                         <div class="my-1 border-t border-surface-variant/50"></div>
                         <a
                             href="<?= base_url('keluar') ?>"

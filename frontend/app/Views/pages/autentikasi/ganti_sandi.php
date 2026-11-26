@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ganti Kata Sandi — JejakSumut</title>
 
-    <!-- Tailwind CSS CDN & Design Tokens Resmi JejakSumut -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script id="tailwind-config">
         tailwind.config = {
@@ -16,8 +15,8 @@
                         "primary-container": "#0b6e77",
                         "on-primary": "#ffffff",
                         "secondary": "#3b6843",
-                        "secondary-container": "#bceebb",
-                        "on-secondary-fixed-variant": "#234f2d",
+                        "secondary-container": "#c2f0c5",
+                        "on-secondary-fixed-variant": "#1a4826",
                         "tertiary": "#8c2900",
                         "tertiary-container": "#b53801",
                         "on-tertiary": "#ffffff",
@@ -43,7 +42,6 @@
         };
     </script>
 
-    <!-- Google Fonts: Playfair Display + Plus Jakarta Sans + Material Symbols -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -51,36 +49,18 @@
 </head>
 
 <body class="bg-surface font-sans text-on-surface antialiased">
-<?php
-$sudahMasuk = (bool) ($sudah_masuk ?? false);
-$emailSesi  = (string) ($email_sesi ?? '');
-$peranSesi  = (string) ($peran_sesi ?? '');
-$modeAdmin  = (bool) ($mode_admin ?? false);
-
-if ($sudahMasuk && $peranSesi === 'admin') {
-    $tujuanKembali = base_url('/admin');
-    $labelKembali  = 'Kembali ke Dasbor Admin';
-} else {
-    $tujuanKembali = base_url('/masuk');
-    $labelKembali  = 'Kembali ke Halaman Masuk';
-}
-?>
 
     <div class="min-h-screen flex">
 
-        <!-- ============================================================ -->
-        <!-- KOLOM KIRI: Foto lanskap editorial (tersembunyi di mobile)   -->
-        <!-- ============================================================ -->
+        <!-- Kolom Kiri: Lanskap editorial Sumatera Utara -->
         <div class="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-surface-container">
             <img
                 src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg"
                 alt="Panorama Danau Toba dan Perbukitan Sumatera Utara"
                 class="absolute inset-0 h-full w-full object-cover"
             />
-            <!-- Gradient overlay gelap agar teks terbaca jelas -->
             <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
 
-            <!-- Teks branding di atas foto -->
             <div class="relative z-10 flex flex-col justify-end p-10 pb-14">
                 <a href="<?= base_url('/') ?>" class="flex items-center gap-3 mb-6">
                     <img src="<?= base_url('assets/logo-jejaksumut.png') ?>" alt="Logo JejakSumut" class="h-10 w-10 object-contain" />
@@ -92,17 +72,14 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                     Jaga Keamanan Akun JejakSumut Anda
                 </h2>
                 <p class="mt-3 text-white/80 text-sm leading-relaxed max-w-sm">
-                    Perbarui kata sandi akun member maupun pengelola secara berkala dengan memverifikasi kata sandi lama Anda.
+                    Perbarui kata sandi akun member maupun pengelola secara berkala dengan kombinasi karakter yang kuat.
                 </p>
             </div>
         </div>
 
-        <!-- ============================================================ -->
-        <!-- KOLOM KANAN: Formulir Ganti Kata Sandi                       -->
-        <!-- ============================================================ -->
+        <!-- Kolom Kanan: Formulir Ganti Kata Sandi -->
         <div class="flex flex-1 flex-col justify-center px-6 py-12 lg:px-16 xl:px-24">
 
-            <!-- Logo mobile -->
             <div class="lg:hidden mb-8">
                 <a href="<?= base_url('/') ?>" class="inline-flex items-center gap-3">
                     <img src="<?= base_url('assets/logo-jejaksumut.png') ?>" alt="Logo JejakSumut" class="h-9 w-9 object-contain" />
@@ -114,17 +91,27 @@ if ($sudahMasuk && $peranSesi === 'admin') {
 
             <div class="w-full max-w-md mx-auto">
                 <h1 class="font-serif text-3xl font-semibold text-on-surface tracking-tight leading-[1.1]">
-                    <?= $modeAdmin ? 'Ganti Sandi Pengelola' : 'Ganti Kata Sandi' ?>
+                    Ganti Kata Sandi
                 </h1>
                 <p class="mt-2 text-on-surface-variant text-sm">
-                    Masukkan email akun dan kata sandi lama untuk menetapkan kata sandi baru.
+                    <?php if (! empty($sudah_masuk)): ?>
+                        Akun aktif: <strong class="text-on-surface"><?= esc((string) ($email_sesi ?? '')) ?></strong>
+                    <?php else: ?>
+                        Masukkan email dan kata sandi saat ini untuk mengatur kata sandi baru.
+                    <?php endif; ?>
                 </p>
 
-                <!-- Notifikasi Flash -->
                 <?php if (session()->getFlashdata('error')): ?>
                     <div class="mt-5 rounded-xl border border-error/30 bg-error-container/30 px-4 py-3 text-sm text-on-error-container flex items-start gap-2.5" role="alert">
                         <span class="material-symbols-outlined text-error text-lg shrink-0">error</span>
                         <span><?= esc(session()->getFlashdata('error')) ?></span>
+                    </div>
+                <?php endif; ?>
+
+                <?php if (session()->getFlashdata('success')): ?>
+                    <div class="mt-5 rounded-xl border border-secondary/30 bg-secondary-container/30 px-4 py-3 text-sm text-on-secondary-fixed-variant flex items-start gap-2.5" role="status">
+                        <span class="material-symbols-outlined text-secondary text-lg shrink-0">check_circle</span>
+                        <span><?= esc(session()->getFlashdata('success')) ?></span>
                     </div>
                 <?php endif; ?>
 
@@ -138,35 +125,31 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                     </div>
                 <?php endif; ?>
 
-                <!-- Formulir Ganti Kata Sandi -->
                 <form action="<?= base_url('/ganti-sandi') ?>" method="post" class="mt-8 space-y-5">
                     <?= csrf_field() ?>
 
-                    <!-- Input Email -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-on-surface mb-1.5">
-                            Alamat Email
-                        </label>
-                        <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            value="<?= esc($sudahMasuk ? $emailSesi : old('email')) ?>"
-                            <?= $sudahMasuk ? 'readonly' : '' ?>
-                            required
-                            autocomplete="email"
-                            placeholder="contoh@email.com"
-                            class="block w-full rounded-lg border border-outline-variant <?= $sudahMasuk ? 'bg-surface-container text-on-surface-variant cursor-not-allowed' : 'bg-surface-container-lowest text-on-surface' ?> px-4 py-2.5 text-sm
-                                   placeholder:text-outline
-                                   focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
-                                   transition-colors duration-200"
-                        />
-                    </div>
+                    <?php if (empty($sudah_masuk)): ?>
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-on-surface mb-1.5">
+                                Alamat Email Akun
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                name="email"
+                                value="<?= esc(old('email')) ?>"
+                                required
+                                autocomplete="email"
+                                placeholder="contoh@email.com"
+                                class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5 text-on-surface text-sm
+                                       placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container transition-colors duration-200"
+                            />
+                        </div>
+                    <?php endif; ?>
 
-                    <!-- Input Kata Sandi Lama -->
                     <div>
                         <label for="kata_sandi_lama" class="block text-sm font-medium text-on-surface mb-1.5">
-                            Kata Sandi Lama
+                            Kata Sandi Saat Ini
                         </label>
                         <div class="relative">
                             <input
@@ -177,16 +160,14 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                                 autocomplete="current-password"
                                 placeholder="Masukkan kata sandi lama"
                                 class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest pl-4 pr-11 py-2.5 text-on-surface text-sm
-                                       placeholder:text-outline
-                                       focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
-                                       transition-colors duration-200"
+                                       placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container transition-colors duration-200"
                             />
                             <button
                                 type="button"
                                 data-tombol-sandi="kata_sandi_lama"
-                                aria-label="Tampilkan kata sandi lama"
+                                aria-label="Tampilkan kata sandi saat ini"
                                 aria-pressed="false"
-                                title="Tampilkan kata sandi lama"
+                                title="Tampilkan kata sandi"
                                 class="absolute inset-y-0 right-0 flex items-center px-3 text-outline hover:text-on-surface focus-visible:outline-none focus-visible:text-primary transition-colors"
                             >
                                 <span class="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
@@ -194,7 +175,6 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                         </div>
                     </div>
 
-                    <!-- Input Kata Sandi Baru -->
                     <div>
                         <label for="kata_sandi_baru" class="block text-sm font-medium text-on-surface mb-1.5">
                             Kata Sandi Baru
@@ -208,16 +188,14 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                                 autocomplete="new-password"
                                 placeholder="Minimal 6 karakter"
                                 class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest pl-4 pr-11 py-2.5 text-on-surface text-sm
-                                       placeholder:text-outline
-                                       focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
-                                       transition-colors duration-200"
+                                       placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container transition-colors duration-200"
                             />
                             <button
                                 type="button"
                                 data-tombol-sandi="kata_sandi_baru"
                                 aria-label="Tampilkan kata sandi baru"
                                 aria-pressed="false"
-                                title="Tampilkan kata sandi baru"
+                                title="Tampilkan kata sandi"
                                 class="absolute inset-y-0 right-0 flex items-center px-3 text-outline hover:text-on-surface focus-visible:outline-none focus-visible:text-primary transition-colors"
                             >
                                 <span class="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
@@ -225,30 +203,27 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                         </div>
                     </div>
 
-                    <!-- Input Konfirmasi Kata Sandi Baru -->
                     <div>
-                        <label for="konfirmasi_kata_sandi_baru" class="block text-sm font-medium text-on-surface mb-1.5">
+                        <label for="konfirmasi_kata_sandi" class="block text-sm font-medium text-on-surface mb-1.5">
                             Konfirmasi Kata Sandi Baru
                         </label>
                         <div class="relative">
                             <input
                                 type="password"
-                                id="konfirmasi_kata_sandi_baru"
-                                name="konfirmasi_kata_sandi_baru"
+                                id="konfirmasi_kata_sandi"
+                                name="konfirmasi_kata_sandi"
                                 required
                                 autocomplete="new-password"
                                 placeholder="Ulangi kata sandi baru"
                                 class="block w-full rounded-lg border border-outline-variant bg-surface-container-lowest pl-4 pr-11 py-2.5 text-on-surface text-sm
-                                       placeholder:text-outline
-                                       focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container
-                                       transition-colors duration-200"
+                                       placeholder:text-outline focus:outline-none focus:ring-2 focus:ring-primary-container/40 focus:border-primary-container transition-colors duration-200"
                             />
                             <button
                                 type="button"
-                                data-tombol-sandi="konfirmasi_kata_sandi_baru"
+                                data-tombol-sandi="konfirmasi_kata_sandi"
                                 aria-label="Tampilkan konfirmasi kata sandi baru"
                                 aria-pressed="false"
-                                title="Tampilkan konfirmasi kata sandi baru"
+                                title="Tampilkan kata sandi"
                                 class="absolute inset-y-0 right-0 flex items-center px-3 text-outline hover:text-on-surface focus-visible:outline-none focus-visible:text-primary transition-colors"
                             >
                                 <span class="material-symbols-outlined text-xl" aria-hidden="true">visibility</span>
@@ -256,7 +231,6 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                         </div>
                     </div>
 
-                    <!-- Tombol Simpan (Primary CTA) -->
                     <button
                         type="submit"
                         class="w-full rounded-lg bg-tertiary-container hover:bg-tertiary px-4 py-2.5 text-sm font-semibold text-on-tertiary
@@ -267,18 +241,19 @@ if ($sudahMasuk && $peranSesi === 'admin') {
                     </button>
                 </form>
 
-                <!-- Tombol Kembali (Secondary / Ghost) -->
-                <a href="<?= esc($tujuanKembali) ?>"
-                   class="mt-5 flex w-full items-center justify-center gap-2 rounded-lg border border-outline-variant bg-surface-container-lowest px-4 py-2.5
-                          text-sm font-medium text-on-surface
-                          hover:bg-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-outline/40
-                          active:scale-[0.98] transition-all duration-200">
-                    <span class="material-symbols-outlined text-base">arrow_back</span>
-                    <span><?= esc($labelKembali) ?></span>
-                </a>
+                <div class="mt-6 flex items-center justify-between text-xs text-on-surface-variant">
+                    <a href="<?= base_url(! empty($sudah_masuk) ? '/' : '/masuk') ?>"
+                       class="inline-flex items-center gap-1 font-medium text-on-surface hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined text-base" aria-hidden="true">arrow_back</span>
+                        <span><?= ! empty($sudah_masuk) ? 'Kembali ke Beranda' : 'Kembali ke Halaman Masuk' ?></span>
+                    </a>
+                    <a href="<?= base_url('/lupa-sandi') ?>"
+                       class="font-semibold text-primary-container hover:text-primary underline underline-offset-2">
+                        Lupa kata sandi?
+                    </a>
+                </div>
             </div>
 
-            <!-- Footer kecil -->
             <p class="mt-10 text-center text-xs text-on-surface-variant">
                 &copy; <?= date('Y') ?> JejakSumut — Jelajahi Pesona Sumatera Utara
             </p>
