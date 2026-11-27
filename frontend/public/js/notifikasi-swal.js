@@ -35,7 +35,8 @@
             '.swal2-popup.swal2-toast.swal-toast-jejaksumut .swal2-close:hover { background: #f5ebe6 !important; color: #241d19 !important; }',
             '.swal2-popup.swal2-toast.swal-toast-jejaksumut .swal2-timer-progress-bar-container { position: absolute !important; left: 0 !important; right: 0 !important; bottom: 0 !important; height: 3px !important; }',
             '.swal2-popup.swal2-toast.swal-toast-jejaksumut .swal2-timer-progress-bar { height: 3px !important; background: linear-gradient(90deg, #00545b, #1d7a82) !important; }',
-            '.swal2-popup.swal2-toast.swal-toast-jejaksumut.swal-toast-gagal .swal2-timer-progress-bar { background: linear-gradient(90deg, #b53801, #d97706) !important; }'
+            '.swal2-popup.swal2-toast.swal-toast-jejaksumut.swal-toast-gagal .swal2-timer-progress-bar { background: linear-gradient(90deg, #b53801, #d97706) !important; }',
+            '@media print { .swal2-container, .swal2-toast { display: none !important; } }'
         ].join('\n');
         document.head.appendChild(gaya);
     }

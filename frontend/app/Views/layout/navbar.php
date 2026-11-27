@@ -32,13 +32,20 @@ $apakahKatalogAktif = ($menuAktif === 'katalog' || $menuAktif === 'destinasi');
             </div>
         </a>
 
-        <!-- Aksi Kanan: Jelajahi Wisata + Dropdown Akun (Person) -->
+        <!-- Aksi Kanan: Jelajahi Wisata (tersembunyi di handphone) + Dropdown Akun (Person) -->
         <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <?php
+            // Sembunyikan tombol Jelajahi Wisata pada layar handphone (< 640px) agar header tidak sempit
+            $kelasTombolJelajah = 'hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-full font-label-md text-label-md whitespace-nowrap shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2';
+            if ($apakahKatalogAktif) {
+                $kelasTombolJelajah .= ' bg-primary-container text-on-primary focus-visible:ring-primary';
+            } else {
+                $kelasTombolJelajah .= ' bg-tertiary-container hover:bg-tertiary text-on-tertiary focus-visible:ring-tertiary';
+            }
+            ?>
             <a
                 href="<?= base_url('destinasi') ?>"
-                class="<?= $apakahKatalogAktif
-                    ? 'inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md whitespace-nowrap shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
-                    : 'inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full bg-tertiary-container hover:bg-tertiary text-on-tertiary font-label-md text-label-md whitespace-nowrap shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tertiary' ?>"
+                class="<?= $kelasTombolJelajah ?>"
                 <?= $apakahKatalogAktif ? 'aria-current="page"' : '' ?>
             >
                 <span class="material-symbols-outlined text-[18px]" aria-hidden="true">travel_explore</span>
