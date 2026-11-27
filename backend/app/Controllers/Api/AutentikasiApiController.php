@@ -548,13 +548,26 @@ class AutentikasiApiController extends ResourceController
         );
 
         if ($smtpTersedia) {
+            $urlFrontend  = rtrim((string) env('JEJAKSUMUT_FRONTEND_URL', 'http://localhost:8081'), '/');
+            $tautanReset  = $urlFrontend . '/reset-sandi?token=' . urlencode($tokenReset);
             $emailService = \Config\Services::email();
             $emailService->setTo($email);
-            $emailService->setSubject('Reset Kata Sandi JejakSumut');
+            $emailService->setSubject('Atur Ulang Kata Sandi JejakSumut');
             $emailService->setMessage(
-                "Halo {$pengguna['nama']},\n\nGunakan token berikut (berlaku 15 menit) untuk mengatur ulang kata sandi Anda:\n{$tokenReset}\n"
+                "Halo {$pengguna['nama']},\n\n"
+                . "Klik tautan berikut (berlaku 15 menit) untuk mengatur ulang kata sandi akun JejakSumut Anda:\n"
+                . "{$tautanReset}\n\n"
+                . "Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini.\n"
             );
-            $emailService->send();
+
+            if (! $emailService->send()) {
+                return $this->kirimResponsAutentikasi(
+                    'gagal',
+                    'Gagal mengirim email reset kata sandi. Periksa konfigurasi SMTP server.',
+                    null,
+                    ResponseInterface::HTTP_SERVICE_UNAVAILABLE
+                );
+            }
         }
 
         return $this->kirimResponsAutentikasi(

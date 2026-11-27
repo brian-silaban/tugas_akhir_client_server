@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title><?= lang('Errors.pageNotFound') ?></title>
+    <link rel="icon" type="image/png" href="<?= function_exists('base_url') ? base_url('assets/logo-jejaksumut.png') : '/assets/logo-jejaksumut.png' ?>" />
 
     <style>
         div.logo {

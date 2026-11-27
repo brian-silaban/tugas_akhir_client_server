@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= ($mode_admin ?? false) ? 'Masuk Panel Pengelola' : 'Masuk' ?> — JejakSumut</title>
+    <link rel="icon" type="image/png" href="<?= base_url('assets/logo-jejaksumut.png') ?>" />
 
     <!-- Tailwind CSS CDN & Design Tokens Resmi JejakSumut -->
     <script src="https://cdn.tailwindcss.com"></script>
