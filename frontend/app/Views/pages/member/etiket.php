@@ -304,6 +304,8 @@ $polaFinderAktif = static function (int $barisLokal, int $kolomLokal): bool {
                             <img
                                 src="<?= esc((string) $etiket['foto_destinasi']) ?>"
                                 alt="Foto <?= esc((string) ($etiket['nama_destinasi'] ?? '')) ?>"
+                                loading="lazy"
+                                decoding="async"
                                 onerror="this.parentElement.style.display='none'"
                                 class="h-full w-full object-cover"
                             />

@@ -86,7 +86,7 @@
         <?= $this->renderSection('isi') ?>
     </main>
 
-    <script src="<?= esc(base_url('js/sweetalert2.all.min.js'), 'attr') ?>"></script>
-    <script src="<?= esc(base_url('js/notifikasi-swal.js?v=' . @filemtime(FCPATH . 'js/notifikasi-swal.js')), 'attr') ?>"></script>
+    <script src="<?= esc(base_url('js/sweetalert2.all.min.js'), 'attr') ?>" defer></script>
+    <script src="<?= esc(base_url('js/notifikasi-swal.js?v=' . @filemtime(FCPATH . 'js/notifikasi-swal.js')), 'attr') ?>" defer></script>
 </body>
 </html>

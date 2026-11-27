@@ -42,6 +42,9 @@ class AdminApiController extends BasisAdminApiController
             return $this->gagal(422, 'Filter status harus menunggu, lunas, atau dibatalkan.');
         }
 
+        $batasMentah = filter_var($this->request->getGet('batas'), FILTER_VALIDATE_INT);
+        $batas       = $batasMentah === false ? 25 : min(50, max(1, (int) $batasMentah));
+
         $kueri = $this->koneksiAdmin()->table('v_ringkasan_pemesanan');
         if ($status !== '') {
             $kueri->where('status', $status);
@@ -49,9 +52,9 @@ class AdminApiController extends BasisAdminApiController
 
         // Hitungan dan daftar memakai filter yang sama; pertahankan kondisi setelah menghitung.
         $jumlah = $kueri->countAllResults(false);
-        $paginasi = $this->buatPaginasi($jumlah);
+        $paginasi = $this->buatPaginasi($jumlah, $batas);
         $daftar = $kueri->orderBy('dibuat_pada', 'DESC')->orderBy('id', 'DESC')
-            ->limit(25, ($paginasi['halaman'] - 1) * 25)->get()->getResultArray();
+            ->limit($batas, ($paginasi['halaman'] - 1) * $batas)->get()->getResultArray();
 
         return $this->berhasil(['daftar' => $daftar, 'paginasi' => $paginasi]);
     }
@@ -111,9 +114,9 @@ class AdminApiController extends BasisAdminApiController
             ->orderBy('ulasan.id', 'DESC');
     }
 
-    private function buatPaginasi(int $jumlah): array
+    private function buatPaginasi(int $jumlah, int $batas = 25): array
     {
-        $totalHalaman = max(1, (int) ceil($jumlah / 25));
+        $totalHalaman = max(1, (int) ceil($jumlah / $batas));
         $halaman = filter_var($this->request->getGet('halaman'), FILTER_VALIDATE_INT);
 
         return [

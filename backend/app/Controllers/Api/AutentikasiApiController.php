@@ -40,15 +40,24 @@ class AutentikasiApiController extends ResourceController
     }
 
     /**
+     * Menghasilkan sidik pendek HMAC dari hash kata sandi agar token otomatis hangus saat sandi berubah.
+     */
+    private static function buatSidikHashSandi(string $hashKataSandi, string $kunciRahasia): string
+    {
+        return substr(hash_hmac('sha256', $hashKataSandi, $kunciRahasia), 0, 16);
+    }
+
+    /**
      * Membuat token HMAC-SHA256 yang bertanda tangan.
-     * Payload memuat id, email, peran, dan exp (waktu kedaluwarsa).
+     * Payload memuat id, email, peran, exp (waktu kedaluwarsa), dan sidik hash sandi.
      *
      * @param int    $idPengguna
      * @param string $email
      * @param string $peran
+     * @param string $hashKataSandi
      * @return string|null
      */
-    public static function buatToken(int $idPengguna, string $email, string $peran): ?string
+    public static function buatToken(int $idPengguna, string $email, string $peran, string $hashKataSandi = ''): ?string
     {
         $kunciRahasia = self::ambilKunciRahasia();
         if ($kunciRahasia === null) {
@@ -57,9 +66,10 @@ class AutentikasiApiController extends ResourceController
 
         // Masa berlaku token: 24 jam ke depan
         $waktuKedaluwarsa = time() + (60 * 60 * 24);
+        $sidikSandi       = self::buatSidikHashSandi($hashKataSandi, $kunciRahasia);
 
         // Susun payload sebagai string terformat
-        $payload = $idPengguna . '|' . $email . '|' . $peran . '|' . $waktuKedaluwarsa;
+        $payload = $idPengguna . '|' . $email . '|' . $peran . '|' . $waktuKedaluwarsa . '|' . $sidikSandi;
 
         // Buat tanda tangan HMAC-SHA256
         $tandaTangan = hash_hmac('sha256', $payload, $kunciRahasia);
@@ -109,11 +119,11 @@ class AutentikasiApiController extends ResourceController
 
         // Pecah payload menjadi komponen
         $bagian = explode('|', $payload);
-        if (count($bagian) !== 4) {
+        if (count($bagian) !== 5) {
             return null;
         }
 
-        [$idPengguna, $email, $peran, $exp] = $bagian;
+        [$idPengguna, $email, $peran, $exp, $sidikSandi] = $bagian;
 
         // Cek masa berlaku
         if ((int) $exp < time()) {
@@ -125,7 +135,30 @@ class AutentikasiApiController extends ResourceController
             'email'       => $email,
             'peran'       => $peran,
             'exp'         => (int) $exp,
+            'sidik_sandi' => $sidikSandi,
         ];
+    }
+
+    /**
+     * Memeriksa apakah sidik hash sandi pada token masih cocok dengan kata sandi aktif di database.
+     *
+     * @param array<string, mixed> $dataToken
+     */
+    public static function cocokkanSidikSandiToken(array $dataToken, string $hashKataSandiDatabase): bool
+    {
+        $kunciRahasia = self::ambilKunciRahasia();
+        if ($kunciRahasia === null) {
+            return false;
+        }
+
+        $sidikToken = (string) ($dataToken['sidik_sandi'] ?? '');
+        if ($sidikToken === '') {
+            return false;
+        }
+
+        $sidikSaatIni = self::buatSidikHashSandi($hashKataSandiDatabase, $kunciRahasia);
+
+        return hash_equals($sidikSaatIni, $sidikToken);
     }
 
     /**
@@ -228,10 +261,22 @@ class AutentikasiApiController extends ResourceController
      */
     public function masuk(): ResponseInterface
     {
+        // Batasi percobaan login per IP untuk mencegah brute-force kata sandi
+        $throttler = \Config\Services::throttler();
+        $kunciIp   = md5($this->request->getIPAddress() . '_masuk');
+        if (! $throttler->check($kunciIp, 15, MINUTE)) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Terlalu banyak percobaan masuk. Silakan coba lagi dalam 1 menit.',
+                null,
+                ResponseInterface::HTTP_TOO_MANY_REQUESTS
+            );
+        }
+
         $inputJson = $this->request->getJSON(true);
         $inputData = ! empty($inputJson) ? $inputJson : $this->request->getPost();
 
-        $email     = trim((string) ($inputData['email'] ?? ''));
+        $email     = strtolower(trim((string) ($inputData['email'] ?? '')));
         $kataSandi = (string) ($inputData['kata_sandi'] ?? '');
 
         if ($email === '' || $kataSandi === '') {
@@ -243,7 +288,7 @@ class AutentikasiApiController extends ResourceController
         }
 
         $modelPengguna = new PenggunaModel();
-        $pengguna      = $modelPengguna->where('email', $email)->first();
+        $pengguna      = $modelPengguna->cariDenganEmail($email);
 
         if ($pengguna === null || ! password_verify($kataSandi, $pengguna['kata_sandi'])) {
             return $this->respond([
@@ -253,8 +298,13 @@ class AutentikasiApiController extends ResourceController
             ], ResponseInterface::HTTP_UNAUTHORIZED);
         }
 
-        // Buat token HMAC bertanda tangan
-        $tokenBaru = self::buatToken((int) $pengguna['id'], $pengguna['email'], $pengguna['peran']);
+        // Buat token HMAC bertanda tangan yang terikat pada sidik hash kata sandi saat ini
+        $tokenBaru = self::buatToken(
+            (int) $pengguna['id'],
+            $pengguna['email'],
+            $pengguna['peran'],
+            (string) $pengguna['kata_sandi']
+        );
         if ($tokenBaru === null) {
             log_message('error', 'JEJAKSUMUT_KUNCI_TOKEN atau API_TOKEN_SECRET belum dikonfigurasi (minimal 32 karakter).');
 
@@ -286,11 +336,23 @@ class AutentikasiApiController extends ResourceController
      */
     public function daftar(): ResponseInterface
     {
+        // Batasi percobaan pendaftaran per IP untuk mencegah spam akun
+        $throttler = \Config\Services::throttler();
+        $kunciIp   = md5($this->request->getIPAddress() . '_daftar');
+        if (! $throttler->check($kunciIp, 10, MINUTE)) {
+            return $this->kirimResponsAutentikasi(
+                'gagal',
+                'Terlalu banyak permintaan pendaftaran. Silakan coba lagi dalam 1 menit.',
+                null,
+                ResponseInterface::HTTP_TOO_MANY_REQUESTS
+            );
+        }
+
         $inputJson = $this->request->getJSON(true);
         $inputData = ! empty($inputJson) ? $inputJson : $this->request->getPost();
 
         $nama                = trim((string) ($inputData['nama'] ?? ''));
-        $email               = trim((string) ($inputData['email'] ?? ''));
+        $email               = strtolower(trim((string) ($inputData['email'] ?? '')));
         $kataSandi           = (string) ($inputData['kata_sandi'] ?? '');
         $konfirmasiKataSandi = (string) ($inputData['konfirmasi_kata_sandi'] ?? '');
 
@@ -336,8 +398,8 @@ class AutentikasiApiController extends ResourceController
 
         $modelPengguna = new PenggunaModel();
 
-        // Cek email duplikat
-        $sudahAda = $modelPengguna->where('email', $email)->first();
+        // Cek email duplikat secara case-insensitive
+        $sudahAda = $modelPengguna->cariDenganEmail($email);
         if ($sudahAda !== null) {
             return $this->respond([
                 'status' => 'gagal',
@@ -428,6 +490,14 @@ class AutentikasiApiController extends ResourceController
 
         if ($dataToken !== null) {
             $pengguna = $modelPengguna->find((int) $dataToken['id_pengguna']);
+            if ($pengguna === null || ! self::cocokkanSidikSandiToken($dataToken, (string) ($pengguna['kata_sandi'] ?? ''))) {
+                return $this->kirimResponsAutentikasi(
+                    'gagal',
+                    'Sesi autentikasi telah berakhir. Silakan masuk kembali.',
+                    null,
+                    ResponseInterface::HTTP_UNAUTHORIZED
+                );
+            }
         } else {
             // Batasi percobaan ganti sandi tanpa sesi agar terhindar dari brute-force
             $throttler = \Config\Services::throttler();
@@ -462,8 +532,9 @@ class AutentikasiApiController extends ResourceController
             );
         }
 
+        $hashSandiBaru  = password_hash($kataSandiBaru, PASSWORD_DEFAULT);
         $berhasilSimpan = $modelPengguna->update((int) $pengguna['id'], [
-            'kata_sandi'      => password_hash($kataSandiBaru, PASSWORD_DEFAULT),
+            'kata_sandi'      => $hashSandiBaru,
             'diperbarui_pada' => date('Y-m-d H:i:s'),
         ]);
 
@@ -476,10 +547,24 @@ class AutentikasiApiController extends ResourceController
             );
         }
 
+        // Terbitkan token baru bagi sesi aktif agar pengguna tidak ikut terkeluar saat token lama hangus
+        $dataHasil = ['peran' => $pengguna['peran']];
+        if ($dataToken !== null) {
+            $tokenBaru = self::buatToken(
+                (int) $pengguna['id'],
+                (string) $pengguna['email'],
+                (string) $pengguna['peran'],
+                $hashSandiBaru
+            );
+            if ($tokenBaru !== null) {
+                $dataHasil['token_baru'] = $tokenBaru;
+            }
+        }
+
         return $this->kirimResponsAutentikasi(
             'berhasil',
             'Kata sandi berhasil diperbarui. Gunakan kata sandi baru saat masuk.',
-            ['peran' => $pengguna['peran']],
+            $dataHasil,
             ResponseInterface::HTTP_OK
         );
     }
@@ -502,7 +587,7 @@ class AutentikasiApiController extends ResourceController
         }
 
         $inputData = $this->ambilInputPermintaan();
-        $email     = trim((string) ($inputData['email'] ?? ''));
+        $email     = strtolower(trim((string) ($inputData['email'] ?? '')));
         $nama      = trim((string) ($inputData['nama'] ?? ''));
 
         if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL) || $nama === '') {
@@ -542,10 +627,13 @@ class AutentikasiApiController extends ResourceController
         $konfigEmail   = config('Email');
         $smtpTersedia  = trim((string) ($konfigEmail->SMTPHost ?? '')) !== ''
             && trim((string) ($konfigEmail->fromEmail ?? '')) !== '';
-        $modeSimulasi  = ! $smtpTersedia && (
-            ENVIRONMENT !== 'production'
-            || filter_var(env('JEJAKSUMUT_SIMULASI_RESET_SANDI', false), FILTER_VALIDATE_BOOLEAN)
-        );
+        // Cegah kebocoran token reset pada akun admin bila mode simulasi aktif
+        $modeSimulasi  = ! $smtpTersedia
+            && ($pengguna['peran'] ?? '') !== 'admin'
+            && (
+                ENVIRONMENT !== 'production'
+                || filter_var(env('JEJAKSUMUT_SIMULASI_RESET_SANDI', false), FILTER_VALIDATE_BOOLEAN)
+            );
 
         if ($smtpTersedia) {
             $urlFrontend  = rtrim((string) env('JEJAKSUMUT_FRONTEND_URL', 'http://localhost:8081'), '/');

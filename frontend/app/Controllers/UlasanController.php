@@ -34,6 +34,12 @@ class UlasanController extends BaseController
         $layananApi = new LayananApiBackend();
         $hasilApi   = $layananApi->kirimUlasan($dataUlasan, (string) session('token_api'));
 
+        if (($hasilApi['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+
+            return redirect()->to('/masuk')->withCookies()->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
+        }
+
         if ($hasilApi['berhasil']) {
             $slugDestinasi = (string) $this->request->getPost('slug_destinasi');
 

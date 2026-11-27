@@ -189,7 +189,7 @@ class AutentikasiController extends BaseController
     {
         session()->destroy();
 
-        return redirect()->to(site_url('/'))->with('success', 'Anda telah berhasil keluar.');
+        return redirect()->to(site_url('/'))->withCookies()->with('success', 'Anda telah berhasil keluar.');
     }
 
     public function keluarAdmin(): RedirectResponse
@@ -442,6 +442,11 @@ class AutentikasiController extends BaseController
             return redirect()->to(site_url(ltrim($ruteFormulir, '/')))->withCookies()
                 ->withInput()
                 ->with('error', $pesanError);
+        }
+
+        // Perbarui token sesi aktif agar pengguna yang baru mengganti sandinya tetap terautentikasi
+        if ($sudahMasuk && ! empty($hasil['data']['token_baru'])) {
+            session()->set('token_api', (string) $hasil['data']['token_baru']);
         }
 
         $pesanSukses = $hasil['pesan'] ?: 'Kata sandi berhasil diperbarui.';

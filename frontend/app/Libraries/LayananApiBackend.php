@@ -194,33 +194,155 @@ class LayananApiBackend
     }
 
     /**
-     * Mengambil daftar kategori wisata dari GET /api/v1/kategori.
+     * Mengambil beberapa destinasi sekaligus berdasarkan daftar slug dari GET /api/v1/destinasi.
+     *
+     * @param list<string> $daftarSlug
+     * @return array<string, mixed>
+     */
+    public function ambilDestinasiBerdasarkanDaftarSlug(array $daftarSlug): array
+    {
+        $slugBersih = array_values(array_filter(
+            array_map(static fn ($slug): string => trim((string) $slug), $daftarSlug),
+            static fn (string $slug): bool => $slug !== ''
+        ));
+
+        if ($slugBersih === []) {
+            return [
+                'terhubung'   => true,
+                'berhasil'    => true,
+                'data'        => [],
+                'pesan_error' => null,
+            ];
+        }
+
+        $hasil = $this->kirimGet('/destinasi', ['daftar_slug' => implode(',', $slugBersih)]);
+
+        return [
+            'terhubung'   => $hasil['terhubung'],
+            'berhasil'    => $hasil['berhasil'],
+            'data'        => is_array($hasil['isi']['data'] ?? null) ? $hasil['isi']['data'] : [],
+            'pesan_error' => $hasil['pesan_error'],
+        ];
+    }
+
+    /**
+     * Memeriksa apakah satu destinasi sudah masuk daftar favorit pengguna secara ringan.
+     */
+    public function cekStatusFavoritDestinasi(int $idPengguna, int $idDestinasi, string $token): bool
+    {
+        if ($idPengguna <= 0 || $idDestinasi <= 0 || trim($token) === '') {
+            return false;
+        }
+
+        $hasil = $this->kirimGet('/favorit/' . $idPengguna, ['id_destinasi' => $idDestinasi], $token);
+        if (! $hasil['terhubung'] || ! $hasil['berhasil']) {
+            return false;
+        }
+
+        if (isset($hasil['isi']['difavorit'])) {
+            return (bool) $hasil['isi']['difavorit'];
+        }
+
+        // Fallback kompatibilitas bila backend mengembalikan daftar favorit penuh
+        if (is_array($hasil['data'])) {
+            foreach ($hasil['data'] as $itemFavorit) {
+                if (! is_array($itemFavorit)) {
+                    continue;
+                }
+                $idFavoritDestinasi = (int) ($itemFavorit['id_destinasi'] ?? $itemFavorit['id'] ?? 0);
+                if ($idFavoritDestinasi > 0 && $idFavoritDestinasi === $idDestinasi) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Mengambil daftar kategori wisata dari GET /api/v1/kategori (memakai cache singkat 3 menit).
      *
      * @return list<array<string, mixed>>
      */
-    public function ambilDaftarKategori(): array
+    public function ambilDaftarKategori(bool $pakaiCache = true): array
     {
+        $kunciCache = 'jejaksumut_ref_kategori_v1';
+        if ($pakaiCache) {
+            try {
+                $dataCache = cache($kunciCache);
+                if (is_array($dataCache) && $dataCache !== []) {
+                    return $dataCache;
+                }
+            } catch (Throwable $kesalahan) {
+                // Abaikan error cache dan lanjutkan mengambil data langsung dari API
+            }
+        }
+
         $hasil = $this->kirimGet('/kategori');
         if (! $hasil['terhubung'] || ! $hasil['berhasil']) {
             return [];
         }
 
-        return is_array($hasil['isi']['data'] ?? null) ? $hasil['isi']['data'] : [];
+        $daftarKategori = is_array($hasil['isi']['data'] ?? null) ? $hasil['isi']['data'] : [];
+        if ($daftarKategori !== []) {
+            try {
+                cache()->save($kunciCache, $daftarKategori, 180);
+            } catch (Throwable $kesalahan) {
+                // Abaikan bila penyimpanan cache gagal
+            }
+        }
+
+        return $daftarKategori;
     }
 
     /**
-     * Mengambil daftar 33 kabupaten/kota Sumatera Utara dari GET /api/v1/kabupaten-kota.
+     * Mengambil daftar 33 kabupaten/kota Sumatera Utara dari GET /api/v1/kabupaten-kota (cache 3 menit).
      *
      * @return list<array<string, mixed>>
      */
-    public function ambilDaftarKabupatenKota(): array
+    public function ambilDaftarKabupatenKota(bool $pakaiCache = true): array
     {
+        $kunciCache = 'jejaksumut_ref_kabupaten_kota_v1';
+        if ($pakaiCache) {
+            try {
+                $dataCache = cache($kunciCache);
+                if (is_array($dataCache) && $dataCache !== []) {
+                    return $dataCache;
+                }
+            } catch (Throwable $kesalahan) {
+                // Abaikan error cache dan lanjutkan mengambil data langsung dari API
+            }
+        }
+
         $hasil = $this->kirimGet('/kabupaten-kota');
         if (! $hasil['terhubung'] || ! $hasil['berhasil']) {
             return [];
         }
 
-        return is_array($hasil['isi']['data'] ?? null) ? $hasil['isi']['data'] : [];
+        $daftarWilayah = is_array($hasil['isi']['data'] ?? null) ? $hasil['isi']['data'] : [];
+        if ($daftarWilayah !== []) {
+            try {
+                cache()->save($kunciCache, $daftarWilayah, 180);
+            } catch (Throwable $kesalahan) {
+                // Abaikan bila penyimpanan cache gagal
+            }
+        }
+
+        return $daftarWilayah;
+    }
+
+    /**
+     * Menghapus cache referensi kategori dan kabupaten/kota setelah admin mengubah data destinasi.
+     */
+    public function bersihkanCacheReferensi(): void
+    {
+        try {
+            $layananCache = cache();
+            $layananCache->delete('jejaksumut_ref_kategori_v1');
+            $layananCache->delete('jejaksumut_ref_kabupaten_kota_v1');
+        } catch (Throwable $kesalahan) {
+            // Abaikan error penghapusan cache
+        }
     }
 
     // =========================================================================
@@ -440,10 +562,10 @@ class LayananApiBackend
             $header['Authorization'] = 'Bearer ' . $tokenAktif;
         }
 
-        // Teruskan IP asli pengunjung ke Backend agar Rate Limiting dihitung per pengguna, bukan per server
+        // Teruskan IP asli pengunjung yang valid ke Backend agar Rate Limiting dihitung per pengguna
         if (! is_cli()) {
-            $ipPengunjung = Services::request()->getIPAddress();
-            if ($ipPengunjung !== '' && $ipPengunjung !== '0.0.0.0') {
+            $ipPengunjung = trim((string) Services::request()->getIPAddress());
+            if ($ipPengunjung !== '' && $ipPengunjung !== '0.0.0.0' && filter_var($ipPengunjung, FILTER_VALIDATE_IP) !== false) {
                 $header['X-Forwarded-For'] = $ipPengunjung;
             }
         }

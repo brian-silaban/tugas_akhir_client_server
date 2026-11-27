@@ -17,6 +17,14 @@ abstract class BasisAdminController extends BaseController
 
     protected function hasilAksi(array $hasil, string $tujuan, bool $simpanIsian = false): RedirectResponse
     {
+        if (($hasil['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+
+            return redirect()->to(site_url('masuk'))
+                ->withCookies()
+                ->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
+        }
+
         $pengalihan = redirect()->to(site_url($tujuan))->withCookies();
         if ($hasil['berhasil']) {
             return $pengalihan->with('success', $hasil['pesan'] ?: 'Perubahan berhasil disimpan.');

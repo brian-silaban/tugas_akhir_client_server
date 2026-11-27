@@ -28,6 +28,32 @@ class DestinasiApiController extends ResourceController
     {
         $destinasiModel = new DestinasiModel();
 
+        // Jika daftar_slug dikirim (misalnya dari Hero Beranda), ambil sekaligus dalam satu kueri
+        $daftarSlugMentah = trim((string) $this->request->getGet('daftar_slug'));
+        if ($daftarSlugMentah !== '') {
+            $daftarSlug      = explode(',', $daftarSlugMentah);
+            $daftarBaris     = $destinasiModel->ambilBerdasarkanDaftarSlug($daftarSlug);
+            $daftarTerformat = array_map(
+                fn (array $baris): array => $this->formatItemDestinasi($baris),
+                $daftarBaris
+            );
+            $jumlahData = count($daftarTerformat);
+
+            return $this->respond([
+                'status'      => 'berhasil',
+                'pesan'       => 'Daftar destinasi pilihan berhasil diambil.',
+                'penyedia'    => 'JejakSumut Tourism API',
+                'jumlah_data' => $jumlahData,
+                'paginasi'    => [
+                    'halaman_sekarang'  => 1,
+                    'batas_per_halaman' => max(1, $jumlahData),
+                    'total_data'        => $jumlahData,
+                    'total_halaman'     => 1,
+                ],
+                'data' => $daftarTerformat,
+            ], ResponseInterface::HTTP_OK);
+        }
+
         // Kumpulkan parameter filter dari query string
         $filterPencarian = [
             'kata_kunci'     => trim((string) $this->request->getGet('kata_kunci')),
@@ -59,6 +85,7 @@ class DestinasiApiController extends ResourceController
 
         return $this->respond([
             'status'      => 'berhasil',
+            'pesan'       => 'Daftar destinasi wisata berhasil diambil.',
             'penyedia'    => 'JejakSumut Tourism API',
             'jumlah_data' => count($daftarTerformat),
             'paginasi'    => [
@@ -104,7 +131,7 @@ class DestinasiApiController extends ResourceController
 
         $fasilitasRelasi = $fasilitasModel->ambilBerdasarkanDestinasi($idDestinasi);
         $galeri          = $galeriModel->ambilBerdasarkanDestinasi($idDestinasi);
-        $ulasanTerbaru   = $ulasanModel->ambilDaftarUlasanDestinasi($idDestinasi, 10, 0);
+        $ulasanTerbaru   = $ulasanModel->ambilDaftarUlasanDestinasi($idDestinasi, 20, 0);
 
         $dataDetail = $this->formatItemDestinasi($destinasi);
         $dataDetail['klasifikasi_status'] = $destinasi['klasifikasi_status'] ?? null;
@@ -123,6 +150,7 @@ class DestinasiApiController extends ResourceController
 
         return $this->respond([
             'status'   => 'berhasil',
+            'pesan'    => 'Detail destinasi wisata berhasil diambil.',
             'penyedia' => 'JejakSumut Tourism API',
             'data'     => $dataDetail,
         ], ResponseInterface::HTTP_OK);

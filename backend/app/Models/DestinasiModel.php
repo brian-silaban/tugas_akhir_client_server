@@ -165,6 +165,58 @@ class DestinasiModel extends Model
     }
 
     /**
+     * Mengambil beberapa destinasi sekaligus berdasarkan daftar slug dalam satu query
+     * dan mempertahankan urutan slug yang diminta.
+     *
+     * @param list<string> $daftarSlug
+     * @return list<array<string, mixed>>
+     */
+    public function ambilBerdasarkanDaftarSlug(array $daftarSlug): array
+    {
+        $daftarSlugBersih = [];
+        foreach ($daftarSlug as $slugItem) {
+            $slugTeks = trim((string) $slugItem);
+            if ($slugTeks !== '' && ! in_array($slugTeks, $daftarSlugBersih, true)) {
+                $daftarSlugBersih[] = $slugTeks;
+            }
+            if (count($daftarSlugBersih) >= 12) {
+                break;
+            }
+        }
+
+        if ($daftarSlugBersih === []) {
+            return [];
+        }
+
+        $hasil = $this->select(
+            'destinasi.*,
+             kategori.nama AS nama_kategori,
+             kategori.slug AS slug_kategori,
+             kabupaten_kota.nama_kabupaten_kota,
+             kabupaten_kota.jenis_daerah,
+             kabupaten_kota.ibu_kota'
+        )
+            ->join('kategori', 'kategori.id = destinasi.id_kategori')
+            ->join('kabupaten_kota', 'kabupaten_kota.kode_kabupaten = destinasi.kode_kabupaten')
+            ->whereIn('destinasi.slug', $daftarSlugBersih)
+            ->findAll();
+
+        $petaBerdasarkanSlug = [];
+        foreach ($hasil as $baris) {
+            $petaBerdasarkanSlug[(string) $baris['slug']] = $this->lengkapiAtributTampilan($baris);
+        }
+
+        $hasilTerurut = [];
+        foreach ($daftarSlugBersih as $slugUrutan) {
+            if (isset($petaBerdasarkanSlug[$slugUrutan])) {
+                $hasilTerurut[] = $petaBerdasarkanSlug[$slugUrutan];
+            }
+        }
+
+        return $hasilTerurut;
+    }
+
+    /**
      * Mengambil data dari SQL View v_wisata_lengkap.
      *
      * @return list<array<string, mixed>>
@@ -275,12 +327,12 @@ class DestinasiModel extends Model
     public function tentukanFotoFallbackKategori(string $namaKategori): string
     {
         $petaFoto = [
-            'Wisata Alam'             => 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Lake_Toba_and_the_surrounding_hills.jpg',
-            'Wisata Bahari & Pantai'  => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e1/Ndulu_pantai_sorake.jpg/1280px-Ndulu_pantai_sorake.jpg',
-            'Wisata Budaya & Sejarah' => 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6c/Maimun_Palace_Medan_Indonesia.jpg/1280px-Maimun_Palace_Medan_Indonesia.jpg',
-            'Wisata Religi'           => 'https://upload.wikimedia.org/wikipedia/commons/7/71/TamanLumbini20110607.jpg',
-            'Wisata Buatan & Edukasi' => 'https://upload.wikimedia.org/wikipedia/commons/6/6f/Taman_Budaya_Medan.jpg',
-            'Desa Wisata'             => 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Bakkara_Village%2C_North_Sumatra%2C_Indonesia.jpg',
+            'Wisata Alam'             => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg',
+            'Wisata Bahari & Pantai'  => 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/Ndulu_pantai_sorake.jpg/1280px-Ndulu_pantai_sorake.jpg',
+            'Wisata Budaya & Sejarah' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6c/Maimun_Palace_Medan_Indonesia.jpg/1280px-Maimun_Palace_Medan_Indonesia.jpg',
+            'Wisata Religi'           => 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/TamanLumbini20110607.jpg/1280px-TamanLumbini20110607.jpg',
+            'Wisata Buatan & Edukasi' => 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Taman_Budaya_Medan.jpg/1280px-Taman_Budaya_Medan.jpg',
+            'Desa Wisata'             => 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Bakkara_Village%2C_North_Sumatra%2C_Indonesia.jpg/1280px-Bakkara_Village%2C_North_Sumatra%2C_Indonesia.jpg',
         ];
 
         return $petaFoto[$namaKategori] ?? $petaFoto['Wisata Alam'];

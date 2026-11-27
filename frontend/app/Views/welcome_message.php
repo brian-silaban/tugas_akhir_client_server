@@ -23,7 +23,7 @@ $slideBawaan = [
     'label_harga_tiket' => 'Gratis',
     'rata_rating'       => 0,
     'jumlah_ulasan'     => 0,
-    'foto_utama'        => 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Lake_Toba_and_the_surrounding_hills.jpg?utm_source=id.wikipedia.org&utm_campaign=api&utm_content=original',
+    'foto_utama'        => 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Lake_Toba_and_the_surrounding_hills.jpg/1280px-Lake_Toba_and_the_surrounding_hills.jpg',
 ];
 
 $daftarSlide = is_array($daftarSlideHero ?? null) && $daftarSlideHero !== []
@@ -249,6 +249,8 @@ $daftarWilayahUnggulan             = array_slice($daftarKabupatenKota ?? [], 0, 
                         <img
                             src="<?= esc($destinasiUnggulanUtama['foto_utama'] ?? '') ?>"
                             alt="<?= esc($destinasiUnggulanUtama['nama'] ?? '') ?>"
+                            loading="lazy"
+                            decoding="async"
                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                         />
                         <div class="absolute top-4 left-4 flex items-center gap-2">
@@ -350,6 +352,8 @@ $daftarWilayahUnggulan             = array_slice($daftarKabupatenKota ?? [], 0, 
                                 <img
                                     src="<?= esc($destinasiPendamping['foto_utama'] ?? '') ?>"
                                     alt="<?= esc($destinasiPendamping['nama'] ?? '') ?>"
+                                    loading="lazy"
+                                    decoding="async"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                                 />
                                 <div class="absolute top-3 left-3">

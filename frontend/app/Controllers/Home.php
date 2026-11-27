@@ -32,17 +32,19 @@ class Home extends BaseController
         $terhubungBackend = false;
         $pesanErrorApi    = null;
 
-        foreach ($slugPopulerHero as $slugItem) {
-            $hasilDetail = $layananApi->ambilDetailDestinasi($slugItem);
-            if (! empty($hasilDetail['terhubung'])) {
-                $terhubungBackend = true;
-            }
-            if ($pesanErrorApi === null && ! empty($hasilDetail['pesan_error'])) {
-                $pesanErrorApi = $hasilDetail['pesan_error'];
-            }
-            if (! empty($hasilDetail['data']) && is_array($hasilDetail['data'])) {
-                $petaDetailSlug[$slugItem] = $hasilDetail['data'];
-                $daftarSlideHero[]         = $hasilDetail['data'];
+        // Ambil 6 destinasi populer sekaligus dalam satu request HTTP agar pembukaan Beranda ringan
+        $hasilBatch       = $layananApi->ambilDestinasiBerdasarkanDaftarSlug($slugPopulerHero);
+        $terhubungBackend = ! empty($hasilBatch['terhubung']);
+        $pesanErrorApi    = $hasilBatch['pesan_error'] ?? null;
+
+        if (! empty($hasilBatch['data']) && is_array($hasilBatch['data'])) {
+            foreach ($hasilBatch['data'] as $itemDestinasi) {
+                if (! is_array($itemDestinasi) || empty($itemDestinasi['slug'])) {
+                    continue;
+                }
+                $slugItem                  = (string) $itemDestinasi['slug'];
+                $petaDetailSlug[$slugItem] = $itemDestinasi;
+                $daftarSlideHero[]         = $itemDestinasi;
             }
         }
 

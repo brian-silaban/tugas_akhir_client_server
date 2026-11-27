@@ -90,13 +90,13 @@ class LayananApiMitra
             ];
         }
 
-        // Batasi timeout 1–10 detik agar halaman detail wisata tetap cepat saat mitra down
+        // Batasi timeout 1–4 detik agar halaman detail wisata tetap cepat saat mitra lambat/offline
         if ($batasWaktuDetik !== null) {
             $waktuMentah = $batasWaktuDetik;
         } else {
             $waktuMentah = (int) env('PARTNER_API_TIMEOUT', 3);
         }
-        $this->batasWaktuDetik = max(1, min(10, $waktuMentah));
+        $this->batasWaktuDetik = max(1, min(4, $waktuMentah));
 
         // Aktifkan atau nonaktifkan fallback data simulasi Sumatera Utara
         if ($modeCadanganMock !== null) {
@@ -231,6 +231,20 @@ class LayananApiMitra
         $kotaPencarian = $this->bersihkanNamaKota($kotaAsli);
         $batasAman     = max(1, min(12, $batasItem));
 
+        // Bangun kunci cache unik per mitra, kota, batas item, dan koordinat (2 desimal)
+        $kunciKoordinat = '';
+        if (is_array($konteksDestinasi)) {
+            $koordinatObj   = is_array($konteksDestinasi['koordinat'] ?? null) ? $konteksDestinasi['koordinat'] : [];
+            $latMentah      = (float) ($koordinatObj['garis_lintang'] ?? ($konteksDestinasi['garis_lintang'] ?? 0));
+            $lngMentah      = (float) ($koordinatObj['garis_bujur'] ?? ($konteksDestinasi['garis_bujur'] ?? 0));
+            $kunciKoordinat = number_format($latMentah, 2, '.', '') . ',' . number_format($lngMentah, 2, '.', '');
+        }
+        $kunciCacheMitra = 'jejaksumut_mitra_rek_' . md5($kodeMitra . '|' . strtolower($kotaPencarian) . '|' . $batasAman . '|' . $kunciKoordinat);
+        $hasilDariCache  = $this->ambilDariCacheSingkat($kunciCacheMitra);
+        if (is_array($hasilDariCache) && isset($hasilDariCache['kode_mitra'])) {
+            return $hasilDariCache;
+        }
+
         $urlDasar       = $infoMitra['url_api'];
         $apiKey         = $infoMitra['api_key'] ?? '';
         $urlTujuan      = '';
@@ -260,6 +274,7 @@ class LayananApiMitra
             );
 
             if ($hasilPenginapan['berhasil']) {
+                $this->simpanKeCacheSingkat($kunciCacheMitra, $hasilPenginapan['data'], 300);
                 return $hasilPenginapan['data'];
             }
 
@@ -276,6 +291,7 @@ class LayananApiMitra
             );
 
             if ($hasilTransport['berhasil']) {
+                $this->simpanKeCacheSingkat($kunciCacheMitra, $hasilTransport['data'], 300);
                 return $hasilTransport['data'];
             }
 
@@ -292,6 +308,7 @@ class LayananApiMitra
             );
 
             if ($hasilKuliner['berhasil']) {
+                $this->simpanKeCacheSingkat($kunciCacheMitra, $hasilKuliner['data'], 300);
                 return $hasilKuliner['data'];
             }
 
@@ -324,7 +341,7 @@ class LayananApiMitra
                     }
 
                     if ($daftarTernormalisasi !== []) {
-                        return [
+                        $hasilLive = [
                             'kode_mitra'        => $kodeMitra,
                             'nama_layanan'      => $infoMitra['nama_layanan'],
                             'ikon'              => $infoMitra['ikon'],
@@ -338,6 +355,9 @@ class LayananApiMitra
                             'waktu_respon_ms'   => $waktuResponMs,
                             'daftar_item'       => $daftarTernormalisasi,
                         ];
+                        $this->simpanKeCacheSingkat($kunciCacheMitra, $hasilLive, 300);
+
+                        return $hasilLive;
                     }
                 }
 
@@ -357,7 +377,7 @@ class LayananApiMitra
             );
 
             if ($daftarSimulasi !== []) {
-                return [
+                $hasilFallback = [
                     'kode_mitra'        => $kodeMitra,
                     'nama_layanan'      => $infoMitra['nama_layanan'],
                     'ikon'              => $infoMitra['ikon'],
@@ -371,10 +391,14 @@ class LayananApiMitra
                     'waktu_respon_ms'   => $waktuResponMs,
                     'daftar_item'       => $daftarSimulasi,
                 ];
+                // Negative cache 90 detik agar mitra yang sedang mati tidak menahan halaman berulang kali
+                $this->simpanKeCacheSingkat($kunciCacheMitra, $hasilFallback, 90);
+
+                return $hasilFallback;
             }
         }
 
-        return [
+        $hasilKosong = [
             'kode_mitra'        => $kodeMitra,
             'nama_layanan'      => $infoMitra['nama_layanan'],
             'ikon'              => $infoMitra['ikon'],
@@ -388,6 +412,9 @@ class LayananApiMitra
             'waktu_respon_ms'   => $waktuResponMs,
             'daftar_item'       => [],
         ];
+        $this->simpanKeCacheSingkat($kunciCacheMitra, $hasilKosong, 90);
+
+        return $hasilKosong;
     }
 
     /**
@@ -396,10 +423,19 @@ class LayananApiMitra
      *
      * @return list<array<string, mixed>>
      */
-    public function cekStatusSemuaMitra(string $kotaUji = 'Medan'): array
+    public function cekStatusSemuaMitra(string $kotaUji = 'Medan', bool $paksaSegarkan = false): array
     {
+        $kunciCacheStatus = 'jejaksumut_status_semua_mitra_v1';
+        if (! $paksaSegarkan) {
+            $statusCache = $this->ambilDariCacheSingkat($kunciCacheStatus);
+            if (is_array($statusCache) && $statusCache !== []) {
+                return $statusCache;
+            }
+        }
+
         $kotaPencarian = $this->bersihkanNamaKota($kotaUji);
         $daftarStatus  = [];
+        $batasUjiCepat = min(3, $this->batasWaktuDetik);
 
         foreach ($this->konfigurasiMitra as $kodeMitra => $infoMitra) {
             $urlDasar      = $infoMitra['url_api'];
@@ -424,21 +460,18 @@ class LayananApiMitra
                 continue;
             }
 
-            $batasUjiDetik = null;
             if ($kodeMitra === 'penginapan' && $this->apakahAdapterPenginapanSinggahMedan($urlDasar)) {
-                $urlUji        = $this->ambilBaseUrlPenginapan($urlDasar) . '/kecamatan';
-                $batasUjiDetik = max($this->batasWaktuDetik, 8);
+                $urlUji = $this->ambilBaseUrlPenginapan($urlDasar) . '/kecamatan';
             } elseif ($kodeMitra === 'transportasi' && ($apiKey !== '' || str_ends_with(rtrim($urlDasar, '/'), '/api'))) {
                 $urlUji = $this->ambilBaseUrlTransportasi($urlDasar) . '/transport/lokasi';
             } elseif ($kodeMitra === 'kuliner' && $this->apakahAdapterKulinerKhasMedan($urlDasar)) {
-                $urlUji        = $this->ambilBaseUrlKuliner($urlDasar) . '/kategori';
-                $batasUjiDetik = max($this->batasWaktuDetik, 10);
+                $urlUji = $this->ambilBaseUrlKuliner($urlDasar) . '/kategori';
             } else {
                 $pemisahQuery = str_contains($urlDasar, '?') ? '&' : '?';
                 $urlUji       = $urlDasar . $pemisahQuery . 'kota=' . urlencode($kotaPencarian);
             }
 
-            $hasilPanggil = $this->panggilEndpointMitra($urlUji, $apiKey, $batasUjiDetik);
+            $hasilPanggil = $this->panggilEndpointMitra($urlUji, $apiKey, $batasUjiCepat);
 
             if ($hasilPanggil['berhasil']) {
                 $daftarStatus[] = [
@@ -464,6 +497,8 @@ class LayananApiMitra
                 ];
             }
         }
+
+        $this->simpanKeCacheSingkat($kunciCacheStatus, $daftarStatus, 180);
 
         return $daftarStatus;
     }
@@ -492,6 +527,19 @@ class LayananApiMitra
                 'waktu_respon_ms' => 0,
                 'data'            => [],
                 'pesan_error'     => 'URL API mitra transportasi belum dikonfigurasi.',
+            ];
+        }
+
+        $kunciCacheLokasi = 'jejaksumut_transport_lokasi_v1';
+        $lokasiDariCache  = $this->ambilDariCacheSingkat($kunciCacheLokasi);
+        if (is_array($lokasiDariCache) && $lokasiDariCache !== []) {
+            return [
+                'berhasil'        => true,
+                'terhubung'       => true,
+                'status_kode'     => 200,
+                'waktu_respon_ms' => 1,
+                'data'            => $lokasiDariCache,
+                'pesan_error'     => null,
             ];
         }
 
@@ -554,6 +602,10 @@ class LayananApiMitra
 
             return strcasecmp($lokasiA['nama_lokasi'], $lokasiB['nama_lokasi']);
         });
+
+        if ($daftarLokasi !== []) {
+            $this->simpanKeCacheSingkat($kunciCacheLokasi, $daftarLokasi, 300);
+        }
 
         return [
             'berhasil'        => $daftarLokasi !== [],
@@ -1004,7 +1056,7 @@ class LayananApiMitra
     ): array {
         $baseUrl      = $this->ambilBaseUrlPenginapan($infoMitra['url_api']);
         $apiKey       = $infoMitra['api_key'] ?? '';
-        $batasTimeout = max($this->batasWaktuDetik, 8);
+        $batasTimeout = $this->batasWaktuDetik;
         $urlTujuan    = $baseUrl . '/hotels?limit=30&page=1';
 
         [$wisataLat, $wisataLng] = $this->tentukanKoordinatWisata($konteksDestinasi, [], $kotaPencarian);
@@ -1328,7 +1380,7 @@ class LayananApiMitra
     ): array {
         $baseUrl      = $this->ambilBaseUrlKuliner($infoMitra['url_api']);
         $apiKey       = $infoMitra['api_key'] ?? '';
-        $batasTimeout = max($this->batasWaktuDetik, 10);
+        $batasTimeout = $this->batasWaktuDetik;
 
         [$wisataLat, $wisataLng] = $this->tentukanKoordinatWisata($konteksDestinasi, [], $kotaPencarian);
         // Hitung jarak dari pusat Kota Medan untuk membedakan kuliner terdekat vs persinggahan Medan

@@ -49,11 +49,26 @@ class FavoritApiController extends ResourceController
             ], ResponseInterface::HTTP_NOT_FOUND);
         }
 
-        $favoritModel  = new FavoritModel();
+        $favoritModel = new FavoritModel();
+
+        // Jika parameter id_destinasi dikirim, cukup kembalikan status cek ringan tanpa memuat seluruh daftar
+        $idDestinasiCek = $this->request->getGet('id_destinasi');
+        if ($idDestinasiCek !== null && $idDestinasiCek !== '' && is_numeric($idDestinasiCek) && (int) $idDestinasiCek > 0) {
+            $sudahAda = $favoritModel->cekFavorit((int) $idPengguna, (int) $idDestinasiCek);
+
+            return $this->respond([
+                'status'    => 'berhasil',
+                'pesan'     => 'Status favorit berhasil diperiksa.',
+                'difavorit' => $sudahAda,
+                'data'      => ['difavorit' => $sudahAda],
+            ], ResponseInterface::HTTP_OK);
+        }
+
         $daftarFavorit = $favoritModel->ambilFavoritPengguna((int) $idPengguna);
 
         return $this->respond([
             'status'      => 'berhasil',
+            'pesan'       => 'Daftar destinasi favorit berhasil diambil.',
             'jumlah_data' => count($daftarFavorit),
             'data'        => $daftarFavorit,
         ], ResponseInterface::HTTP_OK);
@@ -92,11 +107,26 @@ class FavoritApiController extends ResourceController
             ], ResponseInterface::HTTP_NOT_FOUND);
         }
 
-        $favoritModel  = new FavoritModel();
+        $favoritModel = new FavoritModel();
+
+        // Jika parameter id_destinasi dikirim, cukup kembalikan status cek ringan tanpa memuat seluruh daftar
+        $idDestinasiCek = $this->request->getGet('id_destinasi');
+        if ($idDestinasiCek !== null && $idDestinasiCek !== '' && is_numeric($idDestinasiCek) && (int) $idDestinasiCek > 0) {
+            $sudahAda = $favoritModel->cekFavorit((int) $idPengguna, (int) $idDestinasiCek);
+
+            return $this->respond([
+                'status'    => 'berhasil',
+                'pesan'     => 'Status favorit berhasil diperiksa.',
+                'difavorit' => $sudahAda,
+                'data'      => ['difavorit' => $sudahAda],
+            ], ResponseInterface::HTTP_OK);
+        }
+
         $daftarFavorit = $favoritModel->ambilFavoritPengguna((int) $idPengguna);
 
         return $this->respond([
             'status'      => 'berhasil',
+            'pesan'       => 'Daftar destinasi favorit berhasil diambil.',
             'jumlah_data' => count($daftarFavorit),
             'data'        => $daftarFavorit,
         ], ResponseInterface::HTTP_OK);

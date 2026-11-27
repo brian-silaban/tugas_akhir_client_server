@@ -26,7 +26,8 @@ if ($modeClient === 'admin') {
     $routes->get('destinasi/(:segment)', 'DestinasiController::detail/$1');
     $routes->get('daftar', 'AutentikasiController::daftar');
     $routes->post('daftar', 'AutentikasiController::prosesDaftar', ['filter' => 'csrf']);
-    $routes->get('keluar', 'AutentikasiController::keluar');
+    $routes->post('keluar', 'AutentikasiController::keluar', ['filter' => 'csrf']);
+    $routes->get('keluar', static fn () => redirect()->to(site_url('/')));
 
     // --- Favorit (Anggota 3) – dilindungi filter autentikasi & CSRF ---
     $routes->get('favorit-saya',     'FavoritController::index',  ['filter' => 'autentikasi']);

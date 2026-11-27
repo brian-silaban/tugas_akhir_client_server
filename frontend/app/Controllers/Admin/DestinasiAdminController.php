@@ -44,6 +44,9 @@ class DestinasiAdminController extends BasisAdminController
     public function buat(): RedirectResponse
     {
         $hasil = $this->layananApi->kirimPost('/destinasi', $this->bacaFormulir());
+        if ($hasil['berhasil']) {
+            $this->layananApi->bersihkanCacheReferensi();
+        }
         $tujuan = $hasil['berhasil'] ? 'admin/destinasi' : 'admin/destinasi/tambah';
 
         return $this->hasilAksi($hasil, $tujuan, true);
@@ -52,6 +55,9 @@ class DestinasiAdminController extends BasisAdminController
     public function ubah(int $id): RedirectResponse
     {
         $hasil = $this->layananApi->kirimPut('/destinasi/' . $id, $this->bacaFormulir());
+        if ($hasil['berhasil']) {
+            $this->layananApi->bersihkanCacheReferensi();
+        }
         $tujuan = $hasil['berhasil'] ? 'admin/destinasi' : 'admin/destinasi/' . $id . '/edit';
 
         $pengalihan = $this->hasilAksi($hasil, $tujuan, true);
@@ -65,21 +71,27 @@ class DestinasiAdminController extends BasisAdminController
     public function hapus(int $id): RedirectResponse
     {
         $hasil = $this->layananApi->kirimDelete('/destinasi/' . $id);
+        if ($hasil['berhasil']) {
+            $this->layananApi->bersihkanCacheReferensi();
+        }
 
         return $this->hasilAksi($hasil, 'admin/destinasi');
     }
 
     private function tampilkanFormulir(array $destinasi): string
     {
-        $kategori = $this->layananApi->kirimGet('/kategori');
-        $wilayah = $this->layananApi->kirimGet('/kabupaten-kota');
+        $daftarKategori = $this->layananApi->ambilDaftarKategori();
+        $daftarWilayah  = $this->layananApi->ambilDaftarKabupatenKota();
+        $pesanApi       = ($daftarKategori === [] || $daftarWilayah === [])
+            ? 'Data referensi kategori atau wilayah gagal dimuat dari server Backend.'
+            : null;
 
         return view('pages/admin/formulir_destinasi', [
-            'judul_halaman' => $destinasi === [] ? 'Tambah destinasi' : 'Edit destinasi',
-            'destinasi' => $destinasi,
-            'daftar_kategori' => $kategori['data'] ?? [],
-            'daftar_wilayah' => $wilayah['data'] ?? [],
-            'pesan_api' => $kategori['pesan_error'] ?? $wilayah['pesan_error'],
+            'judul_halaman'   => $destinasi === [] ? 'Tambah destinasi' : 'Edit destinasi',
+            'destinasi'       => $destinasi,
+            'daftar_kategori' => $daftarKategori,
+            'daftar_wilayah'  => $daftarWilayah,
+            'pesan_api'       => $pesanApi,
         ]);
     }
 

@@ -61,13 +61,21 @@ class PeranAdminFilter implements FilterInterface
             );
         }
 
-        // Cek ulang akun & peran terbaru dari database agar pencabutan hak admin langsung berlaku
-        $penggunaAktif = (new PenggunaModel())->select('id, peran')->find((int) $dataToken['id_pengguna']);
+        // Cek ulang akun, kata sandi, & peran terbaru dari database agar pencabutan hak admin atau ubah sandi langsung berlaku
+        $penggunaAktif = (new PenggunaModel())->select('id, peran, kata_sandi')->find((int) $dataToken['id_pengguna']);
         if ($penggunaAktif === null) {
             return $this->buatResponsGagal(
                 $respons,
                 ResponseInterface::HTTP_UNAUTHORIZED,
                 'Akses ditolak. Akun administrator tidak ditemukan.'
+            );
+        }
+
+        if (! AutentikasiApiController::cocokkanSidikSandiToken($dataToken, (string) ($penggunaAktif['kata_sandi'] ?? ''))) {
+            return $this->buatResponsGagal(
+                $respons,
+                ResponseInterface::HTTP_UNAUTHORIZED,
+                'Akses ditolak. Sesi autentikasi telah berakhir karena perubahan kata sandi. Silakan masuk kembali.'
             );
         }
 

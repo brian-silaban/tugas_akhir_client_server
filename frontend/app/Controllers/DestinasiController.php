@@ -80,17 +80,11 @@ class DestinasiController extends BaseController
         $tokenApi        = (string) session('token_api');
 
         if ($idPenggunaLogin > 0 && $tokenApi !== '') {
-            $hasilFavorit = $layananApi->kirimGet('/favorit/' . $idPenggunaLogin, [], $tokenApi);
-            if ($hasilFavorit['terhubung'] && $hasilFavorit['berhasil'] && is_array($hasilFavorit['data'])) {
-                $idDestinasiSaatIni = (int) ($destinasi['id'] ?? 0);
-                foreach ($hasilFavorit['data'] as $itemFavorit) {
-                    $idFavoritDestinasi = (int) ($itemFavorit['id_destinasi'] ?? $itemFavorit['id'] ?? 0);
-                    if ($idFavoritDestinasi > 0 && $idFavoritDestinasi === $idDestinasiSaatIni) {
-                        $sudahDifavorit = true;
-                        break;
-                    }
-                }
-            }
+            $sudahDifavorit = $layananApi->cekStatusFavoritDestinasi(
+                $idPenggunaLogin,
+                (int) ($destinasi['id'] ?? 0),
+                $tokenApi
+            );
         }
 
         return view('pages/destinasi/detail', [

@@ -47,3 +47,8 @@ Options -Indexes
 # Disable server signature start
 ServerSignature Off
 # Disable server signature end
+
+# Kompresi Gzip untuk payload JSON REST API
+<IfModule mod_deflate.c>
+	AddOutputFilterByType DEFLATE application/json text/plain text/html
+</IfModule>

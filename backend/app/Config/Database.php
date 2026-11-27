@@ -36,7 +36,7 @@ class Database extends Config
         'DBDriver'   => 'Postgre',
         'DBPrefix'   => '',
         'pConnect'   => false,
-        'DBDebug'    => true,
+        'DBDebug'    => (ENVIRONMENT !== 'production'),
         'charset'    => 'utf8',
         'swapPre'    => '',
         'encrypt'    => false,
@@ -191,6 +191,12 @@ class Database extends Config
     public function __construct()
     {
         parent::__construct();
+
+        // Aktifkan enkripsi koneksi PostgreSQL jika diatur lewat variabel lingkungan produksi
+        $enkripsiDb = env('JEJAKSUMUT_DB_ENCRYPT');
+        if ($enkripsiDb !== null && $enkripsiDb !== '') {
+            $this->default['encrypt'] = filter_var($enkripsiDb, FILTER_VALIDATE_BOOLEAN);
+        }
 
         // Kredensial admin dipakai hanya setelah token dan peran pengguna lolos pemeriksaan.
         $namaPenggunaAdmin = (string) env('JEJAKSUMUT_DB_ADMIN_USER', '');

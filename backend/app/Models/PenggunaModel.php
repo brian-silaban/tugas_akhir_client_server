@@ -58,7 +58,7 @@ class PenggunaModel extends Model
     // ---------------------------------------------------------------
 
     /**
-     * Cari data pengguna berdasarkan alamat email.
+     * Cari data pengguna berdasarkan alamat email secara case-insensitive.
      * Digunakan saat proses login dan pengecekan email duplikat.
      *
      * @param string $email
@@ -66,6 +66,20 @@ class PenggunaModel extends Model
      */
     public function cariDenganEmail(string $email): ?array
     {
-        return $this->where('email', $email)->first();
+        $emailBersih = strtolower(trim($email));
+        if ($emailBersih === '') {
+            return null;
+        }
+
+        $baris = $this->db->query(
+            'SELECT * FROM ' . $this->db->protectIdentifiers($this->table) . ' WHERE LOWER(email) = ? LIMIT 1',
+            [$emailBersih]
+        )->getRowArray();
+
+        if (! is_array($baris)) {
+            return null;
+        }
+
+        return $baris;
     }
 }

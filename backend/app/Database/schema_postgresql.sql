@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS pengguna (
     diperbarui_pada TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS pengguna_email_lower ON pengguna (LOWER(email));
+
 -- 3. Tabel Kategori
 CREATE TABLE IF NOT EXISTS kategori (
     id SERIAL PRIMARY KEY,
@@ -73,6 +75,7 @@ CREATE INDEX IF NOT EXISTS destinasi_id_kategori ON destinasi(id_kategori);
 CREATE INDEX IF NOT EXISTS destinasi_kode_kabupaten ON destinasi(kode_kabupaten);
 CREATE INDEX IF NOT EXISTS destinasi_kota ON destinasi(kota);
 CREATE INDEX IF NOT EXISTS destinasi_harga_tiket ON destinasi(harga_tiket);
+CREATE INDEX IF NOT EXISTS destinasi_rating_ulasan ON destinasi (rata_rating DESC, jumlah_ulasan DESC, id ASC);
 
 -- 5. Tabel Master Fasilitas & Relasi Many-to-Many
 CREATE TABLE IF NOT EXISTS fasilitas (
@@ -116,6 +119,7 @@ CREATE TABLE IF NOT EXISTS pemesanan (
 
 CREATE INDEX IF NOT EXISTS pemesanan_id_pengguna ON pemesanan(id_pengguna);
 CREATE INDEX IF NOT EXISTS pemesanan_id_destinasi ON pemesanan(id_destinasi);
+CREATE INDEX IF NOT EXISTS pemesanan_status_dibuat_pada ON pemesanan (status, dibuat_pada DESC, id DESC);
 
 -- 8. Tabel Ulasan
 CREATE TABLE IF NOT EXISTS ulasan (

@@ -61,13 +61,21 @@ class AutentikasiTokenFilter implements FilterInterface
             );
         }
 
-        // Pastikan akun pengguna masih ada di database
-        $penggunaAktif = (new PenggunaModel())->select('id, peran')->find((int) $dataToken['id_pengguna']);
+        // Pastikan akun pengguna masih ada di database dan kata sandi belum diubah
+        $penggunaAktif = (new PenggunaModel())->select('id, peran, kata_sandi')->find((int) $dataToken['id_pengguna']);
         if ($penggunaAktif === null) {
             return $this->buatResponsGagal(
                 $respons,
                 ResponseInterface::HTTP_UNAUTHORIZED,
                 'Akses ditolak. Akun pengguna tidak ditemukan atau sudah tidak aktif.'
+            );
+        }
+
+        if (! AutentikasiApiController::cocokkanSidikSandiToken($dataToken, (string) ($penggunaAktif['kata_sandi'] ?? ''))) {
+            return $this->buatResponsGagal(
+                $respons,
+                ResponseInterface::HTTP_UNAUTHORIZED,
+                'Akses ditolak. Sesi autentikasi telah berakhir karena perubahan kata sandi. Silakan masuk kembali.'
             );
         }
 

@@ -36,6 +36,12 @@ class FavoritController extends BaseController
 
         $hasil = $this->layananApiBackend->kirimGet('/favorit/' . $idPengguna, [], (string) session()->get('token_api'));
 
+        if (($hasil['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+
+            return redirect()->to('/masuk')->withCookies()->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
+        }
+
         $daftarFavorit = [];
         if ($hasil['terhubung'] && $hasil['berhasil'] && is_array($hasil['data'])) {
             $daftarFavorit = $hasil['data'];
@@ -100,6 +106,18 @@ class FavoritController extends BaseController
                 ]);
             }
             return redirect()->back()->with('error', 'Tidak dapat terhubung ke server Backend API.');
+        }
+
+        if (($hasil['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+            if ($this->request->isAJAX()) {
+                return $this->response->setStatusCode(401)->setJSON([
+                    'status' => 'gagal',
+                    'pesan'  => 'Sesi Anda telah berakhir. Silakan masuk kembali.',
+                ]);
+            }
+
+            return redirect()->to('/masuk')->withCookies()->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
         }
 
         if ($this->request->isAJAX()) {

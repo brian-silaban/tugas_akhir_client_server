@@ -107,14 +107,17 @@ $apakahKatalogAktif = ($menuAktif === 'katalog' || $menuAktif === 'destinasi');
                             <span>Ganti Kata Sandi</span>
                         </a>
                         <div class="my-1 border-t border-surface-variant/50"></div>
-                        <a
-                            href="<?= base_url('keluar') ?>"
-                            role="menuitem"
-                            class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-error hover:bg-error-container/25 transition-colors"
-                        >
-                            <span class="material-symbols-outlined text-base" aria-hidden="true">logout</span>
-                            <span>Keluar</span>
-                        </a>
+                        <form action="<?= base_url('keluar') ?>" method="post" class="m-0 p-0">
+                            <?= csrf_field() ?>
+                            <button
+                                type="submit"
+                                role="menuitem"
+                                class="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-error hover:bg-error-container/25 transition-colors"
+                            >
+                                <span class="material-symbols-outlined text-base" aria-hidden="true">logout</span>
+                                <span>Keluar</span>
+                            </button>
+                        </form>
                     <?php else : ?>
                         <a
                             href="<?= base_url('masuk') ?>"

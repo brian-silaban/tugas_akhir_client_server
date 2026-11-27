@@ -4,7 +4,7 @@ Ringkasan pendapatan, antrian verifikasi tiket, ulasan wisatawan, dan status lay
 <?= $this->endSection() ?>
 <?= $this->section('aksi_halaman') ?>
 <div class="aksi">
-    <a class="tombol tombol-ghost" href="<?= esc(site_url('admin'), 'attr') ?>">
+    <a class="tombol tombol-ghost" href="<?= esc(site_url('admin?segarkan=1'), 'attr') ?>">
         <span class="material-symbols-outlined" aria-hidden="true">refresh</span> Perbarui data
     </a>
 </div>

@@ -9,17 +9,26 @@
 
 use App\Libraries\LayananApiBackend;
 
-// Ambil daftar ulasan lewat REST API backend
-$layananApi = new LayananApiBackend();
-$hasilApi   = $layananApi->ambilDaftarUlasan((int) ($id_destinasi ?? 0));
+// Gunakan ulasan yang sudah dimuat pada detail destinasi agar tidak memicu request HTTP ganda
+$daftarUlasan    = [];
+$rataRating      = 0;
+$jumlahUlasan    = 0;
+$terhubungUlasan = true;
 
-$daftarUlasan = [];
-$rataRating   = 0;
-$jumlahUlasan = 0;
-if ($hasilApi['berhasil']) {
-    $daftarUlasan = is_array($hasilApi['data']) ? $hasilApi['data'] : [];
-    $rataRating   = (float) ($hasilApi['isi']['rata_rating'] ?? 0);
-    $jumlahUlasan = (int) ($hasilApi['isi']['jumlah_ulasan'] ?? 0);
+if (isset($ulasan_awal) && is_array($ulasan_awal)) {
+    $daftarUlasan = $ulasan_awal;
+    $rataRating   = (float) ($rata_rating_awal ?? 0);
+    $jumlahUlasan = (int) ($jumlah_ulasan_awal ?? count($daftarUlasan));
+} else {
+    $layananApi      = new LayananApiBackend();
+    $hasilApi        = $layananApi->ambilDaftarUlasan((int) ($id_destinasi ?? 0));
+    $terhubungUlasan = (bool) ($hasilApi['terhubung'] ?? false);
+
+    if (! empty($hasilApi['berhasil'])) {
+        $daftarUlasan = is_array($hasilApi['data']) ? $hasilApi['data'] : [];
+        $rataRating   = (float) ($hasilApi['isi']['rata_rating'] ?? 0);
+        $jumlahUlasan = (int) ($hasilApi['isi']['jumlah_ulasan'] ?? 0);
+    }
 }
 
 // Form ulasan hanya muncul untuk pengguna yang sudah masuk
@@ -74,7 +83,7 @@ $sudahMasuk = (int) session('id_pengguna') > 0;
         <?php endif; ?>
     </noscript>
 
-    <?php if (! $hasilApi['terhubung']) : ?>
+    <?php if (! $terhubungUlasan) : ?>
         <p class="mb-6 text-sm text-stone-600">Ulasan belum bisa dimuat karena server sedang tidak terjangkau. Coba muat ulang beberapa saat lagi.</p>
     <?php endif; ?>
 

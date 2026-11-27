@@ -33,6 +33,7 @@ class KategoriApiController extends ResourceController
 
         return $this->respond([
             'status'      => 'berhasil',
+            'pesan'       => 'Daftar kategori wisata berhasil diambil.',
             'penyedia'    => 'JejakSumut Tourism API',
             'jumlah_data' => count($daftarKategori),
             'data'        => $daftarKategori,
@@ -55,6 +56,7 @@ class KategoriApiController extends ResourceController
 
         return $this->respond([
             'status'      => 'berhasil',
+            'pesan'       => 'Daftar kabupaten/kota berhasil diambil.',
             'penyedia'    => 'JejakSumut Tourism API',
             'jumlah_data' => count($daftarKabupatenKota),
             'data'        => $daftarKabupatenKota,

@@ -23,6 +23,12 @@ class PemesananController extends BaseController
         $layananApi = new LayananApiBackend();
         $hasilApi   = $layananApi->ambilDaftarPemesanan($idPengguna, (string) session('token_api'));
 
+        if (($hasilApi['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+
+            return redirect()->to('/masuk')->withCookies()->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
+        }
+
         $daftarTiket = [];
         $pesanError  = '';
         if ($hasilApi['berhasil'] && is_array($hasilApi['data'])) {
@@ -50,6 +56,12 @@ class PemesananController extends BaseController
 
         $layananApi = new LayananApiBackend();
         $hasilApi   = $layananApi->ambilDetailPemesanan($id, (string) session('token_api'));
+
+        if (($hasilApi['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+
+            return redirect()->to('/masuk')->withCookies()->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
+        }
 
         if (! $hasilApi['berhasil'] || ! is_array($hasilApi['data'])) {
             $pesanError = $hasilApi['pesan_error'] ?? 'Tiket tidak ditemukan.';
@@ -92,6 +104,12 @@ class PemesananController extends BaseController
         $layananApi = new LayananApiBackend();
         $hasilApi   = $layananApi->buatPemesanan($dataPemesanan, (string) session('token_api'));
 
+        if (($hasilApi['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+
+            return redirect()->to('/masuk')->withCookies()->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
+        }
+
         // Arahkan langsung ke E-Ticket setelah backend mengembalikan status 201 Created.
         $idTiketBaru = (int) ($hasilApi['data']['id'] ?? 0);
         if ($hasilApi['berhasil'] && $idTiketBaru > 0) {
@@ -115,6 +133,12 @@ class PemesananController extends BaseController
 
         $layananApi = new LayananApiBackend();
         $hasilApi   = $layananApi->batalkanPemesanan($id, (string) session('token_api'));
+
+        if (($hasilApi['status_kode'] ?? 0) === 401) {
+            session()->destroy();
+
+            return redirect()->to('/masuk')->withCookies()->with('error', 'Sesi Anda telah berakhir. Silakan masuk kembali.');
+        }
 
         if ($hasilApi['berhasil']) {
             return redirect()->to('/pemesanan')->with('pesan_sukses', 'Tiket berhasil dibatalkan.');

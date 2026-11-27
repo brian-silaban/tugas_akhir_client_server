@@ -84,6 +84,8 @@
                             <img
                                 src="<?= esc($fotoTambahan['url_foto'] ?? '') ?>"
                                 alt="<?= esc($fotoTambahan['keterangan'] ?? $destinasi['nama']) ?>"
+                                loading="lazy"
+                                decoding="async"
                                 class="w-full h-full object-cover"
                             />
                         </div>
@@ -240,8 +242,11 @@
                 <!-- Komponen Ulasan & Rating Bintang (Anggota 4) -->
                 <?php if (is_file(APPPATH . 'Views/components/bagian_ulasan.php')) : ?>
                     <?= view('components/bagian_ulasan', [
-                        'id_destinasi'   => $idDestinasi,
-                        'slug_destinasi' => $slugDestinasi,
+                        'id_destinasi'       => $idDestinasi,
+                        'slug_destinasi'     => $slugDestinasi,
+                        'ulasan_awal'        => $destinasi['ulasan_terbaru'] ?? null,
+                        'rata_rating_awal'   => $destinasi['rata_rating'] ?? 0,
+                        'jumlah_ulasan_awal' => $destinasi['jumlah_ulasan'] ?? 0,
                     ]) ?>
                 <?php endif; ?>
 
